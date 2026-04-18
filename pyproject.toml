@@ -1,0 +1,17 @@
+[project]
+name = "quest-1"
+version = "0.1.0"
+description = "PoC for development management integrated web application"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=3.1.0",
+    "flask-login>=0.6.3",
+    "flask-migrate>=4.0.0",
+    "flask-sqlalchemy>=3.1.1",
+    "flask-wtf>=1.2.2",
+    "gunicorn>=23.0.0",
+    "psycopg2-binary>=2.9.9",
+    "python-dotenv>=1.0.1",
+    "tzdata>=2025.1",
+]
