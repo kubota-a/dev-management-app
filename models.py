@@ -37,6 +37,7 @@ class Department(db.Model):
 
     users = db.relationship("User", back_populates="department")
     projects = db.relationship("Project", back_populates="department")
+    yearly_budgets = db.relationship("DepartmentYearlyBudget", back_populates="department")
 
 
 # 2. users（ユーザー）
@@ -268,3 +269,40 @@ class ProjectStatusLog(db.Model):
 
     project = db.relationship("Project", back_populates="project_status_logs")
     actor = db.relationship("User", back_populates="project_status_logs")
+
+
+# 8. department_yearly_budgets（部門年間予算）
+class DepartmentYearlyBudget(db.Model):
+    """部門ごとの年間予算を年度単位で管理する。"""
+
+    __tablename__ = "department_yearly_budgets"
+    __table_args__ = (
+        db.CheckConstraint(
+            "annual_budget_amount >= 0",
+            name="ck_department_yearly_budgets_annual_budget_amount_non_negative",
+        ),
+        db.CheckConstraint(
+            "fiscal_year >= 2000",
+            name="ck_department_yearly_budgets_fiscal_year_min",
+        ),
+        db.UniqueConstraint(
+            "department_id",
+            "fiscal_year",
+            name="uq_department_yearly_budgets_department_id_fiscal_year",
+        ),
+    )
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    department_id = db.Column(db.BigInteger, db.ForeignKey("departments.id"), nullable=False, index=True)
+    fiscal_year = db.Column(db.Integer, nullable=False, index=True)
+    annual_budget_amount = db.Column(db.Numeric(12, 2), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        onupdate=utc_now,
+    )
+
+    # 部門との紐づき（部門1 : 年度予算N）
+    department = db.relationship("Department", back_populates="yearly_budgets")
