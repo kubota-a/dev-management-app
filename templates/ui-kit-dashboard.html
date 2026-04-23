@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja" class="theme-hq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard UI Kit</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="/static/css/design-tokens.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div class="app-layout">
+            <aside class="app-sidebar">
+                <div class="app-sidebar-title">WebApp Base</div>
+
+                <div class="app-sidebar-section-title">Menu</div>
+                <nav class="app-nav">
+                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                    <a href="#" class="app-nav-link">一覧管理</a>
+                    <a href="#" class="app-nav-link">申請管理</a>
+                    <a href="#" class="app-nav-link">設定</a>
+                    <a href="#" class="app-nav-link">レポート</a>
+                    <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
+                    <a href="#" class="app-nav-link">承認一覧</a>
+                    <a href="#" class="app-nav-link">履歴</a>
+                    <a href="#" class="app-nav-link">タグ管理</a>
+                    <a href="#" class="app-nav-link">エクスポート</a>
+                    <a href="#" class="app-nav-link">ロール設定</a>
+                    <a href="#" class="app-nav-link">システム設定</a>
+                </nav>
+            </aside>
+
+            <div class="app-main">
+                <header class="app-header">
+                    <div class="app-header-left">
+                        <button type="button" class="mobile-menu-button" data-drawer-open aria-controls="mobileDrawer" aria-expanded="false" aria-label="メニューを開く">
+                            &#9776;
+                        </button>
+                        <div>
+                            <div class="app-header-title">ダッシュボード見本</div>
+                            <div class="app-header-meta">オーソドックスなパーツを1ページで確認</div>
+                        </div>
+                    </div>
+                    <div class="app-header-right">
+                        <div class="header-notification">
+                            <button type="button" class="header-notification-button" aria-label="Open notifications (3 unread)">
+                                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                                    <path class="header-notification-stroke" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path class="header-notification-stroke" d="M13.73 21a2 2 0 0 1-3.46 0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                    <circle class="header-notification-badge" cx="18" cy="7" r="4.5" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="account-menu" data-account-menu-root>
+                            <button type="button" class="account-menu-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenuDropdown">
+                                <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="user">
+                                    <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
+                                    <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
+                                    <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                                </svg>
+                            </button>
+                            <div id="accountMenuDropdown" class="account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
+                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
+                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
+                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <main class="app-content section-stack">
+
+                    <!-- 件数サマリーバンド -->
+                    <section class="summary-band" aria-label="件数サマリー">
+                        <div class="summary-band-inner">
+                            <div class="summary-band-segment sb-accent-blue">
+                                <div class="sb-number-row">
+                                    <span class="sb-value">184</span><span class="sb-unit">件</span>
+                                </div>
+                                <span class="sb-label">全案件数</span>
+                                <span class="sb-meta">前週比 +6件</span>
+                            </div>
+                            <div class="summary-band-segment sb-accent-amber is-warning">
+                                <div class="sb-number-row">
+                                    <span class="sb-value">9</span><span class="sb-unit">件</span>
+                                </div>
+                                <span class="sb-label">本部承認待ち</span>
+                                <span class="sb-meta">今週中に要確認</span>
+                            </div>
+                            <div class="summary-band-segment sb-accent-teal">
+                                <div class="sb-number-row">
+                                    <span class="sb-value">96</span><span class="sb-unit">件</span>
+                                </div>
+                                <span class="sb-label">進行中</span>
+                                <span class="sb-meta">進行率 52.1%</span>
+                            </div>
+                            <div class="summary-band-segment sb-accent-green">
+                                <div class="sb-number-row">
+                                    <span class="sb-value">60</span><span class="sb-unit">件</span>
+                                </div>
+                                <span class="sb-label">完了</span>
+                                <span class="sb-meta">当月完了 14件</span>
+                            </div>
+                            <div class="summary-band-segment sb-accent-red is-delay">
+                                <div class="sb-number-row">
+                                    <span class="sb-value">12</span><span class="sb-unit">件</span>
+                                </div>
+                                <span class="sb-label">遅延案件</span>
+                                <span class="sb-meta">最長遅延 11日</span>
+                            </div>
+                            <div class="summary-band-segment sb-accent-orange is-budget-alert">
+                                <div class="sb-number-row">
+                                    <span class="sb-value">18</span><span class="sb-unit">件</span>
+                                </div>
+                                <span class="sb-label">予算注意</span>
+                                <span class="sb-meta">超過・逼迫を含む</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- フィルターバー -->
+                    <section class="card filter-bar">
+                        <div class="filter-bar-row">
+                            <span class="filter-lead">絞込:</span>
+                            <div class="filter-group filter-group-inline">
+                                <label for="filterDept" class="visually-hidden">部門</label>
+                                <select id="filterDept" class="filter-select">
+                                    <option>部門：すべて</option>
+                                    <option>営業部</option>
+                                    <option>開発部</option>
+                                    <option>管理部</option>
+                                </select>
+                            </div>
+                            <div class="filter-group filter-group-inline">
+                                <label for="filterStatus" class="visually-hidden">ステータス</label>
+                                <select id="filterStatus" class="filter-select">
+                                    <option>ステータス：すべて</option>
+                                    <option>承認待ち</option>
+                                    <option>進行中</option>
+                                    <option>完了</option>
+                                </select>
+                            </div>
+                            <div class="filter-group filter-group-inline">
+                                <label for="filterFiscalYear" class="visually-hidden">年度</label>
+                                <select id="filterFiscalYear" class="filter-select">
+                                    <option>年度：2026</option>
+                                    <option>年度：2025</option>
+                                    <option>年度：2024</option>
+                                </select>
+                            </div>
+                            <span class="filter-divider" aria-hidden="true"></span>
+                            <label class="filter-check">
+                                <input type="checkbox">
+                                <span>予算注意のみ</span>
+                            </label>
+                            <label class="filter-check">
+                                <input type="checkbox">
+                                <span>遅延ありのみ</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- メインコンテンツ 非対称グリッド (2:1) -->
+                    <section class="dashboard-main-grid">
+                        <div class="dashboard-main-col">
+                            <article class="card">
+                                <h2 class="card-title">進捗・予算状況</h2>
+                                <div class="progress-meter-stack">
+                                    <div class="progress-meter">
+                                        <div class="progress-meter-header">
+                                            <span>案件進捗率</span>
+                                            <strong>68%</strong>
+                                        </div>
+                                        <div class="progress-track"><span class="progress-fill progress-fill-project" style="width: 68%;"></span></div>
+                                    </div>
+                                    <div class="progress-meter">
+                                        <div class="progress-meter-header">
+                                            <span>年間予算使用率</span>
+                                            <strong>91%</strong>
+                                        </div>
+                                        <div class="progress-track"><span class="progress-fill progress-fill-budget-year" style="width: 91%;"></span></div>
+                                    </div>
+                                </div>
+                            </article>
+                            <article class="card">
+                                <h2 class="card-title">承認ステップ状況</h2>
+                                <div class="approval-steps-showcase">
+                                    <div class="approval-step-card">
+                                        <div class="approval-step-card-label">A — 本部承認待ち中</div>
+                                        <div class="steps">
+                                            <div class="step done">
+                                                <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                <div class="sname">申請</div>
+                                            </div>
+                                            <div class="step done">
+                                                <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                <div class="sname">部門承認</div>
+                                            </div>
+                                            <div class="step active">
+                                                <div class="sdot active"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><rect x="1.5" y="1.5" width="10" height="10" rx="2" fill="white"/></svg></div>
+                                                <div class="sname">本部承認</div>
+                                            </div>
+                                            <div class="step pending">
+                                                <div class="sdot pending">4</div>
+                                                <div class="sname">実行可否確定</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="approval-steps-showcase-grid">
+                                        <div class="approval-step-card">
+                                            <div class="approval-step-card-label">B — 完了</div>
+                                            <div class="steps">
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">申請</div>
+                                                </div>
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">部門承認</div>
+                                                </div>
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">本部承認</div>
+                                                </div>
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">実行可否確定</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="approval-step-card">
+                                            <div class="approval-step-card-label">C — 部門承認で却下</div>
+                                            <div class="steps">
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">申請</div>
+                                                </div>
+                                                <div class="step rejected">
+                                                    <div class="sdot rejected"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><line x1="2.5" y1="2.5" x2="11.5" y2="11.5" stroke="white" stroke-width="2.6" stroke-linecap="round"/><line x1="11.5" y1="2.5" x2="2.5" y2="11.5" stroke="white" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+                                                    <div class="sname">部門承認<br>却下</div>
+                                                </div>
+                                                <div class="step pending">
+                                                    <div class="sdot pending">3</div>
+                                                    <div class="sname">本部承認</div>
+                                                </div>
+                                                <div class="step pending">
+                                                    <div class="sdot pending">4</div>
+                                                    <div class="sname">実行可否確定</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+
+                        <article class="card">
+                            <h2 class="card-title">未読通知</h2>
+                            <ul class="notification-list-mini">
+                                <li><span class="notification-title">本部承認待ちが 3 件追加されました</span><time datetime="2026-04-21T09:10">04/21 09:10</time></li>
+                                <li><span class="notification-title">営業部の年間予算使用率が 90% を超過しました</span><time datetime="2026-04-21T08:30">04/21 08:30</time></li>
+                                <li><span class="notification-title">期限超過タスクを含む案件が更新されました</span><time datetime="2026-04-20T18:12">04/20 18:12</time></li>
+                                <li><span class="notification-title">高額案件レビュー会議が登録されました</span><time datetime="2026-04-20T15:42">04/20 15:42</time></li>
+                            </ul>
+                        </article>
+                    </section>
+
+                    <!-- 重要案件ミニリスト 3列 -->
+                    <section class="dashboard-grid-3">
+                        <article class="card mini-insight-card mini-insight-card-approval">
+                            <div class="mini-insight-head">
+                                <h2 class="card-title mini-insight-title">承認待ち案件 <span class="mini-insight-count">9件</span></h2>
+                                <a href="#" class="mini-insight-link">すべて見る →</a>
+                            </div>
+                            <div class="mini-insight-underline" aria-hidden="true"></div>
+                            <ul class="mini-insight-list">
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">顧客ポータル改修</span>
+                                        <span class="mini-insight-sub">営業企画部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-approval-hq">本部承認待ち</span>
+                                    </div>
+                                </li>
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">営業支援ダッシュボード</span>
+                                        <span class="mini-insight-sub">営業部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-approval-dept">部門承認待ち</span>
+                                    </div>
+                                </li>
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">在庫連携機能追加</span>
+                                        <span class="mini-insight-sub">情報システム部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-approval-hq">本部承認待ち</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </article>
+                        <article class="card mini-insight-card mini-insight-card-delay">
+                            <div class="mini-insight-head">
+                                <h2 class="card-title mini-insight-title">遅延案件 <span class="mini-insight-count">12件</span></h2>
+                                <a href="#" class="mini-insight-link">すべて見る →</a>
+                            </div>
+                            <div class="mini-insight-underline" aria-hidden="true"></div>
+                            <ul class="mini-insight-list">
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">会員管理刷新</span>
+                                        <span class="mini-insight-sub">業務推進部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-delay badge-delay-days">+7日</span>
+                                        <span class="mini-insight-stat">進捗 48%</span>
+                                    </div>
+                                </li>
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">請求自動化対応</span>
+                                        <span class="mini-insight-sub">経理部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-delay badge-delay-days">+5日</span>
+                                        <span class="mini-insight-stat">進捗 62%</span>
+                                    </div>
+                                </li>
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">運用監視改善</span>
+                                        <span class="mini-insight-sub">情報システム部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-delay badge-delay-days">+3日</span>
+                                        <span class="mini-insight-stat">進捗 85%</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </article>
+                        <article class="card mini-insight-card mini-insight-card-budget">
+                            <div class="mini-insight-head">
+                                <h2 class="card-title mini-insight-title">予算注意案件 <span class="mini-insight-count">18件</span></h2>
+                                <a href="#" class="mini-insight-link">すべて見る →</a>
+                            </div>
+                            <div class="mini-insight-underline" aria-hidden="true"></div>
+                            <ul class="mini-insight-list">
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">業務基盤統合</span>
+                                        <span class="mini-insight-sub">情報システム部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-warning badge-status-short">注意</span>
+                                        <span class="mini-insight-stat">消費率 88%</span>
+                                    </div>
+                                </li>
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">顧客分析基盤</span>
+                                        <span class="mini-insight-sub">経営企画部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-warning badge-status-short">注意</span>
+                                        <span class="mini-insight-stat">消費率 85%</span>
+                                    </div>
+                                </li>
+                                <li class="mini-insight-item">
+                                    <div class="mini-insight-main">
+                                        <span class="mini-insight-name">社内ポータル統合</span>
+                                        <span class="mini-insight-sub">総務部</span>
+                                    </div>
+                                    <div class="mini-insight-meta">
+                                        <span class="badge badge-budget-over badge-status-short">超過</span>
+                                        <span class="mini-insight-stat">消費率 103%</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </article>
+                    </section>
+
+                    <!-- ランキング + タスク注意 + 高額案件 -->
+                    <section class="dashboard-grid-3">
+                        <article class="card ranking-card">
+                            <div class="ranking-card-head">
+                                <h2 class="card-title ranking-card-title">年間予算占有率 上位5案件</h2>
+                            </div>
+                            <div class="ranking-card-underline" aria-hidden="true"></div>
+                            <ol class="ranking-card-list">
+                                <li class="ranking-card-item">
+                                    <span class="ranking-card-rank">1.</span>
+                                    <div class="ranking-card-main">
+                                        <span class="ranking-card-primary">基幹システム更新</span>
+                                        <span class="ranking-card-secondary">情報システム部</span>
+                                    </div>
+                                    <strong class="ranking-card-value">18.2%</strong>
+                                </li>
+                                <li class="ranking-card-item">
+                                    <span class="ranking-card-rank">2.</span>
+                                    <div class="ranking-card-main">
+                                        <span class="ranking-card-primary">全国拠点NW更改</span>
+                                        <span class="ranking-card-secondary">営業部</span>
+                                    </div>
+                                    <strong class="ranking-card-value">13.5%</strong>
+                                </li>
+                                <li class="ranking-card-item">
+                                    <span class="ranking-card-rank">3.</span>
+                                    <div class="ranking-card-main">
+                                        <span class="ranking-card-primary">認証基盤リプレイス</span>
+                                        <span class="ranking-card-secondary">業務推進部</span>
+                                    </div>
+                                    <strong class="ranking-card-value">11.1%</strong>
+                                </li>
+                                <li class="ranking-card-item">
+                                    <span class="ranking-card-rank">4.</span>
+                                    <div class="ranking-card-main">
+                                        <span class="ranking-card-primary">顧客分析基盤</span>
+                                        <span class="ranking-card-secondary">経営企画部</span>
+                                    </div>
+                                    <strong class="ranking-card-value">9.8%</strong>
+                                </li>
+                                <li class="ranking-card-item">
+                                    <span class="ranking-card-rank">5.</span>
+                                    <div class="ranking-card-main">
+                                        <span class="ranking-card-primary">運用監視改善</span>
+                                        <span class="ranking-card-secondary">情報システム部</span>
+                                    </div>
+                                    <strong class="ranking-card-value">7.2%</strong>
+                                </li>
+                            </ol>
+                        </article>
+                        <article class="card">
+                            <h2 class="card-title">タスク注意サマリー</h2>
+                            <ul class="task-alert-list">
+                                <li><span class="badge badge-danger">危険</span><span>期限超過タスクあり（14件）</span></li>
+                                <li><span class="badge badge-warning">注意</span><span>進行中タスクが多い（96件）</span></li>
+                                <li><span class="badge badge-warning">注意</span><span>未着手タスクが多い（42件）</span></li>
+                            </ul>
+                        </article>
+                        <article class="card mini-list-card">
+                            <h2 class="card-title">高額案件一覧</h2>
+                            <ul class="mini-list">
+                                <li><span>基幹システム更新</span><span>4,800万円</span></li>
+                                <li><span>全国拠点NW更改</span><span>3,600万円</span></li>
+                                <li><span>認証基盤リプレイス</span><span>2,950万円</span></li>
+                            </ul>
+                        </article>
+                    </section>
+
+                    <!-- 状態ラベル見本 -->
+                    <section class="card">
+                        <h2 class="card-title">状態ラベル見本</h2>
+                        <div class="demo-row">
+                            <span class="badge badge-approval-dept">部門承認待ち</span>
+                            <span class="badge badge-approval-hq">本部承認待ち</span>
+                            <span class="badge badge-progress">開発中</span>
+                            <span class="badge badge-success badge-status-short">完了</span>
+                            <span class="badge badge-danger badge-status-short">却下</span>
+                            <span class="badge badge-delay">遅延あり</span>
+                            <span class="badge badge-budget-warning">予算注意</span>
+                            <span class="badge badge-budget-over">予算超過</span>
+                            <span class="badge badge-executable">実行可能</span>
+                            <span class="badge badge-adjusting">調整検討</span>
+                            <span class="badge badge-pressure">予算逼迫</span>
+                            <span class="badge badge-normal badge-status-short">正常</span>
+                            <span class="badge badge-warning badge-status-short">注意</span>
+                            <span class="badge badge-danger badge-status-short">危険</span>
+                        </div>
+                    </section>
+
+                    <!-- 空状態見本 -->
+                    <section class="dashboard-grid-3">
+                        <article class="card empty-state empty-state-dashboard">
+                            <div class="empty-state-title">承認待ち案件はありません</div>
+                            <p class="empty-state-text">新しい申請は現在ありません。</p>
+                        </article>
+                        <article class="card empty-state empty-state-dashboard">
+                            <div class="empty-state-title">遅延案件はありません</div>
+                            <p class="empty-state-text">全案件が計画どおりに進行しています。</p>
+                        </article>
+                        <article class="card empty-state empty-state-dashboard">
+                            <div class="empty-state-title">予算注意案件はありません</div>
+                            <p class="empty-state-text">予算消費率が閾値未満です。</p>
+                        </article>
+                    </section>
+
+                    <!-- グリッドレイアウト見本 -->
+                    <section class="card section-stack">
+                        <h2 class="card-title">グリッドレイアウト見本</h2>
+                        <div class="dashboard-grid-demo">
+                            <h3 class="dashboard-grid-title">4列</h3>
+                            <div class="dashboard-grid-4">
+                                <div class="card summary-card"><p class="summary-label">4列 A</p><p class="summary-value">A</p></div>
+                                <div class="card summary-card"><p class="summary-label">4列 B</p><p class="summary-value">B</p></div>
+                                <div class="card summary-card"><p class="summary-label">4列 C</p><p class="summary-value">C</p></div>
+                                <div class="card summary-card"><p class="summary-label">4列 D</p><p class="summary-value">D</p></div>
+                            </div>
+                        </div>
+                        <div class="dashboard-grid-demo">
+                            <h3 class="dashboard-grid-title">3列</h3>
+                            <div class="dashboard-grid-3">
+                                <div class="card summary-card"><p class="summary-label">3列 A</p><p class="summary-value">A</p></div>
+                                <div class="card summary-card"><p class="summary-label">3列 B</p><p class="summary-value">B</p></div>
+                                <div class="card summary-card"><p class="summary-label">3列 C</p><p class="summary-value">C</p></div>
+                            </div>
+                        </div>
+                        <div class="dashboard-grid-demo">
+                            <h3 class="dashboard-grid-title">2列</h3>
+                            <div class="dashboard-grid-2">
+                                <div class="card summary-card"><p class="summary-label">2列 A</p><p class="summary-value">A</p></div>
+                                <div class="card summary-card"><p class="summary-label">2列 B</p><p class="summary-value">B</p></div>
+                            </div>
+                        </div>
+                        <div class="dashboard-grid-demo">
+                            <h3 class="dashboard-grid-title">非対称</h3>
+                            <div class="dashboard-grid-asym">
+                                <div class="card summary-card"><p class="summary-label">主エリア</p><p class="summary-value">2カラム幅</p></div>
+                                <div class="card summary-card"><p class="summary-label">補助エリア</p><p class="summary-value">1カラム幅</p></div>
+                                <div class="card summary-card"><p class="summary-label">詳細エリア</p><p class="summary-value">横並び想定</p></div>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+
+                <footer class="app-footer">
+                    <button type="button" class="footer-nav-item is-active">ホーム</button>
+                    <button type="button" class="footer-nav-item">一覧</button>
+                    <button type="button" class="footer-nav-item">追加</button>
+                    <button type="button" class="footer-nav-item">設定</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" data-drawer-close></div>
+
+    <aside id="mobileDrawer" class="mobile-drawer" aria-hidden="true">
+        <div class="mobile-drawer-header">
+            <div class="app-sidebar-title">WebApp Base</div>
+            <button type="button" class="mobile-drawer-close" data-drawer-close aria-label="メニューを閉じる">&times;</button>
+        </div>
+
+        <div class="mobile-drawer-body">
+            <div class="app-sidebar-section-title">Menu</div>
+            <nav class="app-nav">
+                <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                <a href="#" class="app-nav-link">一覧管理</a>
+                <a href="#" class="app-nav-link">申請管理</a>
+                <a href="#" class="app-nav-link">設定</a>
+                <a href="#" class="app-nav-link">レポート</a>
+                <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
+                <a href="#" class="app-nav-link">承認一覧</a>
+                <a href="#" class="app-nav-link">履歴</a>
+                <a href="#" class="app-nav-link">タグ管理</a>
+                <a href="#" class="app-nav-link">エクスポート</a>
+                <a href="#" class="app-nav-link">ロール設定</a>
+                <a href="#" class="app-nav-link">システム設定</a>
+            </nav>
+        </div>
+    </aside>
+
+    <div id="confirmModal" class="modal-overlay" aria-hidden="true">
+        <div class="modal">
+            <h2 class="modal-title">確認</h2>
+            <p class="modal-text">この操作を実行してもよろしいですか？</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" data-modal-close>キャンセル</button>
+                <button type="button" class="btn btn-primary" data-modal-close>実行する</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+:root {
+    /* =========================
+       Base Colors
+    ========================= */
+    --color-bg: #f6f8fb;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f9fafb;
+    --color-border: #d9e0e8;
+    --color-overlay: rgba(15, 23, 42, 0.45);
+ 
+    --color-text-main: #1f2937;
+    --color-text-sub: #4b5563;
+    --color-text-muted: #6b7280;
+    --color-text-white: #ffffff;
+ 
+    --color-success-bg: rgba(227, 247, 235, 1);
+    --color-success-text: #1f6b3b;
+    --color-danger-bg: #fdecee;
+    --color-danger-text: #9f2d3a;
+    --color-warning-bg: #fff7e6;
+    --color-warning-text: #9a6700;
+    --color-info-bg: rgba(228, 231, 236, 1);
+    --color-info-text: #4b5563;
+    --color-focus-ring-neutral: rgba(107, 114, 128, 0.2);
+ 
+    /* =========================
+       Theme Tokens
+    ========================= */
+    --color-accent: #6f98bf;
+    --color-accent-dark: #5b86ae;
+    --color-accent-soft: #eef4f9;
+    --color-on-accent: #ffffff;
+ 
+    --color-shell-bg: #31475E;
+    --color-shell-text: #ffffff;
+    --color-shell-muted: rgba(255, 255, 255, 0.68);
+    --color-shell-hover: rgba(255, 255, 255, 0.12);
+    --color-shell-link: rgba(255, 255, 255, 0.92);
+    --color-sidebar-bg: var(--color-shell-bg);
+ 
+    --color-header-bg: #ffffff;
+    --color-header-text: var(--color-text-main);
+    --color-header-meta: var(--color-text-muted);
+    --color-header-border: var(--color-border);
+    --color-header-icon-bg: var(--color-shell-text);
+    --color-header-icon-figure: var(--color-shell-bg);
+    --color-header-icon-bg-hover: var(--color-shell-muted);
+    --color-header-icon-figure-hover: var(--color-shell-bg);
+    /* ヘッダー専用のフォーカス色。将来ヘッダー配色が異なるテーマでは上書きする。 */
+    --color-header-focus-outline: var(--color-shell-muted);
+    --color-footer-bg: rgba(255, 255, 255, 0.96);
+ 
+    /* =========================
+       Component Fine-tuning
+    ========================= */
+    --color-secondary-border: #c4cfda;
+    --color-secondary-border-hover: #97a7b8;
+    /* フォーム系フォーカスリングの正式トークン（新規実装はこちらを使う）。 */
+    --color-control-focus-ring: var(--color-focus-ring-neutral);
+    /* 互換維持用の別名。新規実装での使用は非推奨（段階移行のため残置）。 */
+    --color-focus-ring: var(--color-control-focus-ring);
+    --color-select-arrow: var(--color-text-muted);
+    --color-danger-border: rgba(159, 45, 58, 0.34);
+    --color-danger-bg-hover: #f8dfe4;
+    --color-danger-border-hover: rgba(159, 45, 58, 0.46);
+    /* Dangerボタン用の受け口トークン。将来テーマ差分を追加しやすくするために分離。 */
+    --color-action-danger-bg: var(--color-danger-bg);
+    --color-action-danger-text: var(--color-danger-text);
+    --color-action-danger-border: var(--color-danger-border);
+    --color-action-danger-bg-hover: var(--color-danger-bg-hover);
+    --color-action-danger-border-hover: var(--color-danger-border-hover);
+    --color-surface-overlay-subtle: rgba(0, 0, 0, 0.06);
+    --color-scrollbar-thumb: rgba(99, 115, 129, 0.46);
+    --color-scrollbar-thumb-hover: rgba(99, 115, 129, 0.62);
+    --color-scrollbar-thumb-on-dark: rgba(255, 255, 255, 0.24);
+    --color-table-head-bg: #d7e3ee;
+    --color-table-head-text: #43576c;
+    --color-form-label-accent: var(--color-accent);
+ 
+    --space-form-group-gap: var(--space-md);
+    --space-form-label-control-gap: var(--space-2xs);
+    --space-form-help-gap: var(--space-xs);
+    --space-form-label-gap: var(--space-xs);
+    --space-form-label-main-gap: var(--space-2xs);
+    --space-form-required-badge-x: 0.45rem;
+    --space-form-required-badge-y: 0.15rem;
+    --space-select-caret-offset-primary: 16px;
+    --space-select-caret-offset-secondary: 11px;
+    --size-form-label-accent-width: 3px;
+    --size-form-label-accent-height: 0.95em;
+    --size-focus-ring-width: 3px;
+    --size-select-height: 42px;
+    --size-select-caret: 5px;
+ 
+    /* =========================
+       Typography
+    ========================= */
+    --font-family-base: "Noto Sans JP", sans-serif;
+ 
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-md: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 1.875rem;
+ 
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+ 
+    --line-height-base: 1.6;
+ 
+    /* =========================
+       Spacing
+    ========================= */
+    --space-2xs: 0.25rem;
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+ 
+    /* =========================
+       Radius / Shadow
+    ========================= */
+    --radius-sm: 6px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --radius-full: 999px;
+ 
+    --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --shadow-button-hover: 0 2px 8px rgba(15, 23, 42, 0.08);
+    --shadow-button-primary-hover: 0 3px 10px rgba(91, 134, 174, 0.28);
+ 
+    /* =========================
+       Layout
+    ========================= */
+    --sidebar-width: 240px;
+    --header-height: 64px;
+    --footer-height: 64px;
+    --mobile-header-height: 56px;
+    --mobile-footer-height: 64px;
+    --size-button-height: 40px;
+    --size-footer-nav-item-height: 40px;
+    --size-mobile-menu-button: 40px;
+    --size-header-user-icon: 30px;
+    --size-header-user-icon-mobile: 25px;
+    --size-table-scrollbar: 8px;
+    --size-drawer-scrollbar: 4px;
+ 
+    --container-sm: 720px;
+    --container-md: 960px;
+    --container-lg: 1200px;
+    --container-content-max: 1320px;
+    /* 余剰幅を左マージンへ配分する割合。0.42 は左42% / 右58%寄りで、中央寄せしすぎず左起点感を残す。 */
+    --ratio-content-extra-space-left: 0.42;
+    --space-content-margin-min: var(--space-md);
+ 
+   /* =========================
+      Transition
+   ========================= */
+   --transition-base: 0.2s ease;
+ 
+   /* =========================
+      Dashboard Summary Band
+   ========================= */
+   --color-ds-band-bg:      #3E5B74;
+   --color-ds-band-divider: rgba(255, 255, 255, 0.12);
+   --color-ds-band-text:    #ffffff;
+   --color-ds-band-muted:   rgba(255, 255, 255, 0.815);
+   --color-ds-band-dim:     rgba(255, 255, 255, 0.541);
+   --color-ds-band-value-default: #ffffff;
+   --color-status-hq-pending: #fff7e6;
+   --color-status-delay: #f7b38c;
+   --color-status-budget-alert: #f7668a;
+ 
+   /* Segment accent colors (currently unused).
+      `sb-accent-*` classes are kept in HTML for potential future reactivation,
+      but no current stylesheet maps those classes to these tokens. */
+   --color-ds-acc-blue:   #5ab0e8;
+   --color-ds-acc-amber:  #f5a83d;
+   --color-ds-acc-teal:   #3dbfb8;
+   --color-ds-acc-green:  #3cc47a;
+   --color-ds-acc-red:    #e05555;
+   --color-ds-acc-orange: #f07840;
+   --color-ds-acc-purple: #9b72d8;
+
+   --color-step-success: #6abf69;
+   --color-step-success-dark: #3a8f54;
+   --color-step-danger: #f08080;
+   --color-step-text: #64748b;
+   --color-step-text-muted: #94a3b8;
+   --color-step-border: #e2e8f0;
+   --color-step-pipe: #d1d5db;
+   --color-step-surface: #ffffff;
+ }
+ 
