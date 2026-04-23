@@ -43,7 +43,7 @@
                         </button>
                         <div>
                             <div class="app-header-title">ダッシュボード見本</div>
-                            <div class="app-header-meta">オーソドックスなバーツを1ページで確認</div>
+                            <div class="app-header-meta">オーソドックスなパーツを1ページで確認</div>
                         </div>
                     </div>
                     <div class="app-header-right">
@@ -189,25 +189,72 @@
                             </article>
                             <article class="card">
                                 <h2 class="card-title">承認ステップ状況</h2>
-                                <div class="approval-stepper-stack">
-                                    <ol class="approval-stepper">
-                                        <li class="approval-step is-done">申請</li>
-                                        <li class="approval-step is-current">部門承認</li>
-                                        <li class="approval-step">本部承認</li>
-                                        <li class="approval-step">開発管理開始</li>
-                                    </ol>
-                                    <ol class="approval-stepper">
-                                        <li class="approval-step is-done">申請</li>
-                                        <li class="approval-step is-done">部門承認</li>
-                                        <li class="approval-step is-done">本部承認</li>
-                                        <li class="approval-step is-current">開発管理開始</li>
-                                    </ol>
-                                    <ol class="approval-stepper">
-                                        <li class="approval-step is-done">申請</li>
-                                        <li class="approval-step is-rejected">部門承認（却下）</li>
-                                        <li class="approval-step">本部承認</li>
-                                        <li class="approval-step">開発管理開始</li>
-                                    </ol>
+                                <div class="approval-steps-showcase">
+                                    <div class="approval-step-card">
+                                        <div class="approval-step-card-label">A — 本部承認待ち中</div>
+                                        <div class="steps">
+                                            <div class="step done">
+                                                <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                <div class="sname">申請</div>
+                                            </div>
+                                            <div class="step done">
+                                                <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                <div class="sname">部門承認</div>
+                                            </div>
+                                            <div class="step active">
+                                                <div class="sdot active"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><rect x="1.5" y="1.5" width="10" height="10" rx="2" fill="white"/></svg></div>
+                                                <div class="sname">本部承認</div>
+                                            </div>
+                                            <div class="step pending">
+                                                <div class="sdot pending">4</div>
+                                                <div class="sname">実行可否確定</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="approval-steps-showcase-grid">
+                                        <div class="approval-step-card">
+                                            <div class="approval-step-card-label">B — 完了</div>
+                                            <div class="steps">
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">申請</div>
+                                                </div>
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">部門承認</div>
+                                                </div>
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">本部承認</div>
+                                                </div>
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">実行可否確定</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="approval-step-card">
+                                            <div class="approval-step-card-label">C — 部門承認で却下</div>
+                                            <div class="steps">
+                                                <div class="step done">
+                                                    <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                                    <div class="sname">申請</div>
+                                                </div>
+                                                <div class="step rejected">
+                                                    <div class="sdot rejected"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><line x1="2.5" y1="2.5" x2="11.5" y2="11.5" stroke="white" stroke-width="2.6" stroke-linecap="round"/><line x1="11.5" y1="2.5" x2="2.5" y2="11.5" stroke="white" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+                                                    <div class="sname">部門承認<br>却下</div>
+                                                </div>
+                                                <div class="step pending">
+                                                    <div class="sdot pending">3</div>
+                                                    <div class="sname">本部承認</div>
+                                                </div>
+                                                <div class="step pending">
+                                                    <div class="sdot pending">4</div>
+                                                    <div class="sname">実行可否確定</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </article>
                         </div>

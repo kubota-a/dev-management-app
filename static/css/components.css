@@ -1113,3 +1113,140 @@
 
 /* sb-accent-* クラスは HTML 側で保持（将来の再有効化のため）。
    現在は色の差異を付けず、縦区切り線と明度差のみで情報階層を表現する。 */
+
+/* Approval Step Indicator (Dashboard Sample) */
+.approval-steps-showcase {
+    display: grid;
+    gap: 12px;
+}
+
+.approval-step-card {
+    background: var(--color-step-surface);
+    border: 1px solid var(--color-step-border);
+    border-radius: 12px;
+    padding: 22px 28px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.approval-step-card-label {
+    font-size: 11.5px;
+    color: var(--color-step-text-muted);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 24px;
+}
+
+.approval-steps-showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.approval-steps-showcase .steps {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.approval-steps-showcase .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+}
+
+.approval-steps-showcase .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: calc(50% + 16px);
+    right: calc(-50% + 16px);
+    height: 6px;
+    background: var(--color-step-pipe);
+    border-radius: 3px;
+    z-index: 0;
+}
+
+.approval-steps-showcase .step.done:not(:last-child)::after {
+    background: var(--color-step-success);
+}
+
+.approval-steps-showcase .step.active:not(:last-child)::after,
+.approval-steps-showcase .step.rejected:not(:last-child)::after {
+    background: var(--color-step-pipe);
+}
+
+.approval-steps-showcase .sdot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    border: none;
+}
+
+.approval-steps-showcase .sdot.done {
+    background: var(--color-step-success);
+}
+
+.approval-steps-showcase .sdot.active {
+    background: var(--color-step-success-dark);
+}
+
+.approval-steps-showcase .sdot.rejected {
+    background: var(--color-step-danger);
+}
+
+.approval-steps-showcase .sdot.pending {
+    background: var(--color-step-surface);
+    border: 2px solid var(--color-step-pipe);
+    color: var(--color-step-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: "DM Sans", "Noto Sans JP", sans-serif;
+}
+
+.approval-steps-showcase .sdot svg {
+    display: block;
+}
+
+.approval-steps-showcase .sname {
+    font-size: 10.5px;
+    color: var(--color-step-text);
+    text-align: center;
+    line-height: 1.4;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+.approval-steps-showcase .step.done .sname {
+    color: var(--color-step-success);
+}
+
+.approval-steps-showcase .step.active .sname {
+    color: var(--color-step-success-dark);
+    font-weight: var(--font-weight-bold);
+}
+
+.approval-steps-showcase .step.rejected .sname {
+    color: var(--color-step-danger);
+}
+
+.approval-steps-showcase .step.pending .sname {
+    color: var(--color-step-text-muted);
+}
+
+@media (max-width: 899px) {
+    .approval-step-card {
+        padding: var(--space-md);
+    }
+
+    .approval-steps-showcase-grid {
+        grid-template-columns: 1fr;
+    }
+}

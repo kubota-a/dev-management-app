@@ -186,5 +186,14 @@
    --color-ds-acc-red:    #e05555;
    --color-ds-acc-orange: #f07840;
    --color-ds-acc-purple: #9b72d8;
+
+   --color-step-success: #6abf69;
+   --color-step-success-dark: #3a8f54;
+   --color-step-danger: #f08080;
+   --color-step-text: #64748b;
+   --color-step-text-muted: #94a3b8;
+   --color-step-border: #e2e8f0;
+   --color-step-pipe: #d1d5db;
+   --color-step-surface: #ffffff;
  }
  
