@@ -1,0 +1,38 @@
+{% set _raw_role = demo_role if demo_role is defined else (current_user.role if current_user is defined and current_user.is_authenticated and current_user.role is defined else "applicant") %}
+{% set app_role = _raw_role if _raw_role in ["applicant", "manager", "hq"] else "applicant" %}
+<!DOCTYPE html>
+<html lang="ja" class="theme-{{ app_role }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}開発管理システム{% endblock %}</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="/static/css/design-tokens.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div class="app-layout">
+            {% include "partials/_sidebar.html" %}
+
+            <div class="app-main">
+                {% include "partials/_header.html" %}
+
+                <main class="app-content section-stack">
+                    {% block content %}{% endblock %}
+                </main>
+
+                {% block footer %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    {% include "partials/_mobile_drawer.html" %}
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

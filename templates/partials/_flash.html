@@ -1,0 +1,22 @@
+{% set flash_region_id = flash_region_id|default("flashRegion") %}
+{% set flash_alert_id = flash_alert_id|default("flashAlert") %}
+{% set flash_text_id = flash_text_id|default("flashText") %}
+{% set flashed_messages = get_flashed_messages(with_categories=true) %}
+{% set flash_tone_map = {"success": "alert-success", "danger": "alert-danger", "warning": "alert-warning", "info": "alert-info", "notice": "alert-info"} %}
+{% if flashed_messages %}
+{% set flash_category, flash_message = flashed_messages[-1] %}
+{% set flash_tone = flash_tone_map.get(flash_category, "alert-info") %}
+<div id="{{ flash_region_id }}" class="flash-region flash-region-content-start">
+    <div id="{{ flash_alert_id }}" class="alert {{ flash_tone }} alert-dismissible" role="{{ 'alert' if flash_category == 'danger' else 'status' }}" aria-live="polite">
+        <p id="{{ flash_text_id }}" class="flash-message-text">{{ flash_message }}</p>
+        <button type="button" class="alert-close" data-flash-close aria-label="閉じる">&times;</button>
+    </div>
+</div>
+{% else %}
+<div id="{{ flash_region_id }}" class="flash-region flash-region-content-start" hidden>
+    <div id="{{ flash_alert_id }}" class="alert alert-info alert-dismissible" role="status" aria-live="polite">
+        <p id="{{ flash_text_id }}" class="flash-message-text"></p>
+        <button type="button" class="alert-close" data-flash-close aria-label="閉じる">&times;</button>
+    </div>
+</div>
+{% endif %}
