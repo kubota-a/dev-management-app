@@ -1,0 +1,24 @@
+{% set modal_id = modal_id|default("confirmModal") %}
+{% set modal_title = modal_title|default("確認") %}
+{% set modal_text = modal_text|default("この操作を実行してもよろしいですか？") %}
+{% set modal_cancel_label = modal_cancel_label|default("キャンセル") %}
+{% set modal_confirm_label = modal_confirm_label|default("実行する") %}
+{% set modal_confirm_class = modal_confirm_class|default("btn-primary") %}
+{% set modal_form_action = modal_form_action|default("") %}
+{% set modal_form_method = modal_form_method|default("post") %}
+<div id="{{ modal_id }}" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+        <h2 class="modal-title">{{ modal_title }}</h2>
+        <p class="modal-text">{{ modal_text }}</p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-modal-close>{{ modal_cancel_label }}</button>
+            {% if modal_form_action %}
+            <form action="{{ modal_form_action }}" method="{{ modal_form_method }}">
+                <button type="submit" class="btn {{ modal_confirm_class }}">{{ modal_confirm_label }}</button>
+            </form>
+            {% else %}
+            <button type="button" class="btn {{ modal_confirm_class }}" data-modal-close>{{ modal_confirm_label }}</button>
+            {% endif %}
+        </div>
+    </div>
+</div>

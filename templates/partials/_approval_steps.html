@@ -1,0 +1,69 @@
+{% set approval_stage = approval_stage|default("department_pending") %}
+{% set status = status|default("department_pending") %}
+{% set approval_title = approval_title|default("承認ステップ") %}
+{% set step_labels = ["申請", "部門承認", "本部承認", "開発管理開始"] %}
+{% set rejected_step_index = rejected_step_index|default(1)|int %}
+<div class="approval-steps-showcase">
+    <div class="approval-step-card">
+        <div class="approval-step-card-label">{{ approval_title }}</div>
+        <div class="steps">
+            {% for label in step_labels %}
+            {% set idx = loop.index0 %}
+            {% if approval_stage == "department_pending" %}
+            {% if idx == 0 %}
+            {% set step_state = "done" %}
+            {% elif idx == 1 %}
+            {% set step_state = "active" %}
+            {% else %}
+            {% set step_state = "pending" %}
+            {% endif %}
+            {% elif approval_stage == "hq_pending" %}
+            {% if idx <= 1 %}
+            {% set step_state = "done" %}
+            {% elif idx == 2 %}
+            {% set step_state = "active" %}
+            {% else %}
+            {% set step_state = "pending" %}
+            {% endif %}
+            {% elif approval_stage == "approved" %}
+            {% if idx <= 2 %}
+            {% set step_state = "done" %}
+            {% elif status == "completed" %}
+            {% set step_state = "done" %}
+            {% else %}
+            {% set step_state = "active" %}
+            {% endif %}
+            {% elif approval_stage == "rejected" %}
+            {# 将来はproject_status_logs等で却下位置を判定し、rejected_step_indexに反映する想定 #}
+            {% if idx < rejected_step_index %}
+            {% set step_state = "done" %}
+            {% elif idx == rejected_step_index %}
+            {% set step_state = "rejected" %}
+            {% else %}
+            {% set step_state = "pending" %}
+            {% endif %}
+            {% else %}
+            {% if idx == 0 %}
+            {% set step_state = "done" %}
+            {% elif idx == 1 %}
+            {% set step_state = "active" %}
+            {% else %}
+            {% set step_state = "pending" %}
+            {% endif %}
+            {% endif %}
+            <div class="step {{ step_state }}">
+                {% if step_state == "done" %}
+                <div class="sdot done"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><polyline points="2.5,8.5 6.5,12.5 13.5,4.5" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                {% elif step_state == "active" %}
+                <div class="sdot active"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><rect x="1.5" y="1.5" width="10" height="10" rx="2" fill="white"/></svg></div>
+                {% elif step_state == "rejected" %}
+                <div class="sdot rejected"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><line x1="2.5" y1="2.5" x2="11.5" y2="11.5" stroke="white" stroke-width="2.6" stroke-linecap="round"/><line x1="11.5" y1="2.5" x2="2.5" y2="11.5" stroke="white" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+                {% else %}
+                <div class="sdot pending">{{ loop.index }}</div>
+                {% endif %}
+                <div class="sname">{{ label }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

@@ -101,10 +101,14 @@
     };
   
     function getFlashElements() {
+      var region = document.getElementById("flashRegion") || document.getElementById("flashDemoRegion");
+      var alert = document.getElementById("flashAlert") || document.getElementById("flashDemoAlert");
+      var text = document.getElementById("flashText") || document.getElementById("flashDemoText");
+
       return {
-        region: document.getElementById("flashDemoRegion"),
-        alert: document.getElementById("flashDemoAlert"),
-        text: document.getElementById("flashDemoText")
+        region: region,
+        alert: alert,
+        text: text
       };
     }
   

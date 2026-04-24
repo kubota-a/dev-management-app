@@ -1,0 +1,14 @@
+{% set empty_title = empty_title|default("データがまだありません") %}
+{% set empty_text = empty_text|default("新しいデータが作成されるとここに表示されます。") %}
+{% set empty_action_label = empty_action_label|default("") %}
+{% set empty_action_href = empty_action_href|default("#") %}
+{% set empty_wrapper_class = empty_wrapper_class|default("") %}
+<div class="empty-state {{ empty_wrapper_class }}">
+    <div class="empty-state-title">{{ empty_title }}</div>
+    <p class="empty-state-text">{{ empty_text }}</p>
+    {% if empty_action_label %}
+    <div class="card-actions">
+        <a href="{{ empty_action_href }}" class="btn btn-secondary">{{ empty_action_label }}</a>
+    </div>
+    {% endif %}
+</div>

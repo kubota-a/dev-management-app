@@ -172,9 +172,9 @@
    --color-ds-band-muted:   rgba(255, 255, 255, 0.815);
    --color-ds-band-dim:     rgba(255, 255, 255, 0.541);
    --color-ds-band-value-default: #ffffff;
-   --color-status-hq-pending: #fff7e6;
+   --color-status-hq-pending: #f8ea98;
    --color-status-delay: #f7b38c;
-   --color-status-budget-alert: #f7668a;
+   --color-status-budget-alert: #fa88a4;
  
    /* Segment accent colors (currently unused).
       `sb-accent-*` classes are kept in HTML for potential future reactivation,
