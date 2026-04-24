@@ -1,4 +1,4 @@
-﻿import os
+import os
 from dotenv import load_dotenv  # .envファイルを読み込むライブラリ
 from flask import Flask, render_template  # Webアプリ本体を作るフレームワーク
 from flask_migrate import Migrate  # DBマイグレーション（DB構造変更の履歴管理）ツール
