@@ -811,13 +811,7 @@
 .mini-insight-underline {
     height: 4px;
     border-radius: var(--radius-full);
-    background: linear-gradient(
-        to right,
-        var(--mini-insight-underline-accent) 0%,
-        var(--mini-insight-underline-accent) var(--mini-insight-underline-fill),
-        var(--mini-insight-underline-base) var(--mini-insight-underline-fill),
-        var(--mini-insight-underline-base) 100%
-    );
+    background: var(--mini-insight-underline-accent);
     margin-bottom: var(--space-sm);
 }
 
@@ -906,13 +900,7 @@
 .ranking-card-underline {
     height: 4px;
     border-radius: var(--radius-full);
-    background: linear-gradient(
-        to right,
-        var(--ranking-card-underline-accent) 0%,
-        var(--ranking-card-underline-accent) var(--ranking-card-underline-fill),
-        var(--ranking-card-underline-base) var(--ranking-card-underline-fill),
-        var(--ranking-card-underline-base) 100%
-    );
+    background: var(--ranking-card-underline-accent);
     margin-bottom: var(--space-sm);
 }
 
@@ -1209,6 +1197,70 @@
     font-size: 12px;
     font-weight: 600;
     font-family: "DM Sans", "Noto Sans JP", sans-serif;
+}
+
+.top-accent-card {
+    --top-accent-card-color: var(--color-accent);
+    position: relative;
+    overflow: hidden;
+}
+
+.top-accent-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--top-accent-card-color);
+}
+
+.top-accent-card-approval {
+    --top-accent-card-color: var(--color-status-hq-pending);
+}
+
+.top-accent-card-delay {
+    --top-accent-card-color: var(--color-status-delay);
+}
+
+.top-accent-card-budget {
+    --top-accent-card-color: var(--color-status-budget-alert);
+}
+
+.top-accent-card-ranking {
+    --top-accent-card-color: var(--color-accent-dark);
+}
+
+.side-accent-card {
+    --side-accent-card-color: var(--color-accent);
+    position: relative;
+    overflow: hidden;
+}
+
+.side-accent-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: var(--side-accent-card-color);
+}
+
+.side-accent-card-approval {
+    --side-accent-card-color: var(--color-status-hq-pending);
+}
+
+.side-accent-card-delay {
+    --side-accent-card-color: var(--color-status-delay);
+}
+
+.side-accent-card-budget {
+    --side-accent-card-color: var(--color-status-budget-alert);
+}
+
+.side-accent-card-ranking {
+    --side-accent-card-color: var(--color-accent-dark);
 }
 
 .approval-steps-showcase .sdot svg {

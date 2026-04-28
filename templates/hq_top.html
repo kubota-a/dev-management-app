@@ -3,6 +3,7 @@
 {% set header_meta = "全社案件の進行状況を確認できます" %}
 {% set unread_count = 3 %}
 {% set active_menu = "hq_top" %}
+{% set content_footer_enabled = true %}
 
 {% block title %}本部管理者トップ{% endblock %}
 
@@ -91,4 +92,14 @@
         {% include "partials/_empty_state.html" %}
     </article>
 </section>
+{% endblock %}
+
+{% block content_footer %}
+{% set footer_info_text = "全社モニタリング" %}
+{% set footer_info_value = "当日更新 12件" %}
+{% set footer_actions %}
+<button type="button" class="btn btn-secondary">エクスポート</button>
+<button type="button" class="btn btn-primary">全案件管理へ</button>
+{% endset %}
+{% include "partials/_content_footer.html" %}
 {% endblock %}

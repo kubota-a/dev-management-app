@@ -1,6 +1,7 @@
 {% set header_title = header_title|default("ダッシュボード") %}
 {% set header_meta = header_meta|default("開発管理システム") %}
 {% set unread_count = unread_count|default(0) %}
+{% set unread_notifications_count = unread_notifications_count|default(unread_count) %}
 <header class="app-header">
     <div class="app-header-left">
         <button type="button" class="mobile-menu-button" data-drawer-open aria-controls="mobileDrawer" aria-expanded="false" aria-label="メニューを開く">
@@ -12,29 +13,52 @@
         </div>
     </div>
     <div class="app-header-right">
-        <div class="header-notification">
-            <button type="button" class="header-notification-button" aria-label="通知を開く">
-                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-                    <path class="header-notification-stroke" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                    <path class="header-notification-stroke" d="M13.73 21a2 2 0 0 1-3.46 0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                    {% if unread_count|int > 0 %}
-                    <circle class="header-notification-badge" cx="18" cy="7" r="4.5" />
-                    {% endif %}
+        <div class="header-notification" data-notification-root>
+            <button type="button" class="header-notification-button" data-notification-toggle aria-label="通知 {{ unread_notifications_count|int }} 件" aria-haspopup="true" aria-expanded="false" aria-controls="notificationDropdown">
+                {% if unread_notifications_count|int > 0 %}
+                <svg class="header-notification-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                    <g transform="translate(4, 4)">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="#ffffff" stroke="#ffffff" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
+                    </g>
+                    <circle class="header-notification-badge" cx="26" cy="7" r="6" />
+                    <text x="26" y="11" text-anchor="middle" class="header-notification-badge-text">{{ unread_notifications_count if unread_notifications_count|int < 10 else "9+" }}</text>
                 </svg>
-            </button>
-        </div>
-        <div class="account-menu" data-account-menu-root>
-            <button type="button" class="account-menu-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenuDropdown">
-                <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="user">
-                    <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
-                    <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
-                    <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                {% else %}
+                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="#ffffff" stroke="#ffffff" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#ffffff" stroke-width="1.8" />
                 </svg>
+                {% endif %}
             </button>
-            <div id="accountMenuDropdown" class="account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
-                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">プロフィール</button>
-                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">アカウント設定</button>
-                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+            <div id="notificationDropdown" class="notification-dropdown" data-notification-dropdown aria-hidden="true">
+                <div class="notification-dropdown-head">
+                    <span class="notification-dropdown-title" data-notification-title>
+                        {% if unread_notifications_count|int > 0 %}通知（{{ unread_notifications_count|int }}件未読）{% else %}通知（全て既読）{% endif %}
+                    </span>
+                    <button type="button" class="notification-mark-all" data-notification-mark-all>全て既読</button>
+                </div>
+                <div class="notification-item is-unread">
+                    <span class="notification-dot" aria-hidden="true"></span>
+                    <div class="notification-body">
+                        <div class="notification-message"><strong>クラウド移行PJ</strong> 予算超過（103%）が発生しました</div>
+                        <div class="notification-time">5分前</div>
+                    </div>
+                </div>
+                <div class="notification-item is-unread">
+                    <span class="notification-dot" aria-hidden="true"></span>
+                    <div class="notification-body">
+                        <div class="notification-message"><strong>基幹システム刷新PJ</strong> 最終承認依頼（3日待機中）</div>
+                        <div class="notification-time">2時間前</div>
+                    </div>
+                </div>
+                <div class="notification-item">
+                    <span class="notification-dot notification-dot-read" aria-hidden="true"></span>
+                    <div class="notification-body">
+                        <div class="notification-message"><strong>認証基盤改修</strong> が完了しました</div>
+                        <div class="notification-time">2日前</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

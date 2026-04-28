@@ -18,21 +18,41 @@
             <aside class="app-sidebar">
                 <div class="app-sidebar-title">WebApp Base</div>
 
-                <div class="app-sidebar-section-title">Menu</div>
-                <nav class="app-nav">
-                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
-                    <a href="#" class="app-nav-link">一覧管理</a>
-                    <a href="#" class="app-nav-link">申請管理</a>
-                    <a href="#" class="app-nav-link">設定</a>
-                    <a href="#" class="app-nav-link">レポート</a>
-                    <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
-                    <a href="#" class="app-nav-link">承認一覧</a>
-                    <a href="#" class="app-nav-link">履歴</a>
-                    <a href="#" class="app-nav-link">タグ管理</a>
-                    <a href="#" class="app-nav-link">エクスポート</a>
-                    <a href="#" class="app-nav-link">ロール設定</a>
-                    <a href="#" class="app-nav-link">システム設定</a>
-                </nav>
+                <div class="app-sidebar-body">
+                    <div class="app-sidebar-section-title">Menu</div>
+                    <nav class="app-nav">
+                        <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                        <a href="#" class="app-nav-link">一覧管理</a>
+                        <a href="#" class="app-nav-link">申請管理</a>
+                        <a href="#" class="app-nav-link">設定</a>
+                        <a href="#" class="app-nav-link">レポート</a>
+                        <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
+                        <a href="#" class="app-nav-link">承認一覧</a>
+                        <a href="#" class="app-nav-link">履歴</a>
+                        <a href="#" class="app-nav-link">タグ管理</a>
+                        <a href="#" class="app-nav-link">エクスポート</a>
+                        <a href="#" class="app-nav-link">ロール設定</a>
+                        <a href="#" class="app-nav-link">システム設定</a>
+                    </nav>
+                </div>
+                <div class="sidebar-user-footer account-menu" data-account-menu-root>
+                    <button type="button" class="sidebar-user-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="sidebarAccountMenuDropdown">
+                        <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                            <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
+                            <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
+                            <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                        </svg>
+                        <span class="sidebar-user-meta">
+                            <span class="sidebar-user-name">UI Kit User</span>
+                            <span class="sidebar-user-role">デモ管理者</span>
+                        </span>
+                    </button>
+                    <div id="sidebarAccountMenuDropdown" class="account-menu-dropdown sidebar-account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
+                        <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
+                        <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
+                        <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                    </div>
+                </div>
             </aside>
 
             <div class="app-main">
@@ -47,27 +67,43 @@
                         </div>
                     </div>
                     <div class="app-header-right">
-                        <div class="header-notification">
-                            <button type="button" class="header-notification-button" aria-label="Open notifications (3 unread)">
-                                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-                                    <path class="header-notification-stroke" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path class="header-notification-stroke" d="M13.73 21a2 2 0 0 1-3.46 0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                    <circle class="header-notification-badge" cx="18" cy="7" r="4.5" />
+                        <div class="header-notification" data-notification-root>
+                            <button type="button" class="header-notification-button" data-notification-toggle aria-label="通知 3 件" aria-haspopup="true" aria-expanded="false" aria-controls="notificationDropdownDashboard">
+                                <svg class="header-notification-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                                    <g transform="translate(4, 4)">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="#ffffff" stroke="#ffffff" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
+                                    </g>
+                                    <circle class="header-notification-badge" cx="26" cy="7" r="6" />
+                                    <text x="26" y="11" text-anchor="middle" class="header-notification-badge-text">3</text>
                                 </svg>
                             </button>
-                        </div>
-                        <div class="account-menu" data-account-menu-root>
-                            <button type="button" class="account-menu-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenuDropdown">
-                                <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="user">
-                                    <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
-                                    <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
-                                    <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
-                                </svg>
-                            </button>
-                            <div id="accountMenuDropdown" class="account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
-                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
-                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
-                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                            <div id="notificationDropdownDashboard" class="notification-dropdown" data-notification-dropdown aria-hidden="true">
+                                <div class="notification-dropdown-head">
+                                    <span class="notification-dropdown-title" data-notification-title>通知（3件未読）</span>
+                                    <button type="button" class="notification-mark-all" data-notification-mark-all>全て既読</button>
+                                </div>
+                                <div class="notification-item is-unread">
+                                    <span class="notification-dot" aria-hidden="true"></span>
+                                    <div class="notification-body">
+                                        <div class="notification-message"><strong>クラウド移行PJ</strong> 予算超過（103%）が発生しました</div>
+                                        <div class="notification-time">5分前</div>
+                                    </div>
+                                </div>
+                                <div class="notification-item is-unread">
+                                    <span class="notification-dot" aria-hidden="true"></span>
+                                    <div class="notification-body">
+                                        <div class="notification-message"><strong>基幹システム刷新PJ</strong> 最終承認依頼（3日待機中）</div>
+                                        <div class="notification-time">2時間前</div>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <span class="notification-dot notification-dot-read" aria-hidden="true"></span>
+                                    <div class="notification-body">
+                                        <div class="notification-message"><strong>認証基盤改修</strong> が完了しました</div>
+                                        <div class="notification-time">2日前</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -477,6 +513,58 @@
                         </div>
                     </section>
 
+                    <section class="section-stack">
+                        <h2 class="card-title">上ライン付きカード見本</h2>
+                        <div class="dashboard-grid-4">
+                            <article class="card top-accent-card top-accent-card-approval">
+                                <h3 class="summary-label">承認待ちカラー</h3>
+                                <p class="summary-value">12件</p>
+                                <p class="summary-meta">本部承認待ち案件</p>
+                            </article>
+                            <article class="card top-accent-card top-accent-card-delay">
+                                <h3 class="summary-label">遅延カラー</h3>
+                                <p class="summary-value">3件</p>
+                                <p class="summary-meta">遅延リスク案件</p>
+                            </article>
+                            <article class="card top-accent-card top-accent-card-budget">
+                                <h3 class="summary-label">予算注意カラー</h3>
+                                <p class="summary-value">18件</p>
+                                <p class="summary-meta">予算注意案件</p>
+                            </article>
+                            <article class="card top-accent-card top-accent-card-ranking">
+                                <h3 class="summary-label">ランキングカラー</h3>
+                                <p class="summary-value">18.2%</p>
+                                <p class="summary-meta">年間予算占有率</p>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="section-stack">
+                        <h2 class="card-title">左ライン付きカード見本</h2>
+                        <div class="dashboard-grid-4">
+                            <article class="card side-accent-card side-accent-card-approval">
+                                <h3 class="summary-label">承認待ちカラー</h3>
+                                <p class="summary-value">12件</p>
+                                <p class="summary-meta">本部承認待ち案件</p>
+                            </article>
+                            <article class="card side-accent-card side-accent-card-delay">
+                                <h3 class="summary-label">遅延カラー</h3>
+                                <p class="summary-value">3件</p>
+                                <p class="summary-meta">遅延リスク案件</p>
+                            </article>
+                            <article class="card side-accent-card side-accent-card-budget">
+                                <h3 class="summary-label">予算注意カラー</h3>
+                                <p class="summary-value">18件</p>
+                                <p class="summary-meta">予算注意案件</p>
+                            </article>
+                            <article class="card side-accent-card side-accent-card-ranking">
+                                <h3 class="summary-label">ランキングカラー</h3>
+                                <p class="summary-value">18.2%</p>
+                                <p class="summary-meta">年間予算占有率</p>
+                            </article>
+                        </div>
+                    </section>
+
                     <!-- 空状態見本 -->
                     <section class="dashboard-grid-3">
                         <article class="card empty-state empty-state-dashboard">
@@ -550,21 +638,41 @@
         </div>
 
         <div class="mobile-drawer-body">
-            <div class="app-sidebar-section-title">Menu</div>
-            <nav class="app-nav">
-                <a href="#" class="app-nav-link is-active">ダッシュボード</a>
-                <a href="#" class="app-nav-link">一覧管理</a>
-                <a href="#" class="app-nav-link">申請管理</a>
-                <a href="#" class="app-nav-link">設定</a>
-                <a href="#" class="app-nav-link">レポート</a>
-                <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
-                <a href="#" class="app-nav-link">承認一覧</a>
-                <a href="#" class="app-nav-link">履歴</a>
-                <a href="#" class="app-nav-link">タグ管理</a>
-                <a href="#" class="app-nav-link">エクスポート</a>
-                <a href="#" class="app-nav-link">ロール設定</a>
-                <a href="#" class="app-nav-link">システム設定</a>
-            </nav>
+            <div class="mobile-drawer-nav">
+                <div class="app-sidebar-section-title">Menu</div>
+                <nav class="app-nav">
+                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                    <a href="#" class="app-nav-link">一覧管理</a>
+                    <a href="#" class="app-nav-link">申請管理</a>
+                    <a href="#" class="app-nav-link">設定</a>
+                    <a href="#" class="app-nav-link">レポート</a>
+                    <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
+                    <a href="#" class="app-nav-link">承認一覧</a>
+                    <a href="#" class="app-nav-link">履歴</a>
+                    <a href="#" class="app-nav-link">タグ管理</a>
+                    <a href="#" class="app-nav-link">エクスポート</a>
+                    <a href="#" class="app-nav-link">ロール設定</a>
+                    <a href="#" class="app-nav-link">システム設定</a>
+                </nav>
+            </div>
+            <div class="sidebar-user-footer sidebar-user-footer-mobile account-menu" data-account-menu-root>
+                <button type="button" class="sidebar-user-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="mobileAccountMenuDropdown">
+                    <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                        <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
+                        <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
+                        <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                    </svg>
+                    <span class="sidebar-user-meta">
+                        <span class="sidebar-user-name">UI Kit User</span>
+                        <span class="sidebar-user-role">デモ管理者</span>
+                    </span>
+                </button>
+                <div id="mobileAccountMenuDropdown" class="account-menu-dropdown sidebar-account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
+                    <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
+                    <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
+                    <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                </div>
+            </div>
         </div>
     </aside>
 
