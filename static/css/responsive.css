@@ -78,6 +78,13 @@
         padding-bottom: calc(3rem + env(safe-area-inset-bottom));
     }
 
+    .sidebar-user-footer-mobile .sidebar-account-menu-dropdown {
+        left: 0;
+        right: auto;
+        bottom: calc(100% + var(--space-xs));
+        max-width: min(80vw, 16rem);
+    }
+
     .app-header {
         position: fixed !important;
         top: 0;
@@ -112,7 +119,8 @@
         gap: var(--space-xs);
     }
 
-    .app-header-right .header-user-icon {
+    .app-header-right .header-user-icon,
+    .sidebar-user-trigger .header-user-icon {
         width: var(--size-header-user-icon-mobile);
         height: var(--size-header-user-icon-mobile);
     }

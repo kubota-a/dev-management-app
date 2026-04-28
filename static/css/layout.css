@@ -117,7 +117,7 @@
     font-size: var(--text-sm);
 }
 
-.app-header-right .account-menu {
+.account-menu {
     position: relative;
     display: flex;
     align-items: center;
@@ -164,40 +164,45 @@
     stroke-width: 2;
 }
 
-.app-header-right .account-menu-trigger {
+.account-menu-trigger,
+.sidebar-user-trigger {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    width: 100%;
+    gap: var(--space-sm);
     padding: 0;
     border: none;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     background-color: transparent;
-    line-height: 0;
+    color: inherit;
+    text-align: left;
 }
 
-.app-header-right .account-menu-trigger:focus-visible {
+.account-menu-trigger:focus-visible,
+.sidebar-user-trigger:focus-visible {
     outline: 2px solid var(--color-header-focus-outline);
     outline-offset: 2px;
 }
 
-.app-header-right .header-user-icon-bg {
+.header-user-icon-bg {
     fill: var(--color-header-icon-bg);
     transition: fill var(--transition-base);
 }
 
-.app-header-right .header-user-icon-figure {
+.header-user-icon-figure {
     fill: var(--color-header-icon-figure);
     transition: fill var(--transition-base);
 }
 
-.app-header-right .header-user-icon {
+.header-user-icon {
     width: var(--size-header-user-icon);
     height: var(--size-header-user-icon);
-    cursor: pointer;
     transition: transform var(--transition-base);
+    flex-shrink: 0;
 }
 
-.app-header-right .account-menu-dropdown {
+.account-menu-dropdown {
     position: absolute;
     top: calc(100% + var(--space-xs));
     right: 0;
@@ -211,11 +216,11 @@
     box-shadow: var(--shadow-sm);
 }
 
-.app-header-right .account-menu-dropdown.is-open {
+.account-menu-dropdown.is-open {
     display: block;
 }
 
-.app-header-right .account-menu-item {
+.account-menu-item {
     display: block;
     width: 100%;
     border: none;
@@ -229,7 +234,7 @@
     padding: var(--space-sm) var(--space-md);
 }
 
-.app-header-right .account-menu-item:focus-visible {
+.account-menu-item:focus-visible {
     background-color: var(--color-accent-soft);
 }
 
@@ -240,21 +245,26 @@
         transform: translateY(-1px);
     }
 
-    .app-header-right .account-menu-trigger:hover .header-user-icon {
+    .account-menu-trigger:hover .header-user-icon,
+    .sidebar-user-trigger:hover .header-user-icon {
         transform: translateY(-1px);
     }
 
-    .app-header-right .account-menu-trigger:hover .header-user-icon-bg,
-    .app-header-right .account-menu-trigger[aria-expanded="true"] .header-user-icon-bg {
+    .account-menu-trigger:hover .header-user-icon-bg,
+    .account-menu-trigger[aria-expanded="true"] .header-user-icon-bg,
+    .sidebar-user-trigger:hover .header-user-icon-bg,
+    .sidebar-user-trigger[aria-expanded="true"] .header-user-icon-bg {
         fill: var(--color-header-icon-bg-hover);
     }
 
-    .app-header-right .account-menu-trigger:hover .header-user-icon-figure,
-    .app-header-right .account-menu-trigger[aria-expanded="true"] .header-user-icon-figure {
+    .account-menu-trigger:hover .header-user-icon-figure,
+    .account-menu-trigger[aria-expanded="true"] .header-user-icon-figure,
+    .sidebar-user-trigger:hover .header-user-icon-figure,
+    .sidebar-user-trigger[aria-expanded="true"] .header-user-icon-figure {
         fill: var(--color-header-icon-figure-hover);
     }
 
-    .app-header-right .account-menu-item:hover {
+    .account-menu-item:hover {
         background-color: var(--color-accent-soft);
     }
 }
@@ -271,6 +281,7 @@
 .sidebar-user-footer {
     margin-top: auto;
     flex-shrink: 0;
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--space-sm);
@@ -294,6 +305,8 @@
 
 .sidebar-user-meta {
     min-width: 0;
+    display: inline-flex;
+    flex-direction: column;
 }
 
 .sidebar-user-name,
@@ -310,6 +323,17 @@
 .sidebar-user-role {
     color: var(--color-shell-muted);
     font-size: var(--text-xs);
+}
+
+.sidebar-user-trigger {
+    line-height: 1.2;
+}
+
+.sidebar-account-menu-dropdown {
+    top: auto;
+    right: auto;
+    left: 0;
+    bottom: calc(100% + var(--space-xs));
 }
 
 .content-footer {

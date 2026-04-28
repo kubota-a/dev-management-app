@@ -18,21 +18,41 @@
             <aside class="app-sidebar">
                 <div class="app-sidebar-title">WebApp Base</div>
 
-                <div class="app-sidebar-section-title">Menu</div>
-                <nav class="app-nav">
-                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
-                    <a href="#" class="app-nav-link">一覧管理</a>
-                    <a href="#" class="app-nav-link">申請管理</a>
-                    <a href="#" class="app-nav-link">設定</a>
-                    <a href="#" class="app-nav-link">レポート</a>
-                    <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
-                    <a href="#" class="app-nav-link">承認一覧</a>
-                    <a href="#" class="app-nav-link">履歴</a>
-                    <a href="#" class="app-nav-link">タグ管理</a>
-                    <a href="#" class="app-nav-link">エクスポート</a>
-                    <a href="#" class="app-nav-link">ロール設定</a>
-                    <a href="#" class="app-nav-link">システム設定</a>
-                </nav>
+                <div class="app-sidebar-body">
+                    <div class="app-sidebar-section-title">Menu</div>
+                    <nav class="app-nav">
+                        <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                        <a href="#" class="app-nav-link">一覧管理</a>
+                        <a href="#" class="app-nav-link">申請管理</a>
+                        <a href="#" class="app-nav-link">設定</a>
+                        <a href="#" class="app-nav-link">レポート</a>
+                        <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
+                        <a href="#" class="app-nav-link">承認一覧</a>
+                        <a href="#" class="app-nav-link">履歴</a>
+                        <a href="#" class="app-nav-link">タグ管理</a>
+                        <a href="#" class="app-nav-link">エクスポート</a>
+                        <a href="#" class="app-nav-link">ロール設定</a>
+                        <a href="#" class="app-nav-link">システム設定</a>
+                    </nav>
+                </div>
+                <div class="sidebar-user-footer account-menu" data-account-menu-root>
+                    <button type="button" class="sidebar-user-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="sidebarAccountMenuDropdown">
+                        <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                            <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
+                            <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
+                            <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                        </svg>
+                        <span class="sidebar-user-meta">
+                            <span class="sidebar-user-name">UI Kit User</span>
+                            <span class="sidebar-user-role">デモ管理者</span>
+                        </span>
+                    </button>
+                    <div id="sidebarAccountMenuDropdown" class="account-menu-dropdown sidebar-account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
+                        <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
+                        <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
+                        <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                    </div>
+                </div>
             </aside>
 
             <div class="app-main">
@@ -55,20 +75,6 @@
                                     <circle class="header-notification-badge" cx="18" cy="7" r="4.5" />
                                 </svg>
                             </button>
-                        </div>
-                        <div class="account-menu" data-account-menu-root>
-                            <button type="button" class="account-menu-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenuDropdown">
-                                <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="user">
-                                    <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
-                                    <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
-                                    <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
-                                </svg>
-                            </button>
-                            <div id="accountMenuDropdown" class="account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
-                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
-                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
-                                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
-                            </div>
                         </div>
                     </div>
                 </header>
@@ -550,21 +556,41 @@
         </div>
 
         <div class="mobile-drawer-body">
-            <div class="app-sidebar-section-title">Menu</div>
-            <nav class="app-nav">
-                <a href="#" class="app-nav-link is-active">ダッシュボード</a>
-                <a href="#" class="app-nav-link">一覧管理</a>
-                <a href="#" class="app-nav-link">申請管理</a>
-                <a href="#" class="app-nav-link">設定</a>
-                <a href="#" class="app-nav-link">レポート</a>
-                <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
-                <a href="#" class="app-nav-link">承認一覧</a>
-                <a href="#" class="app-nav-link">履歴</a>
-                <a href="#" class="app-nav-link">タグ管理</a>
-                <a href="#" class="app-nav-link">エクスポート</a>
-                <a href="#" class="app-nav-link">ロール設定</a>
-                <a href="#" class="app-nav-link">システム設定</a>
-            </nav>
+            <div class="mobile-drawer-nav">
+                <div class="app-sidebar-section-title">Menu</div>
+                <nav class="app-nav">
+                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                    <a href="#" class="app-nav-link">一覧管理</a>
+                    <a href="#" class="app-nav-link">申請管理</a>
+                    <a href="#" class="app-nav-link">設定</a>
+                    <a href="#" class="app-nav-link">レポート</a>
+                    <a href="#" class="app-nav-link">通知管理 <span class="app-nav-count" aria-label="3 unread">3</span></a>
+                    <a href="#" class="app-nav-link">承認一覧</a>
+                    <a href="#" class="app-nav-link">履歴</a>
+                    <a href="#" class="app-nav-link">タグ管理</a>
+                    <a href="#" class="app-nav-link">エクスポート</a>
+                    <a href="#" class="app-nav-link">ロール設定</a>
+                    <a href="#" class="app-nav-link">システム設定</a>
+                </nav>
+            </div>
+            <div class="sidebar-user-footer sidebar-user-footer-mobile account-menu" data-account-menu-root>
+                <button type="button" class="sidebar-user-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="mobileAccountMenuDropdown">
+                    <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                        <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
+                        <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
+                        <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                    </svg>
+                    <span class="sidebar-user-meta">
+                        <span class="sidebar-user-name">UI Kit User</span>
+                        <span class="sidebar-user-role">デモ管理者</span>
+                    </span>
+                </button>
+                <div id="mobileAccountMenuDropdown" class="account-menu-dropdown sidebar-account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
+                    <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">管理者画面へ</button>
+                    <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">一般ユーザー画面へ</button>
+                    <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                </div>
+            </div>
         </div>
     </aside>
 

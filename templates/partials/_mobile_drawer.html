@@ -36,11 +36,22 @@
                 {% endif %}
             </nav>
         </div>
-        <div class="sidebar-user-footer sidebar-user-footer-mobile">
-            <div class="sidebar-user-avatar" aria-hidden="true">{{ sidebar_user_initial }}</div>
-            <div class="sidebar-user-meta">
-                <p class="sidebar-user-name">{{ sidebar_user_name }}</p>
-                <p class="sidebar-user-role">{{ sidebar_user_role }}</p>
+        <div class="sidebar-user-footer sidebar-user-footer-mobile account-menu" data-account-menu-root>
+            <button type="button" class="sidebar-user-trigger" data-account-menu-toggle aria-label="アカウントメニューを開く" aria-haspopup="menu" aria-expanded="false" aria-controls="mobileAccountMenuDropdown">
+                <svg class="header-user-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                    <circle class="header-user-icon-bg" cx="20" cy="20" r="20" fill="var(--color-header-icon-bg)" />
+                    <circle class="header-user-icon-figure" cx="20" cy="15" r="6" fill="var(--color-header-icon-figure)" />
+                    <path class="header-user-icon-figure" d="M8 34 Q8 24 20 24 Q32 24 32 34" fill="var(--color-header-icon-figure)" />
+                </svg>
+                <span class="sidebar-user-meta">
+                    <span class="sidebar-user-name">{{ sidebar_user_name }}</span>
+                    <span class="sidebar-user-role">{{ sidebar_user_role }}</span>
+                </span>
+            </button>
+            <div id="mobileAccountMenuDropdown" class="account-menu-dropdown sidebar-account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
+                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">プロフィール</button>
+                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">アカウント設定</button>
+                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
             </div>
         </div>
     </div>
