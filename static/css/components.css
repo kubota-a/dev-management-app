@@ -811,13 +811,7 @@
 .mini-insight-underline {
     height: 4px;
     border-radius: var(--radius-full);
-    background: linear-gradient(
-        to right,
-        var(--mini-insight-underline-accent) 0%,
-        var(--mini-insight-underline-accent) var(--mini-insight-underline-fill),
-        var(--mini-insight-underline-base) var(--mini-insight-underline-fill),
-        var(--mini-insight-underline-base) 100%
-    );
+    background: var(--mini-insight-underline-accent);
     margin-bottom: var(--space-sm);
 }
 
@@ -906,13 +900,7 @@
 .ranking-card-underline {
     height: 4px;
     border-radius: var(--radius-full);
-    background: linear-gradient(
-        to right,
-        var(--ranking-card-underline-accent) 0%,
-        var(--ranking-card-underline-accent) var(--ranking-card-underline-fill),
-        var(--ranking-card-underline-base) var(--ranking-card-underline-fill),
-        var(--ranking-card-underline-base) 100%
-    );
+    background: var(--ranking-card-underline-accent);
     margin-bottom: var(--space-sm);
 }
 
