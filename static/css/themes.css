@@ -1,19 +1,23 @@
 .theme-hq {
-    --color-accent: #3f5d78;
-    --color-accent-dark: #36506a;
-    --color-accent-soft: #f6f9fc;
-    --color-on-accent: #ffffff;
-    --color-control-focus-ring: rgba(63, 93, 120, 0.2);
+    --color-header-bg: #31475E;    /* ヘッダー背景 */
+    --color-sidebar-bg: #45617c;    /* サイドバー背景 */
+    --color-ds-band-bg: #3E5B74;    /* サマリーバンド背景 */
+    --color-accent: #3f5d78;   /* 主ボタン、フォームアクセント、通常の強調色 */
+    --color-accent-dark: #36506a;   /* リンク、ボタンhover、濃いアクセント */
+    --color-accent-soft: #f6f9fc;   /* hover背景、淡い背景 */
+    --color-table-head-bg: #d7e3ee;    /* テーブル見出し背景 */
+    --color-table-head-text: #43576c;    /* テーブルテーブル見出しテキスト */
+    --color-form-label-accent: #7D9FBF;    /* フォームアクセント */
+    --color-control-focus-ring: rgba(63, 93, 120, 0.2);    /* フォーカスリング */
     --shadow-button-primary-hover: 0 3px 10px rgba(63, 93, 120, 0.3);
 
-    --color-shell-bg: #31475E;
-    --color-sidebar-bg: #45617c;
+    --color-on-accent: #ffffff;
+    --color-shell-bg: #31475E;    /* ヘッダー背景と同じ色にする */
     --color-shell-text: #ffffff;
     --color-shell-muted: rgba(255, 255, 255, 0.68);
     --color-shell-hover: rgba(255, 255, 255, 0.12);
     --color-shell-link: rgba(255, 255, 255, 0.92);
 
-    --color-header-bg: #31475E;
     --color-header-text: #ffffff;
     --color-header-meta: rgba(255, 255, 255, 0.68);
     --color-header-border: rgba(255, 255, 255, 0.16);
@@ -22,9 +26,7 @@
     --color-header-icon-figure: var(--color-shell-bg);
     --color-header-icon-bg-hover: var(--color-shell-muted);
     --color-header-icon-figure-hover: var(--color-shell-bg);
-    --color-form-label-accent: #7D9FBF;
 
-    --color-ds-band-bg: #3E5B74;
     --color-ds-band-divider: rgba(255, 255, 255, 0.12);
     --color-ds-band-text: #ffffff;
     --color-ds-band-muted: rgba(255, 255, 255, 0.815);
@@ -33,21 +35,25 @@
 }
 
 .theme-manager {
-    --color-accent: #8cb7a2;
-    --color-accent-dark: #6e9b86;
-    --color-accent-soft: #eef7f1;
-    --color-on-accent: #ffffff;
-    --color-control-focus-ring: rgba(140, 183, 162, 0.2);
+    --color-header-bg: #3d2040;    /* ヘッダー背景 */
+    --color-sidebar-bg: #5c3d5f;    /* サイドバー背景 */
+    --color-ds-band-bg: #6f4566;    /* サマリーバンド背景 */
+    --color-accent: #8a5a7a;   /* 主ボタン、フォームアクセント、通常の強調色 */
+    --color-accent-dark: #6a445e;   /* リンク、ボタンhover、濃いアクセント */
+    --color-accent-soft: #f6eff3;   /* hover背景、淡い背景 */
+    --color-table-head-bg: #efe1e7;    /* テーブル見出し背景 */
+    --color-table-head-text: #452a3a;    /* テーブルテーブル見出しテキスト */
+    --color-form-label-accent: #8a5a7a;    /* フォームアクセント */
+    --color-control-focus-ring: rgba(138, 90, 122, 0.2);    /* フォーカスリング */
     --shadow-button-primary-hover: 0 3px 10px rgba(110, 155, 134, 0.28);
 
-    --color-shell-bg: #6e9b86;
-    --color-sidebar-bg: #7ca994;
+    --color-on-accent: #ffffff;
+    --color-shell-bg: #3d2040;    /* ヘッダー背景と同じ色にする */
     --color-shell-text: #ffffff;
     --color-shell-muted: rgba(255, 255, 255, 0.72);
     --color-shell-hover: rgba(255, 255, 255, 0.16);
     --color-shell-link: rgba(255, 255, 255, 0.92);
 
-    --color-header-bg: #6e9b86;
     --color-header-text: #ffffff;
     --color-header-meta: rgba(255, 255, 255, 0.8);
     --color-header-border: rgba(255, 255, 255, 0.18);
@@ -56,9 +62,7 @@
     --color-header-icon-figure: var(--color-shell-bg);
     --color-header-icon-bg-hover: var(--color-shell-muted);
     --color-header-icon-figure-hover: var(--color-shell-bg);
-    --color-form-label-accent: var(--color-accent);
 
-    --color-ds-band-bg: #6B9480;
     --color-ds-band-divider: rgba(255, 255, 255, 0.16);
     --color-ds-band-text: #ffffff;
     --color-ds-band-muted: rgba(255, 255, 255, 0.84);
@@ -67,19 +71,20 @@
 }
 
 .theme-applicant {
-    --color-header-bg: #3E8F91;
-    --color-sidebar-bg: #4CA5A7;
-    --color-accent: #478F91;
-    --color-accent-dark: #3B7B7D;
-    --color-accent-soft: #F2FAFA;
-    --color-table-head-bg: #DCEEEF;
-    --color-table-head-text: #47686A;
-    --color-form-label-accent: #56BBBD;
-    --color-control-focus-ring: rgba(71, 143, 145, 0.2);
+    --color-header-bg: #09637E;    /* ヘッダー背景 */
+    --color-sidebar-bg: #088395;    /* サイドバー背景 */
+    --color-ds-band-bg: #0F7C8F;    /* サマリーバンド背景 */
+    --color-accent: #0B7285;   /* 主ボタン、フォームアクセント、通常の強調色 */
+    --color-accent-dark: #095C6A;   /* リンク、ボタンhover、濃いアクセント */
+    --color-accent-soft: #E6F4F7;   /* hover背景、淡い背景 */
+    --color-table-head-bg: #D6EEF3;    /* テーブル見出し背景 */
+    --color-table-head-text: #0B4F5F;    /* テーブルテーブル見出しテキスト */
+    --color-form-label-accent: #0B7285;    /* フォームアクセント */
+    --color-control-focus-ring: rgba(11, 114, 133, 0.2);    /* フォーカスリング */
     --shadow-button-primary-hover: 0 3px 10px rgba(59, 123, 125, 0.28);
 
     --color-on-accent: #ffffff;
-    --color-shell-bg: var(--color-header-bg);
+    --color-shell-bg: var(--color-header-bg);    /* ヘッダー背景と同じ色にする */
     --color-shell-text: #ffffff;
     --color-shell-muted: rgba(255, 255, 255, 0.72);
     --color-shell-hover: rgba(255, 255, 255, 0.14);
@@ -94,7 +99,6 @@
     --color-header-icon-bg-hover: var(--color-shell-muted);
     --color-header-icon-figure-hover: var(--color-shell-bg);
 
-    --color-ds-band-bg: #4B9FA1;
     --color-ds-band-divider: rgba(255, 255, 255, 0.14);
     --color-ds-band-text: #ffffff;
     --color-ds-band-muted: rgba(255, 255, 255, 0.84);
