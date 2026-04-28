@@ -1,0 +1,9 @@
+<div class="content-footer" role="contentinfo">
+    <div class="content-footer-info">
+        <span class="content-footer-info-text">{{ footer_info_text|default("表示情報") }}</span>
+        <strong class="content-footer-info-value">{{ footer_info_value|default("-") }}</strong>
+    </div>
+    <div class="content-footer-actions">
+        {{ footer_actions|default("")|safe }}
+    </div>
+</div>

@@ -3,6 +3,7 @@
 {% set header_meta = "申請状況と最新通知を確認できます" %}
 {% set unread_count = 2 %}
 {% set active_menu = "applicant_top" %}
+{% set content_footer_enabled = true %}
 
 {% block title %}申請者トップ{% endblock %}
 
@@ -88,4 +89,14 @@
 {% set modal_text = "この内容で申請を送信します。よろしいですか？" %}
 {% set modal_confirm_label = "送信する" %}
 {% include "partials/_modal.html" %}
+{% endblock %}
+
+{% block content_footer %}
+{% set footer_info_text = "下書き保存状況" %}
+{% set footer_info_value = "未保存の変更 1件" %}
+{% set footer_actions %}
+<button type="button" class="btn btn-secondary">下書き保存</button>
+<button type="button" class="btn btn-primary">申請を送信</button>
+{% endset %}
+{% include "partials/_content_footer.html" %}
 {% endblock %}

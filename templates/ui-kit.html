@@ -18,24 +18,33 @@
             <aside class="app-sidebar">
                 <div class="app-sidebar-title">WebApp Base</div>
 
-                <div class="app-sidebar-section-title">Menu</div>
-                <nav class="app-nav">
-                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
-                    <a href="#" class="app-nav-link">一覧管理</a>
-                    <a href="#" class="app-nav-link">申請管理</a>
-                    <a href="#" class="app-nav-link">設定</a>
-                    <a href="#" class="app-nav-link">レポート</a>
-                    <a href="#" class="app-nav-link">通知管理</a>
-                    <a href="#" class="app-nav-link">承認一覧</a>
-                    <a href="#" class="app-nav-link">履歴</a>
-                    <a href="#" class="app-nav-link">タグ管理</a>
-                    <a href="#" class="app-nav-link">エクスポート</a>
-                    <a href="#" class="app-nav-link">ロール設定</a>
-                    <a href="#" class="app-nav-link">システム設定</a>
-                </nav>
+                <div class="app-sidebar-body">
+                    <div class="app-sidebar-section-title">Menu</div>
+                    <nav class="app-nav">
+                        <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                        <a href="#" class="app-nav-link">一覧管理</a>
+                        <a href="#" class="app-nav-link">申請管理</a>
+                        <a href="#" class="app-nav-link">設定</a>
+                        <a href="#" class="app-nav-link">レポート</a>
+                        <a href="#" class="app-nav-link">通知管理</a>
+                        <a href="#" class="app-nav-link">承認一覧</a>
+                        <a href="#" class="app-nav-link">履歴</a>
+                        <a href="#" class="app-nav-link">タグ管理</a>
+                        <a href="#" class="app-nav-link">エクスポート</a>
+                        <a href="#" class="app-nav-link">ロール設定</a>
+                        <a href="#" class="app-nav-link">システム設定</a>
+                    </nav>
+                </div>
+                <div class="sidebar-user-footer">
+                    <div class="sidebar-user-avatar" aria-hidden="true">U</div>
+                    <div class="sidebar-user-meta">
+                        <p class="sidebar-user-name">UI Kit User</p>
+                        <p class="sidebar-user-role">デモ管理者</p>
+                    </div>
+                </div>
             </aside>
 
-            <div class="app-main">
+            <div class="app-main has-content-footer">
                 <header class="app-header">
                     <div class="app-header-left">
                         <button type="button" class="mobile-menu-button" data-drawer-open aria-controls="mobileDrawer" aria-expanded="false" aria-label="メニューを開く">
@@ -86,6 +95,7 @@
                             <button class="btn btn-secondary btn-standard">副ボタン</button>
                             <button class="btn btn-danger btn-standard">削除</button>
                         </div>
+                        <p class="text-muted">固定フッターは `has-content-footer` を付与した画面のみ表示されます。</p>
                     </section>
 
                     <section class="card flash-demo-card">
@@ -406,6 +416,16 @@
                         </div>
                     </section>
                 </main>
+                <div class="content-footer" role="contentinfo">
+                    <div class="content-footer-info">
+                        <span class="content-footer-info-text">固定フッターありサンプル</span>
+                        <strong class="content-footer-info-value">保存前の変更: 2件</strong>
+                    </div>
+                    <div class="content-footer-actions">
+                        <button type="button" class="btn btn-secondary">下書き保存</button>
+                        <button type="button" class="btn btn-primary">変更を反映</button>
+                    </div>
+                </div>
 
                 <footer class="app-footer">
                     <button type="button" class="footer-nav-item is-active">ホーム</button>
@@ -426,21 +446,30 @@
         </div>
 
         <div class="mobile-drawer-body">
-            <div class="app-sidebar-section-title">Menu</div>
-            <nav class="app-nav">
-                <a href="#" class="app-nav-link is-active">ダッシュボード</a>
-                <a href="#" class="app-nav-link">一覧管理</a>
-                <a href="#" class="app-nav-link">申請管理</a>
-                <a href="#" class="app-nav-link">設定</a>
-                <a href="#" class="app-nav-link">レポート</a>
-                <a href="#" class="app-nav-link">通知管理</a>
-                <a href="#" class="app-nav-link">承認一覧</a>
-                <a href="#" class="app-nav-link">履歴</a>
-                <a href="#" class="app-nav-link">タグ管理</a>
-                <a href="#" class="app-nav-link">エクスポート</a>
-                <a href="#" class="app-nav-link">ロール設定</a>
-                <a href="#" class="app-nav-link">システム設定</a>
-            </nav>
+            <div class="mobile-drawer-nav">
+                <div class="app-sidebar-section-title">Menu</div>
+                <nav class="app-nav">
+                    <a href="#" class="app-nav-link is-active">ダッシュボード</a>
+                    <a href="#" class="app-nav-link">一覧管理</a>
+                    <a href="#" class="app-nav-link">申請管理</a>
+                    <a href="#" class="app-nav-link">設定</a>
+                    <a href="#" class="app-nav-link">レポート</a>
+                    <a href="#" class="app-nav-link">通知管理</a>
+                    <a href="#" class="app-nav-link">承認一覧</a>
+                    <a href="#" class="app-nav-link">履歴</a>
+                    <a href="#" class="app-nav-link">タグ管理</a>
+                    <a href="#" class="app-nav-link">エクスポート</a>
+                    <a href="#" class="app-nav-link">ロール設定</a>
+                    <a href="#" class="app-nav-link">システム設定</a>
+                </nav>
+            </div>
+            <div class="sidebar-user-footer sidebar-user-footer-mobile">
+                <div class="sidebar-user-avatar" aria-hidden="true">U</div>
+                <div class="sidebar-user-meta">
+                    <p class="sidebar-user-name">UI Kit User</p>
+                    <p class="sidebar-user-role">デモ管理者</p>
+                </div>
+            </div>
         </div>
     </aside>
 

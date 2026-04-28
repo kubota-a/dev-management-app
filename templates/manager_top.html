@@ -3,6 +3,7 @@
 {% set header_meta = "承認待ちと遅延案件を確認できます" %}
 {% set unread_count = 4 %}
 {% set active_menu = "manager_top" %}
+{% set content_footer_enabled = true %}
 
 {% block title %}部門管理者トップ{% endblock %}
 
@@ -62,4 +63,14 @@
     {% set status = "department_pending" %}
     {% include "partials/_approval_steps.html" %}
 </section>
+{% endblock %}
+
+{% block content_footer %}
+{% set footer_info_text = "承認キュー" %}
+{% set footer_info_value = "未処理 8件" %}
+{% set footer_actions %}
+<button type="button" class="btn btn-secondary">一覧を更新</button>
+<button type="button" class="btn btn-primary">承認待ちを確認</button>
+{% endset %}
+{% include "partials/_content_footer.html" %}
 {% endblock %}

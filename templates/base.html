@@ -19,12 +19,13 @@
         <div class="app-layout">
             {% include "partials/_sidebar.html" %}
 
-            <div class="app-main">
+            <div class="app-main{% if content_footer_enabled|default(false) %} has-content-footer{% endif %}">
                 {% include "partials/_header.html" %}
 
                 <main class="app-content section-stack">
                     {% block content %}{% endblock %}
                 </main>
+                {% block content_footer %}{% endblock %}
 
                 {% block footer %}{% endblock %}
             </div>
