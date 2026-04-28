@@ -91,6 +91,67 @@
         setAccountMenuState(root, false);
       });
     }
+
+    function getNotificationRoots() {
+      return document.querySelectorAll("[data-notification-root]");
+    }
+
+    function getNotificationElements(root) {
+      if (!root) return {};
+
+      return {
+        root: root,
+        toggle: root.querySelector("[data-notification-toggle]"),
+        dropdown: root.querySelector("[data-notification-dropdown]"),
+        title: root.querySelector("[data-notification-title]")
+      };
+    }
+
+    function isNotificationOpen(root) {
+      var notificationUI = getNotificationElements(root);
+      return !!(notificationUI.dropdown && notificationUI.dropdown.classList.contains("is-open"));
+    }
+
+    function setNotificationState(root, isOpen) {
+      var notificationUI = getNotificationElements(root);
+      if (!notificationUI.toggle || !notificationUI.dropdown) return;
+
+      notificationUI.dropdown.classList.toggle("is-open", isOpen);
+      notificationUI.toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      notificationUI.dropdown.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    }
+
+    function closeAllNotifications() {
+      getNotificationRoots().forEach(function (root) {
+        setNotificationState(root, false);
+      });
+    }
+
+    function markAllNotificationsAsRead(root) {
+      var notificationUI = getNotificationElements(root);
+      if (!notificationUI.root) return;
+
+      notificationUI.root.querySelectorAll(".notification-item.is-unread").forEach(function (item) {
+        item.classList.remove("is-unread");
+        var dot = item.querySelector(".notification-dot");
+        if (dot) {
+          dot.classList.add("notification-dot-read");
+        }
+      });
+
+      notificationUI.root.querySelectorAll(".header-notification-badge, .header-notification-badge-text").forEach(function (badge) {
+        badge.setAttribute("hidden", "hidden");
+        badge.style.display = "none";
+      });
+
+      if (notificationUI.title) {
+        notificationUI.title.textContent = "通知（全て既読）";
+      }
+
+      if (notificationUI.toggle) {
+        notificationUI.toggle.setAttribute("aria-label", "通知 0 件");
+      }
+    }
   
     var FLASH_CLASS_MAP = {
       success: "alert-success",
@@ -133,13 +194,32 @@
     }
   
     document.addEventListener("click", function (event) {
+      var notificationToggle = event.target.closest("[data-notification-toggle]");
+      var notificationMarkAll = event.target.closest("[data-notification-mark-all]");
+      var clickedNotificationRoot = event.target.closest("[data-notification-root]");
       var accountMenuToggle = event.target.closest("[data-account-menu-toggle]");
       var accountMenuItem = event.target.closest("[data-account-menu-item]");
       var clickedAccountMenuRoot = event.target.closest("[data-account-menu-root]");
-  
+
+      if (notificationToggle) {
+        var notificationRoot = notificationToggle.closest("[data-notification-root]");
+        var shouldOpenNotification = !isNotificationOpen(notificationRoot);
+        closeAllNotifications();
+        closeAllAccountMenus();
+        setNotificationState(notificationRoot, shouldOpenNotification);
+        return;
+      }
+
+      if (notificationMarkAll) {
+        var markAllRoot = notificationMarkAll.closest("[data-notification-root]");
+        markAllNotificationsAsRead(markAllRoot);
+        return;
+      }
+
       if (accountMenuToggle) {
         var toggleRoot = accountMenuToggle.closest("[data-account-menu-root]");
         var shouldOpen = !isAccountMenuOpen(toggleRoot);
+        closeAllNotifications();
         closeAllAccountMenus();
         setAccountMenuState(toggleRoot, shouldOpen);
         return;
@@ -153,6 +233,10 @@
   
       if (!clickedAccountMenuRoot) {
         closeAllAccountMenus();
+      }
+
+      if (!clickedNotificationRoot) {
+        closeAllNotifications();
       }
   
       var flashShowTrigger = event.target.closest("[data-flash-show]");
@@ -213,6 +297,7 @@
         closeAllModals();
         setDrawerState(false);
         closeAllAccountMenus();
+        closeAllNotifications();
       }
     });
   

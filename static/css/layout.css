@@ -96,14 +96,14 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
-    padding: 0 var(--space-xl);
+    padding: 0 var(--space-md) 0 var(--space-xl);
 }
 
 .app-header-left,
 .app-header-right {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-xs);
 }
 
 .app-header-title {
@@ -126,14 +126,15 @@
 .app-header-right .header-notification {
     display: inline-flex;
     align-items: center;
+    position: relative;
 }
 
 .app-header-right .header-notification-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 3rem;
+    height: 3rem;
     padding: 0;
     border: none;
     border-radius: var(--radius-full);
@@ -149,8 +150,8 @@
 }
 
 .app-header-right .header-notification-icon {
-    width: 1.375rem;
-    height: 1.375rem;
+    width: 2.0625rem;
+    height: 2.0625rem;
 }
 
 .app-header-right .header-notification-stroke {
@@ -162,6 +163,101 @@
     fill: var(--color-status-budget-alert);
     stroke: var(--color-header-bg);
     stroke-width: 2;
+}
+
+.app-header-right .header-notification-badge-text {
+    fill: #ffffff;
+    font-family: sans-serif;
+    font-size: 7.5px;
+    font-weight: 700;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + var(--space-xs));
+    right: 0;
+    width: 20rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    z-index: 820;
+    display: none;
+    font-family: var(--font-family-base);
+}
+
+.notification-dropdown.is-open {
+    display: block;
+}
+
+.notification-dropdown-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.notification-dropdown-title {
+    color: var(--color-text-main);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+}
+
+.notification-mark-all {
+    border: none;
+    background: none;
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-family-base);
+    cursor: pointer;
+}
+
+.notification-item {
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.is-unread {
+    background-color: var(--color-accent-soft);
+}
+
+.notification-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    margin-top: 0.35rem;
+    flex-shrink: 0;
+    background-color: var(--color-status-budget-alert);
+}
+
+.notification-dot.notification-dot-read {
+    background-color: var(--color-accent);
+}
+
+.notification-body {
+    min-width: 0;
+}
+
+.notification-message {
+    color: var(--color-text-main);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.notification-time {
+    margin-top: 0.125rem;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
 }
 
 .account-menu-trigger,
@@ -240,8 +336,8 @@
 
 @media (hover: hover) {
     .app-header-right .header-notification-button:hover {
-        background-color: var(--color-accent-soft);
-        color: var(--color-accent-dark);
+        background-color: var(--color-header-border);
+        color: var(--color-header-text);
         transform: translateY(-1px);
     }
 

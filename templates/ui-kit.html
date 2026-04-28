@@ -67,13 +67,26 @@
                         </div>
                     </div>
                     <div class="app-header-right">
-                        <div class="header-notification">
-                            <button type="button" class="header-notification-button" aria-label="Open notifications (no unread)">
-                                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-                                    <path class="header-notification-stroke" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path class="header-notification-stroke" d="M13.73 21a2 2 0 0 1-3.46 0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                        <div class="header-notification" data-notification-root>
+                            <button type="button" class="header-notification-button" data-notification-toggle aria-label="通知 0 件" aria-haspopup="true" aria-expanded="false" aria-controls="notificationDropdownUiKit">
+                                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="#ffffff" stroke="#ffffff" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#ffffff" stroke-width="1.8" />
                                 </svg>
                             </button>
+                            <div id="notificationDropdownUiKit" class="notification-dropdown" data-notification-dropdown aria-hidden="true">
+                                <div class="notification-dropdown-head">
+                                    <span class="notification-dropdown-title" data-notification-title>通知（全て既読）</span>
+                                    <button type="button" class="notification-mark-all" data-notification-mark-all>全て既読</button>
+                                </div>
+                                <div class="notification-item">
+                                    <span class="notification-dot notification-dot-read" aria-hidden="true"></span>
+                                    <div class="notification-body">
+                                        <div class="notification-message"><strong>UI Kitメンテナンス</strong> 本日の更新はありません</div>
+                                        <div class="notification-time">1時間前</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </header>
