@@ -8,7 +8,7 @@
     .app-main {
         width: 100%;
         max-width: 100%;
-        overflow-x: hidden;
+        overflow-x: visible;
     }
 
     .app-main {
@@ -141,6 +141,10 @@
     }
 
     .app-content {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         padding: calc(var(--mobile-header-height) + var(--space-md)) var(--space-md) calc(var(--mobile-footer-height) + var(--space-md));
     }
 
@@ -163,7 +167,7 @@
         align-items: center;
         flex-wrap: wrap;
         gap: var(--space-xs);
-        overflow-x: hidden;
+        overflow-x: visible;
     }
 
     .content-footer-info {
@@ -372,6 +376,8 @@
 
     .dashboard-main-grid > *,
     .dashboard-main-col,
+    .dashboard-main-col > *,
+    .card,
     .dashboard-grid-2 > *,
     .dashboard-grid-3 > *,
     .dashboard-grid-4 > *,
