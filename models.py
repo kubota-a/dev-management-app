@@ -37,6 +37,7 @@ class Department(db.Model):
 
     users = db.relationship("User", back_populates="department")
     projects = db.relationship("Project", back_populates="department")
+    project_drafts = db.relationship("ProjectDraft", back_populates="department")
     yearly_budgets = db.relationship("DepartmentYearlyBudget", back_populates="department")
 
 
@@ -74,6 +75,7 @@ class User(UserMixin, db.Model):
         back_populates="applicant",
     )
     notifications = db.relationship("Notification", back_populates="user")
+    project_drafts = db.relationship("ProjectDraft", back_populates="user")
     project_status_logs = db.relationship("ProjectStatusLog", back_populates="actor")
 
 
@@ -92,12 +94,8 @@ class Project(db.Model):
             name="ck_projects_approval_stage_allowed",
         ),
         db.CheckConstraint(
-            "rejection_reason_tag IS NULL OR rejection_reason_tag IN ('内容不備', '予算不足', '優先度低', '情報不足', 'その他')",
-            name="ck_projects_rejection_reason_tag_allowed",
-        ),
-        db.CheckConstraint(
-            "estimated_budget_hours >= 0",
-            name="ck_projects_estimated_budget_hours_non_negative",
+            "estimated_person_months >= 0",
+            name="ck_projects_estimated_person_months_non_negative",
         ),
         db.CheckConstraint(
             "estimated_budget_amount >= 0",
@@ -110,18 +108,21 @@ class Project(db.Model):
     )
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    project_code = db.Column(db.String(20), unique=True, nullable=False, index=True)
     title = db.Column(db.String(200), nullable=False)
     purpose = db.Column(db.Text, nullable=False)
     summary = db.Column(db.Text, nullable=True)
-    estimated_budget_hours = db.Column(db.Numeric(12, 2), nullable=False)
+    estimated_person_months = db.Column(db.Numeric(12, 2), nullable=False)
     estimated_budget_amount = db.Column(db.Numeric(12, 2), nullable=False)
     approved_budget_amount = db.Column(db.Numeric(12, 2), nullable=True)
     applicant_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=False, index=True)
     department_id = db.Column(db.BigInteger, db.ForeignKey("departments.id"), nullable=False, index=True)
     status = db.Column(db.String(30), nullable=False, index=True)
     approval_stage = db.Column(db.String(30), nullable=False, index=True)
-    rejection_reason_tag = db.Column(db.String(30), nullable=True)
     rejection_comment = db.Column(db.Text, nullable=True)
+    planned_start_date = db.Column(db.Date, nullable=True)
+    planned_end_date = db.Column(db.Date, nullable=True)
+    monthly_report_comment = db.Column(db.Text, nullable=True)
     final_rejected_at = db.Column(db.DateTime(timezone=True), nullable=True)
     approved_at = db.Column(db.DateTime(timezone=True), nullable=True)
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -202,7 +203,6 @@ class Task(db.Model):
     progress_rate = db.Column(db.Integer, nullable=False)
     start_date = db.Column(db.Date, nullable=True)
     due_date = db.Column(db.Date, nullable=False, index=True)
-    monthly_report_comment = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = db.Column(
         db.DateTime(timezone=True),
@@ -216,18 +216,42 @@ class Task(db.Model):
 
 # 5. notifications（通知）
 class Notification(db.Model):
-    """ユーザー向け通知。1周目はtypeのCHECK制約を設けない。"""
+    """ユーザー向け通知。ヘッダードロップダウン表示向けに単一メッセージで管理。"""
 
     __tablename__ = "notifications"
+    __table_args__ = (
+        db.CheckConstraint(
+            """
+            (
+              (
+                type IN (
+                  'application_received',
+                  'department_pending',
+                  'hq_pending',
+                  'approved',
+                  'rejected',
+                  'completed'
+                )
+                AND project_id IS NOT NULL
+              )
+              OR
+              (
+                type IN ('system', 'announcement')
+                AND project_id IS NULL
+              )
+            )
+            """,
+            name="ck_notifications_type_project_required",
+        ),
+    )
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
     user_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=False, index=True)
-    project_id = db.Column(db.BigInteger, db.ForeignKey("projects.id"), nullable=False, index=True)
+    project_id = db.Column(db.BigInteger, db.ForeignKey("projects.id"), nullable=True, index=True)
     type = db.Column(db.String(30), nullable=False, index=True)
-    title = db.Column(db.String(200), nullable=False)
-    body = db.Column(db.Text, nullable=False)
+    message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, nullable=False, default=False, index=True)
-    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, index=True)
 
     user = db.relationship("User", back_populates="notifications")
     project = db.relationship("Project", back_populates="notifications")
@@ -254,24 +278,63 @@ class BudgetActualLog(db.Model):
 
 # 7. project_status_logs（案件ステータス履歴）
 class ProjectStatusLog(db.Model):
-    """案件ステータス変更の監査ログ。1周目はCHECK制約を設けない。"""
+    """案件ステータス変更の監査ログ。"""
 
     __tablename__ = "project_status_logs"
+    __table_args__ = (
+        db.CheckConstraint(
+            "action IN ('submit', 'approve_department', 'approve_hq', 'reject_department', 'reject_hq', 'complete')",
+            name="ck_project_status_logs_action_allowed",
+        ),
+        db.CheckConstraint(
+            "from_status IS NULL OR from_status IN ('department_pending', 'hq_pending', 'in_progress', 'completed', 'rejected')",
+            name="ck_project_status_logs_from_status_allowed",
+        ),
+        db.CheckConstraint(
+            "to_status IN ('department_pending', 'hq_pending', 'in_progress', 'completed', 'rejected')",
+            name="ck_project_status_logs_to_status_allowed",
+        ),
+    )
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
     project_id = db.Column(db.BigInteger, db.ForeignKey("projects.id"), nullable=False, index=True)
-    action_type = db.Column(db.String(30), nullable=False)
-    actor_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=False)
-    old_status = db.Column(db.String(30), nullable=True)
-    new_status = db.Column(db.String(30), nullable=False)
-    note = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, index=True)
+    actor_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=False, index=True)
+    from_status = db.Column(db.String(30), nullable=True)
+    to_status = db.Column(db.String(30), nullable=False, index=True)
+    action = db.Column(db.String(30), nullable=False, index=True)
+    comment = db.Column(db.Text, nullable=True)
+    acted_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, index=True)
 
     project = db.relationship("Project", back_populates="project_status_logs")
     actor = db.relationship("User", back_populates="project_status_logs")
 
 
-# 8. department_yearly_budgets（部門年間予算）
+# 8. project_drafts（案件下書き）
+class ProjectDraft(db.Model):
+    """申請フォームの一時保存データ。"""
+
+    __tablename__ = "project_drafts"
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=True)
+    purpose = db.Column(db.Text, nullable=True)
+    department_id = db.Column(db.BigInteger, db.ForeignKey("departments.id"), nullable=True, index=True)
+    estimated_person_months = db.Column(db.Numeric(12, 2), nullable=True)
+    estimated_budget_amount = db.Column(db.Numeric(12, 2), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, index=True)
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        onupdate=utc_now,
+    )
+
+    user = db.relationship("User", back_populates="project_drafts")
+    department = db.relationship("Department", back_populates="project_drafts")
+
+
+# 9. department_yearly_budgets（部門年間予算）
 class DepartmentYearlyBudget(db.Model):
     """部門ごとの年間予算を年度単位で管理する。"""
 
