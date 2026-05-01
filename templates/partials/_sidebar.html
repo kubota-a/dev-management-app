@@ -1,10 +1,13 @@
 {% set active_menu = active_menu|default("") %}
 {% set unread_count_value = unread_count|default(0)|int %}
-{% set sidebar_user_name = sidebar_user_name|default(current_user.name if current_user is defined and current_user.is_authenticated and current_user.name is defined else "ゲストユーザー") %}
-{% set sidebar_user_role = sidebar_user_role|default(current_user.role_label if current_user is defined and current_user.is_authenticated and current_user.role_label is defined else (current_user.role if current_user is defined and current_user.is_authenticated and current_user.role is defined else "担当者")) %}
+{% set resolved_role = current_user.role if current_user is defined and current_user.is_authenticated and current_user.role is defined else "" %}
+{% set resolved_role_label = "申請者" if resolved_role == "applicant" else ("部門管理者" if resolved_role == "manager" else ("本部管理者" if resolved_role == "hq" else "担当者")) %}
+{% set resolved_department_name = current_user.department.name if current_user is defined and current_user.is_authenticated and current_user.department is defined and current_user.department and current_user.department.name is defined else ("本部" if resolved_role == "hq" else "所属未設定") %}
+{% set sidebar_user_name = sidebar_user_name|default(current_user.display_name if current_user is defined and current_user.is_authenticated and current_user.display_name is defined else "ゲストユーザー") %}
+{% set sidebar_user_role = sidebar_user_role|default(resolved_department_name ~ " / " ~ resolved_role_label) %}
 {% set sidebar_user_initial = sidebar_user_initial|default(sidebar_user_name[:1] if sidebar_user_name else "G") %}
 <aside class="app-sidebar">
-    <div class="app-sidebar-title">開発管理システム</div>
+    <div class="app-sidebar-title">開発案件管理システム</div>
 
     <div class="app-sidebar-body">
         <div class="app-sidebar-section-title">Menu</div>
