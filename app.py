@@ -50,7 +50,7 @@ def login():
     """ログイン画面とログイン処理。"""
     # ログイン済みユーザーはロール別トップへ戻す
     if current_user.is_authenticated:
-        return redirect(redirect_by_role(current_user))
+        return redirect(redirect_by_role(current_user.role))
 
     form = LoginForm()
     inline_error = None
@@ -63,7 +63,7 @@ def login():
         if user and user.is_active and check_password_hash(user.password_hash, form.password.data):
             login_user(user, remember=form.remember.data)
             flash("ログインに成功しました。", "success")
-            return redirect(redirect_by_role(user))
+            return redirect(redirect_by_role(user.role))
 
         inline_error = "IDまたはパスワードが正しくありません"
     elif form.is_submitted():
@@ -76,12 +76,12 @@ def login():
     return render_template("login.html", form=form, inline_error=inline_error)
 
 
-def redirect_by_role(user):
-    if user.role == "applicant":
+def redirect_by_role(role: str):
+    if role == "applicant":
         return url_for("applicant_top")
-    if user.role == "manager":
+    if role == "manager":
         return url_for("manager_top")
-    if user.role == "hq":
+    if role == "hq":
         return url_for("hq_top")
     return url_for("index")
 
