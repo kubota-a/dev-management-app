@@ -22,7 +22,7 @@
             <div class="app-main{% if content_footer_enabled|default(false) %} has-content-footer{% endif %}">
                 {% include "partials/_header.html" %}
 
-                <main class="app-content section-stack">
+                <main class="app-content app-content-wide section-stack">
                     {% block content %}{% endblock %}
                 </main>
                 {% block content_footer %}{% endblock %}
