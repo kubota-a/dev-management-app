@@ -192,6 +192,17 @@
   
       flash.region.hidden = true;
     }
+
+    function bindLoginPasswordToggle() {
+      var passwordInput = document.getElementById("login-password");
+      var toggleButton = document.querySelector(".login-password-toggle");
+
+      if (!passwordInput || !toggleButton) return;
+
+      toggleButton.addEventListener("click", function () {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+      });
+    }
   
     document.addEventListener("click", function (event) {
       var notificationToggle = event.target.closest("[data-notification-toggle]");
@@ -300,7 +311,8 @@
         closeAllNotifications();
       }
     });
-  
+
+    bindLoginPasswordToggle();
     bindDrawerBreakpointReset();
   })();
   

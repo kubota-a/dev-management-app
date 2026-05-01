@@ -1301,6 +1301,118 @@
     color: var(--color-step-text-muted);
 }
 
+/* =========================
+   Login Page
+========================= */
+.login-page {
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--color-bg);
+}
+
+.login-page-main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl) var(--space-md);
+}
+
+.login-page-title {
+    margin: 0 0 var(--space-xl);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-main);
+    text-align: center;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 520px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-xl);
+}
+
+.login-flash-list {
+    display: grid;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.login-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.login-password-wrap {
+    position: relative;
+}
+
+.login-password-wrap input {
+    padding-right: 2.75rem;
+}
+
+.login-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: var(--space-sm);
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-sm);
+}
+
+.login-password-icon {
+    pointer-events: none;
+}
+
+.login-remember {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: calc(var(--space-xs) * -1);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-main);
+}
+
+.login-remember input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #525252;
+}
+
+.login-submit {
+    align-self: center;
+    width: min(180px, 100%);
+    background-color: #525252;
+    color: #ffffff;
+    border-radius: var(--radius-md);
+    font-weight: var(--font-weight-bold);
+}
+
+@media (hover: hover) {
+    .login-submit:hover {
+        background-color: #454545;
+        box-shadow: var(--shadow-button-hover);
+    }
+}
+
 @media (max-width: 899px) {
     .approval-step-card {
         padding: var(--space-md);

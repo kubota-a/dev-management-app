@@ -1,8 +1,11 @@
 import os
+import secrets
+from hmac import compare_digest
 from dotenv import load_dotenv  # .envファイルを読み込むライブラリ
-from flask import Flask, render_template  # Webアプリ本体を作るフレームワーク
+from flask import Flask, flash, redirect, render_template, request, session, url_for  # Webアプリ本体を作るフレームワーク
 from flask_migrate import Migrate  # DBマイグレーション（DB構造変更の履歴管理）ツール
-from flask_login import LoginManager  # ログイン管理用ライブラリ
+from flask_login import LoginManager, current_user, login_user  # ログイン管理用ライブラリ
+from werkzeug.security import check_password_hash
 
 from models import db, User  # db = SQLAlchemy本体、User = ユーザーモデル
 
@@ -38,10 +41,60 @@ def index():
     return "Hello, quest_1!"
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    """仮のログイン画面。後で本実装に置き換える。"""
-    return "Login page"
+    """ログイン画面とログイン処理。"""
+    if current_user.is_authenticated:
+        return redirect(get_post_login_redirect(current_user.role))
+
+    if request.method == "POST":
+        if not validate_csrf_token(request.form.get("csrf_token")):
+            flash("セッションが無効です。もう一度ログインしてください。", "danger")
+            return redirect(url_for("login"))
+
+        login_id = (request.form.get("id") or "").strip()
+        password = request.form.get("password") or ""
+        remember = request.form.get("remember") == "1"
+
+        user = User.query.filter_by(login_id=login_id).first()
+        if user and user.is_active and check_password_hash(user.password_hash, password):
+            login_user(user, remember=remember)
+            return redirect(get_post_login_redirect(user.role))
+
+        flash("IDまたはパスワードが正しくありません。", "danger")
+        return render_template(
+            "login.html",
+            csrf_token=ensure_csrf_token(),
+            entered_id=login_id,
+            remember_checked=remember,
+        )
+
+    return render_template("login.html", csrf_token=ensure_csrf_token(), entered_id="", remember_checked=True)
+
+
+def ensure_csrf_token() -> str:
+    token = session.get("login_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["login_csrf_token"] = token
+    return token
+
+
+def validate_csrf_token(token: str | None) -> bool:
+    session_token = session.get("login_csrf_token")
+    if not token or not session_token:
+        return False
+    return compare_digest(token, session_token)
+
+
+def get_post_login_redirect(role: str) -> str:
+    if role == "applicant":
+        return url_for("applicant_top")
+    if role == "manager":
+        return url_for("manager_top")
+    if role == "hq":
+        return url_for("hq_top")
+    return url_for("index")
 
 # UI見本の通常ページ確認用ルート
 @app.route("/ui-kit")

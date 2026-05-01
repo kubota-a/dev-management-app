@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>開発案件管理システム | ログイン</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+</head>
+<body class="login-page">
+    <main class="login-page-main">
+        <h1 class="login-page-title">開発案件管理システム</h1>
+        <section class="login-card" aria-label="ログインフォーム">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="login-flash-list" aria-live="polite">
+                        {% for category, message in messages %}
+                            {% set tone = "danger" if category == "danger" else "info" %}
+                            <div class="alert alert-{{ tone }}" role="{{ 'alert' if tone == 'danger' else 'status' }}">
+                                <p class="flash-message-text">{{ message }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            <form class="login-form" action="{{ url_for('login') }}" method="post" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="login-field">
+                    <label class="form-label" for="login-id">ID</label>
+                    <input id="login-id" name="id" type="text" autocomplete="username" value="{{ entered_id | default('', true) }}" required>
+                </div>
+                <div class="login-field">
+                    <label class="form-label" for="login-password">パスワード</label>
+                    <div class="login-password-wrap">
+                        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+                        <button class="login-password-toggle" type="button" aria-label="パスワードを表示/非表示">
+                            <svg class="login-password-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path fill="currentColor" d="M12 5c5.8 0 9.3 5.5 9.5 5.7a1 1 0 0 1 0 1C21.3 11.9 17.8 17 12 17s-9.3-5.1-9.5-5.3a1 1 0 0 1 0-1C2.7 10.5 6.2 5 12 5zm0 2c-3.8 0-6.6 3-7.5 4 .9 1 3.7 4 7.5 4s6.6-3 7.5-4c-.9-1-3.7-4-7.5-4zm0 1.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <label class="login-remember">
+                    <input type="checkbox" name="remember" value="1" {% if remember_checked %}checked{% endif %}>
+                    <span>ログイン状態を保持</span>
+                </label>
+                <button class="btn login-submit" type="submit">ログイン</button>
+            </form>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
