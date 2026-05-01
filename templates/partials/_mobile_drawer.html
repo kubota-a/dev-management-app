@@ -16,23 +16,11 @@
             <div class="app-sidebar-section-title">Menu</div>
             <nav class="app-nav">
                 {% if app_role == "applicant" %}
-                <a href="/top/applicant" class="app-nav-link{% if active_menu == 'applicant_top' %} is-active{% endif %}">トップ</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'new_request' %} is-active{% endif %}">新規案件申請</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'my_projects' %} is-active{% endif %}">自分の案件</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'my_notifications' %} is-active{% endif %}">通知{% if unread_count_value > 0 %} <span class="app-nav-count" aria-label="{{ unread_count_value }}件の未読通知">{{ unread_count_value }}</span>{% endif %}</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'profile' %} is-active{% endif %}">プロフィール</a>
+                {% include "partials/nav/_applicant_nav.html" %}
                 {% elif app_role == "manager" %}
-                <a href="/top/manager" class="app-nav-link{% if active_menu == 'manager_top' %} is-active{% endif %}">トップ</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'dept_approvals' %} is-active{% endif %}">部門承認待ち</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'dept_projects' %} is-active{% endif %}">自部門案件</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'dept_delays' %} is-active{% endif %}">遅延案件</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'dept_notifications' %} is-active{% endif %}">通知{% if unread_count_value > 0 %} <span class="app-nav-count" aria-label="{{ unread_count_value }}件の未読通知">{{ unread_count_value }}</span>{% endif %}</a>
+                {% include "partials/nav/_manager_nav.html" %}
                 {% else %}
-                <a href="/top/hq" class="app-nav-link{% if active_menu == 'hq_top' %} is-active{% endif %}">トップ</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'hq_approvals' %} is-active{% endif %}">本部承認待ち</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'all_projects' %} is-active{% endif %}">全案件管理</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'department_status' %} is-active{% endif %}">部門別状況</a>
-                <a href="#" class="app-nav-link{% if active_menu == 'hq_notifications' %} is-active{% endif %}">通知{% if unread_count_value > 0 %} <span class="app-nav-count" aria-label="{{ unread_count_value }}件の未読通知">{{ unread_count_value }}</span>{% endif %}</a>
+                {% include "partials/nav/_hq_nav.html" %}
                 {% endif %}
             </nav>
         </div>

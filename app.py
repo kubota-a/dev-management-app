@@ -54,19 +54,19 @@ def ui_kit_dashboard():
     return render_template("ui-kit-dashboard.html")
 
 
-@app.route("/top/applicant")
+@app.route("/sample/applicant")
 def applicant_top():
-    return render_template("applicant_top.html", demo_role="applicant")
+    return render_template("sample_applicant_dashboard.html", demo_role="applicant")
 
 
-@app.route("/top/manager")
+@app.route("/sample/manager")
 def manager_top():
-    return render_template("manager_top.html", demo_role="manager")
+    return render_template("sample_manager_dashboard.html", demo_role="manager")
 
 
-@app.route("/top/hq")
+@app.route("/sample/hq")
 def hq_top():
-    return render_template("hq_top.html", demo_role="hq")
+    return render_template("sample_hq_dashboard.html", demo_role="hq")
 
 
 if __name__ == "__main__":
