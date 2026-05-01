@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set header_title = "申請者トップ" %}
+{% set header_meta = "申請状況と最新通知を確認できます" %}
+{% set unread_count = 2 %}
+{% set active_menu = "applicant_top" %}
+{% set content_footer_enabled = true %}
+
+{% block title %}申請者トップ{% endblock %}
+
+{% block content %}
+{% include "partials/_flash.html" %}
+
+<section class="card">
+    <div class="card-actions">
+        <a href="#" class="btn btn-primary">新規案件申請へ</a>
+    </div>
+</section>
+
+<section class="summary-band" aria-label="自分の案件件数サマリー">
+    <div class="summary-band-inner">
+        <div class="summary-band-segment sb-accent-blue">
+            <div class="sb-number-row"><span class="sb-value">24</span><span class="sb-unit">件</span></div>
+            <span class="sb-label">自分の案件</span>
+        </div>
+        <div class="summary-band-segment sb-accent-amber">
+            <div class="sb-number-row"><span class="sb-value">4</span><span class="sb-unit">件</span></div>
+            <span class="sb-label">部門承認待ち</span>
+        </div>
+        <div class="summary-band-segment sb-accent-teal">
+            <div class="sb-number-row"><span class="sb-value">3</span><span class="sb-unit">件</span></div>
+            <span class="sb-label">本部承認待ち</span>
+        </div>
+        <div class="summary-band-segment sb-accent-green">
+            <div class="sb-number-row"><span class="sb-value">9</span><span class="sb-unit">件</span></div>
+            <span class="sb-label">開発中</span>
+        </div>
+        <div class="summary-band-segment sb-accent-blue">
+            <div class="sb-number-row"><span class="sb-value">6</span><span class="sb-unit">件</span></div>
+            <span class="sb-label">完了</span>
+        </div>
+        <div class="summary-band-segment sb-accent-red">
+            <div class="sb-number-row"><span class="sb-value">2</span><span class="sb-unit">件</span></div>
+            <span class="sb-label">却下</span>
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-main-grid">
+    <div class="dashboard-main-col">
+        <article class="card">
+            <h2 class="card-title">最近更新された自分の案件</h2>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>案件名</th><th>ステータス</th><th>更新日時</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>顧客ポータル改善</td><td><span class="badge badge-approval-hq">本部承認待ち</span></td><td>2026/04/24 10:12</td></tr>
+                        <tr><td>営業支援ダッシュボード</td><td><span class="badge badge-progress">開発中</span></td><td>2026/04/23 18:05</td></tr>
+                        <tr><td>契約ワークフロー更新</td><td><span class="badge badge-approval-dept">部門承認待ち</span></td><td>2026/04/23 09:22</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+        <article class="card">
+            {% set approval_title = "承認ステップ（サンプル）" %}
+            {% set approval_stage = "hq_pending" %}
+            {% set status = "hq_pending" %}
+            {% include "partials/_approval_steps.html" %}
+        </article>
+    </div>
+    <article class="card">
+        <h2 class="card-title">未読通知の要約</h2>
+        <ul class="notification-list-mini">
+            <li><span class="notification-title">「顧客ポータル改善」が本部承認待ちになりました</span><time datetime="2026-04-24T09:40">04/24 09:40</time></li>
+            <li><span class="notification-title">「契約ワークフロー更新」が差し戻されました</span><time datetime="2026-04-23T16:18">04/23 16:18</time></li>
+        </ul>
+    </article>
+</section>
+
+<section class="card">
+    <div class="card-actions">
+        <button type="button" class="btn btn-secondary" data-modal-open="requestConfirmModal">申請確認モーダルを開く</button>
+    </div>
+</section>
+
+{% set modal_id = "requestConfirmModal" %}
+{% set modal_title = "申請内容の確認" %}
+{% set modal_text = "この内容で申請を送信します。よろしいですか？" %}
+{% set modal_confirm_label = "送信する" %}
+{% include "partials/_modal.html" %}
+{% endblock %}
+
+{% block content_footer %}
+{% set footer_info_text = "下書き保存状況" %}
+{% set footer_info_value = "未保存の変更 1件" %}
+{% set footer_actions %}
+<button type="button" class="btn btn-secondary">下書き保存</button>
+<button type="button" class="btn btn-primary">申請を送信</button>
+{% endset %}
+{% include "partials/_content_footer.html" %}
+{% endblock %}

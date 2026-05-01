@@ -580,13 +580,26 @@ body.is-drawer-open {
     }
 }
 
+/* =========================
+   メインコンテンツ幅
+   - 基本：app-content-wide（広め）
+   - 狭め：app-content-narrow（1320px上限）
+========================= */
 @media (min-width: 1440px) {
-    .app-content {
+    .app-content.app-content-wide {
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .app-content.app-content-narrow {
         max-width: var(--container-content-max);
         margin-left: max(var(--space-content-margin-min), calc((100% - var(--container-content-max)) * var(--ratio-content-extra-space-left)));
         margin-right: auto;
     }
 }
+/* 狭め幅にしたい画面では、HTML側で app-content-narrow を追加する。
+   例：<main class="app-content app-content-narrow section-stack"> */
 /* =========================
    Dashboard UI Kit Layout
 ========================= */

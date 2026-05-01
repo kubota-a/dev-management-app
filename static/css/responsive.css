@@ -433,3 +433,29 @@
         font-size: 1.75rem;
     }
 }
+
+@media (max-width: 899px) {
+    .login-page-main {
+        justify-content: flex-start;
+        padding-top: var(--space-2xl);
+    }
+
+    .login-page-title {
+        margin-bottom: var(--space-lg);
+        font-size: var(--text-lg);
+    }
+
+    .login-card {
+        max-width: none;
+        padding: var(--space-lg);
+    }
+
+    .login-submit {
+        width: 100%;
+    }
+
+    .toast-message {
+        bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
+        width: min(92vw, 24rem);
+    }
+}

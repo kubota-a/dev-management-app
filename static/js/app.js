@@ -192,6 +192,30 @@
   
       flash.region.hidden = true;
     }
+
+    function bindLoginPasswordToggle() {
+      var passwordInput = document.getElementById("login-password");
+      var toggleButton = document.querySelector(".login-password-toggle");
+
+      if (!passwordInput || !toggleButton) return;
+
+      toggleButton.addEventListener("click", function () {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+      });
+    }
+
+    function bindToastAutoHide() {
+      document.querySelectorAll("[data-toast-message]").forEach(function (toast) {
+        window.setTimeout(function () {
+          toast.classList.add("is-hidden");
+          window.setTimeout(function () {
+            if (toast && toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 220);
+        }, 2600);
+      });
+    }
   
     document.addEventListener("click", function (event) {
       var notificationToggle = event.target.closest("[data-notification-toggle]");
@@ -300,7 +324,9 @@
         closeAllNotifications();
       }
     });
-  
+
+    bindLoginPasswordToggle();
+    bindToastAutoHide();
     bindDrawerBreakpointReset();
   })();
   

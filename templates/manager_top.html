@@ -1,76 +1,9 @@
 {% extends "base.html" %}
-{% set header_title = "部門管理者トップ" %}
-{% set header_meta = "承認待ちと遅延案件を確認できます" %}
-{% set unread_count = 4 %}
-{% set active_menu = "manager_top" %}
-{% set content_footer_enabled = true %}
 
-{% block title %}部門管理者トップ{% endblock %}
+{% block title %}部門管理者トップ（仮）{% endblock %}
 
 {% block content %}
-{% include "partials/_flash.html" %}
-
-<section class="summary-band" aria-label="自部門サマリー">
-    <div class="summary-band-inner">
-        <div class="summary-band-segment sb-accent-amber">
-            <div class="sb-number-row"><span class="sb-value">8</span><span class="sb-unit">件</span></div>
-            <span class="sb-label">承認待ち件数</span>
-        </div>
-        <div class="summary-band-segment sb-accent-red is-delay">
-            <div class="sb-number-row"><span class="sb-value">5</span><span class="sb-unit">件</span></div>
-            <span class="sb-label">遅延案件件数</span>
-        </div>
-        <div class="summary-band-segment sb-accent-blue">
-            <div class="sb-number-row"><span class="sb-value">41</span><span class="sb-unit">件</span></div>
-            <span class="sb-label">自部門案件数</span>
-        </div>
-        <div class="summary-band-segment sb-accent-orange is-budget-alert">
-            <div class="sb-number-row"><span class="sb-value">6</span><span class="sb-unit">件</span></div>
-            <span class="sb-label">予算注意案件件数</span>
-        </div>
-    </div>
-</section>
-
-<section class="dashboard-grid-3">
-    <article class="card">
-        <h2 class="card-title">承認待ち案件一覧</h2>
-        <ul class="mini-list">
-            <li><span>受注管理再構築</span><span class="badge badge-approval-dept">部門承認待ち</span></li>
-            <li><span>営業支援ダッシュボード</span><span class="badge badge-approval-dept">部門承認待ち</span></li>
-            <li><span>予実連携改善</span><span class="badge badge-approval-dept">部門承認待ち</span></li>
-        </ul>
-    </article>
-    <article class="card">
-        <h2 class="card-title">遅延案件一覧</h2>
-        <ul class="mini-list">
-            <li><span>顧客分析基盤</span><span class="badge badge-delay">+6日</span></li>
-            <li><span>請求自動化対応</span><span class="badge badge-delay">+4日</span></li>
-            <li><span>在庫連携機能追加</span><span class="badge badge-delay">+3日</span></li>
-        </ul>
-    </article>
-    <article class="card">
-        <h2 class="card-title">未読通知の要約</h2>
-        <ul class="notification-list-mini">
-            <li><span class="notification-title">承認期限が近い案件が2件あります</span><time datetime="2026-04-24T08:40">04/24 08:40</time></li>
-            <li><span class="notification-title">遅延案件が1件追加されました</span><time datetime="2026-04-23T17:12">04/23 17:12</time></li>
-        </ul>
-    </article>
-</section>
-
 <section class="card">
-    {% set approval_title = "承認ステップ（部門承認中サンプル）" %}
-    {% set approval_stage = "department_pending" %}
-    {% set status = "department_pending" %}
-    {% include "partials/_approval_steps.html" %}
+    <h1 class="card-title">部門管理者トップ（仮）</h1>
 </section>
-{% endblock %}
-
-{% block content_footer %}
-{% set footer_info_text = "承認キュー" %}
-{% set footer_info_value = "未処理 8件" %}
-{% set footer_actions %}
-<button type="button" class="btn btn-secondary">一覧を更新</button>
-<button type="button" class="btn btn-primary">承認待ちを確認</button>
-{% endset %}
-{% include "partials/_content_footer.html" %}
 {% endblock %}
