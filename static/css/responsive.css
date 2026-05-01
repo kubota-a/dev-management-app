@@ -453,4 +453,9 @@
     .login-submit {
         width: 100%;
     }
+
+    .toast-message {
+        bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
+        width: min(92vw, 24rem);
+    }
 }

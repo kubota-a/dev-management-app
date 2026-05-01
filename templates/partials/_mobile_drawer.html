@@ -42,7 +42,10 @@
             <div id="mobileAccountMenuDropdown" class="account-menu-dropdown sidebar-account-menu-dropdown" data-account-menu aria-hidden="true" role="menu">
                 <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">プロフィール</button>
                 <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">アカウント設定</button>
-                <button type="button" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                <form class="account-menu-form" action="{{ url_for('logout') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="account-menu-item" data-account-menu-item role="menuitem">ログアウト</button>
+                </form>
             </div>
         </div>
     </div>

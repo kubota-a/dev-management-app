@@ -1398,9 +1398,11 @@
 }
 
 .login-submit {
+    --login-action-bg: #525252;
+    --login-action-bg-hover: #454545;
     align-self: center;
     width: min(180px, 100%);
-    background-color: #525252;
+    background-color: var(--login-action-bg);
     color: #ffffff;
     border-radius: var(--radius-md);
     font-weight: var(--font-weight-bold);
@@ -1408,9 +1410,42 @@
 
 @media (hover: hover) {
     .login-submit:hover {
-        background-color: #454545;
+        background-color: var(--login-action-bg-hover);
         box-shadow: var(--shadow-button-hover);
     }
+}
+
+.login-inline-error {
+    margin-bottom: calc(var(--space-sm) * -1);
+}
+
+.toast-message {
+    position: fixed;
+    left: 50%;
+    bottom: var(--space-lg);
+    transform: translateX(-50%);
+    z-index: 1500;
+    min-width: 14rem;
+    max-width: min(90vw, 24rem);
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--login-action-bg, #525252);
+    color: #ffffff;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    opacity: 1;
+    transition: opacity var(--transition-base), transform var(--transition-base);
+}
+
+.toast-message.is-hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.5rem);
+}
+
+.account-menu-form {
+    margin: 0;
 }
 
 @media (max-width: 899px) {

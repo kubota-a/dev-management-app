@@ -1,12 +1,12 @@
 import os
-import secrets
-from hmac import compare_digest
 from dotenv import load_dotenv  # .envファイルを読み込むライブラリ
-from flask import Flask, flash, redirect, render_template, request, session, url_for  # Webアプリ本体を作るフレームワーク
+from flask import Flask, flash, redirect, render_template, url_for  # Webアプリ本体を作るフレームワーク
 from flask_migrate import Migrate  # DBマイグレーション（DB構造変更の履歴管理）ツール
-from flask_login import LoginManager, current_user, login_user  # ログイン管理用ライブラリ
+from flask_login import LoginManager, current_user, login_required, login_user, logout_user  # ログイン管理用ライブラリ
+from flask_wtf import CSRFProtect
 from werkzeug.security import check_password_hash
 
+from forms import LoginForm
 from models import db, User  # db = SQLAlchemy本体、User = ユーザーモデル
 
 # .envファイルを読み込む
@@ -24,6 +24,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
+csrf = CSRFProtect(app)
 
 # 未ログイン時に飛ばすログイン画面のURL
 login_manager.login_view = "login"
@@ -41,60 +42,88 @@ def index():
     return "Hello, quest_1!"
 
 
+# =============================
+# ■ 共通：ログイン画面
+# =============================
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """ログイン画面とログイン処理。"""
+    # ログイン済みユーザーはロール別トップへ戻す
     if current_user.is_authenticated:
-        return redirect(get_post_login_redirect(current_user.role))
+        return redirect(redirect_by_role(current_user))
 
-    if request.method == "POST":
-        if not validate_csrf_token(request.form.get("csrf_token")):
-            flash("セッションが無効です。もう一度ログインしてください。", "danger")
-            return redirect(url_for("login"))
+    form = LoginForm()
+    inline_error = None
 
-        login_id = (request.form.get("id") or "").strip()
-        password = request.form.get("password") or ""
-        remember = request.form.get("remember") == "1"
+    # 入力チェックを通過した場合のみ認証処理を行う
+    if form.validate_on_submit():
+        user = User.query.filter_by(login_id=form.login_id.data).first()
 
-        user = User.query.filter_by(login_id=login_id).first()
-        if user and user.is_active and check_password_hash(user.password_hash, password):
-            login_user(user, remember=remember)
-            return redirect(get_post_login_redirect(user.role))
+        # 認証可否に関わらず同じエラーメッセージを返す
+        if user and user.is_active and check_password_hash(user.password_hash, form.password.data):
+            login_user(user, remember=form.remember.data)
+            flash("ログインに成功しました。", "success")
+            return redirect(redirect_by_role(user))
 
-        flash("IDまたはパスワードが正しくありません。", "danger")
-        return render_template(
-            "login.html",
-            csrf_token=ensure_csrf_token(),
-            entered_id=login_id,
-            remember_checked=remember,
-        )
+        inline_error = "IDまたはパスワードが正しくありません"
+    elif form.is_submitted():
+        # 複数エラー時でも最初の1件だけ表示する
+        for field in (form.login_id, form.password):
+            if field.errors:
+                inline_error = field.errors[0]
+                break
 
-    return render_template("login.html", csrf_token=ensure_csrf_token(), entered_id="", remember_checked=True)
-
-
-def ensure_csrf_token() -> str:
-    token = session.get("login_csrf_token")
-    if not token:
-        token = secrets.token_urlsafe(32)
-        session["login_csrf_token"] = token
-    return token
+    return render_template("login.html", form=form, inline_error=inline_error)
 
 
-def validate_csrf_token(token: str | None) -> bool:
-    session_token = session.get("login_csrf_token")
-    if not token or not session_token:
-        return False
-    return compare_digest(token, session_token)
-
-
-def get_post_login_redirect(role: str) -> str:
-    if role == "applicant":
+def redirect_by_role(user):
+    if user.role == "applicant":
         return url_for("applicant_top")
-    if role == "manager":
+    if user.role == "manager":
         return url_for("manager_top")
-    if role == "hq":
+    if user.role == "hq":
         return url_for("hq_top")
     return url_for("index")
+
+
+# =============================
+# ■ 共通：ログアウト処理
+# =============================
+@app.route("/logout", methods=["POST"])
+@login_required
+def logout():
+    """ログアウト処理。"""
+    logout_user()
+    flash("ログアウトしました。", "success")
+    return redirect(url_for("login"))
+
+
+# =============================
+# ■ 申請者：トップ画面
+# =============================
+@app.route("/top/applicant")
+@login_required
+def applicant_top():
+    return render_template("applicant_top.html", demo_role="applicant")
+
+
+# =============================
+# ■ 部門管理者：トップ画面
+# =============================
+@app.route("/top/manager")
+@login_required
+def manager_top():
+    return render_template("manager_top.html", demo_role="manager")
+
+
+# =============================
+# ■ 本部管理者：トップ画面
+# =============================
+@app.route("/top/hq")
+@login_required
+def hq_top():
+    return render_template("hq_top.html", demo_role="hq")
+
 
 # UI見本の通常ページ確認用ルート
 @app.route("/ui-kit")
@@ -108,17 +137,17 @@ def ui_kit_dashboard():
 
 
 @app.route("/sample/applicant")
-def applicant_top():
+def sample_applicant_top():
     return render_template("sample_applicant_dashboard.html", demo_role="applicant")
 
 
 @app.route("/sample/manager")
-def manager_top():
+def sample_manager_top():
     return render_template("sample_manager_dashboard.html", demo_role="manager")
 
 
 @app.route("/sample/hq")
-def hq_top():
+def sample_hq_top():
     return render_template("sample_hq_dashboard.html", demo_role="hq")
 
 

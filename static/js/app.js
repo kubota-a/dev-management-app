@@ -203,6 +203,19 @@
         passwordInput.type = passwordInput.type === "password" ? "text" : "password";
       });
     }
+
+    function bindToastAutoHide() {
+      document.querySelectorAll("[data-toast-message]").forEach(function (toast) {
+        window.setTimeout(function () {
+          toast.classList.add("is-hidden");
+          window.setTimeout(function () {
+            if (toast && toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 220);
+        }, 2600);
+      });
+    }
   
     document.addEventListener("click", function (event) {
       var notificationToggle = event.target.closest("[data-notification-toggle]");
@@ -313,6 +326,7 @@
     });
 
     bindLoginPasswordToggle();
+    bindToastAutoHide();
     bindDrawerBreakpointReset();
   })();
   
