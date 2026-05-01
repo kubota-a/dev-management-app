@@ -98,24 +98,24 @@
 }
 
 .alert-success {
-    background-color: var(--color-success-bg);
-    color: var(--color-success-text);
+    background-color: var(--color-flash-success-bg);
+    color: var(--color-flash-success-text);
 }
 
 .alert-danger {
-    background-color: var(--color-danger-bg);
-    color: var(--color-danger-text);
+    background-color: var(--color-flash-danger-bg);
+    color: var(--color-flash-danger-text);
 }
 
 .alert-warning {
-    background-color: var(--color-warning-bg);
-    color: var(--color-warning-text);
+    background-color: var(--color-flash-warning-bg);
+    color: var(--color-flash-warning-text);
 }
 
 .alert-notice,
 .alert-info {
-    background-color: var(--color-info-bg);
-    color: var(--color-info-text);
+    background-color: var(--color-flash-info-bg);
+    color: var(--color-flash-info-text);
 }
 
 .flash-demo-controls {
@@ -191,18 +191,18 @@
 }
 
 .badge-success {
-    background-color: var(--color-success-bg);
-    color: var(--color-success-text);
+    background-color: var(--color-badge-success-bg);
+    color: var(--color-badge-success-text);
 }
 
 .badge-danger {
-    background-color: var(--color-danger-bg);
-    color: var(--color-danger-text);
+    background-color: var(--color-badge-danger-bg);
+    color: var(--color-badge-danger-text);
 }
 
 .badge-warning {
-    background-color: var(--color-warning-bg);
-    color: var(--color-warning-text);
+    background-color: var(--color-badge-warning-bg);
+    color: var(--color-badge-warning-text);
 }
 
 .badge-status-short {
@@ -621,23 +621,23 @@
 }
 
 .badge-approval-dept {
-    background-color: #f7dbf7;
-    color: #8a3082;
+    background-color: var(--color-status-label-approval-dept-bg);
+    color: var(--color-status-label-approval-dept-text);
 }
 
 .badge-approval-hq {
-    background-color: #d2d7f5;
-    color: #4c568f;
+    background-color: var(--color-status-label-approval-hq-bg);
+    color: var(--color-status-label-approval-hq-text);
 }
 
 .badge-progress {
-    background-color: #DCEEFF;
-    color: #245B96;
+    background-color: var(--color-status-label-progress-bg);
+    color: var(--color-status-label-progress-text);
 }
 
 .badge-delay {
-    background-color: var(--color-danger-bg);
-    color: var(--color-danger-text);
+    background-color: var(--color-status-label-delay-bg);
+    color: var(--color-status-label-delay-text);
 }
 
 .badge-delay-days {
@@ -645,25 +645,33 @@
 }
 
 .badge-budget-warning {
-    background-color: var(--color-warning-bg);
-    color: var(--color-warning-text);
+    background-color: var(--color-status-label-budget-warning-bg);
+    color: var(--color-status-label-budget-warning-text);
 }
 
-.badge-budget-over,
+.badge-budget-over {
+    background-color: var(--color-status-label-budget-over-bg);
+    color: var(--color-status-label-budget-over-text);
+}
+
 .badge-pressure {
-    background-color: var(--color-danger-bg);
-    color: var(--color-danger-text);
+    background-color: var(--color-status-label-pressure-bg);
+    color: var(--color-status-label-pressure-text);
 }
 
-.badge-executable,
+.badge-executable {
+    background-color: var(--color-status-label-executable-bg);
+    color: var(--color-status-label-executable-text);
+}
+
 .badge-normal {
-    background-color: var(--color-success-bg);
-    color: var(--color-success-text);
+    background-color: var(--color-status-label-normal-bg);
+    color: var(--color-status-label-normal-text);
 }
 
 .badge-adjusting {
-    background-color: var(--color-info-bg);
-    color: var(--color-info-text);
+    background-color: var(--color-status-label-adjusting-bg);
+    color: var(--color-status-label-adjusting-text);
 }
 
 .progress-meter-stack {

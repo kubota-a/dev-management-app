@@ -21,6 +21,51 @@
     --color-warning-text: #9a6700;
     --color-info-bg: rgba(228, 231, 236, 1);
     --color-info-text: #4b5563;
+    /* =========================
+       Flash専用カラー（固定）
+    ========================= */
+    --color-flash-success-bg: rgba(227, 247, 235, 1);
+    --color-flash-success-text: #1f6b3b;
+    --color-flash-danger-bg: #fdecee;
+    --color-flash-danger-text: #9f2d3a;
+    --color-flash-warning-bg: #fff7e6;
+    --color-flash-warning-text: #9a6700;
+    --color-flash-info-bg: rgba(228, 231, 236, 1);
+    --color-flash-info-text: #4b5563;
+    /* =========================
+       Badge専用カラー
+    ========================= */
+    --color-badge-success-bg: var(--color-success-bg);
+    --color-badge-success-text: var(--color-success-text);
+    --color-badge-danger-bg: var(--color-danger-bg);
+    --color-badge-danger-text: var(--color-danger-text);
+    --color-badge-warning-bg: var(--color-warning-bg);
+    --color-badge-warning-text: var(--color-warning-text);
+    --color-badge-info-bg: var(--color-info-bg);
+    --color-badge-info-text: var(--color-info-text);
+    /* =========================
+       Status Label専用カラー
+    ========================= */
+    --color-status-label-approval-dept-bg: #f7dbf7;
+    --color-status-label-approval-dept-text: #8a3082;
+    --color-status-label-approval-hq-bg: #d2d7f5;
+    --color-status-label-approval-hq-text: #4c568f;
+    --color-status-label-progress-bg: #DCEEFF;
+    --color-status-label-progress-text: #245B96;
+    --color-status-label-delay-bg: var(--color-badge-danger-bg);
+    --color-status-label-delay-text: var(--color-badge-danger-text);
+    --color-status-label-budget-warning-bg: var(--color-badge-warning-bg);
+    --color-status-label-budget-warning-text: var(--color-badge-warning-text);
+    --color-status-label-budget-over-bg: var(--color-badge-danger-bg);
+    --color-status-label-budget-over-text: var(--color-badge-danger-text);
+    --color-status-label-executable-bg: var(--color-badge-success-bg);
+    --color-status-label-executable-text: var(--color-badge-success-text);
+    --color-status-label-normal-bg: var(--color-badge-success-bg);
+    --color-status-label-normal-text: var(--color-badge-success-text);
+    --color-status-label-adjusting-bg: var(--color-badge-info-bg);
+    --color-status-label-adjusting-text: var(--color-badge-info-text);
+    --color-status-label-pressure-bg: var(--color-badge-danger-bg);
+    --color-status-label-pressure-text: var(--color-badge-danger-text);
     --color-focus-ring-neutral: rgba(107, 114, 128, 0.2);
  
     /* =========================
