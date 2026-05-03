@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% set page_role = "applicant" %}
-{% set active_nav = "applicant_new" %}
+{% set active_menu = "applicant_new" %}
 {% set header_title = "新規案件申請" %}
 {% set header_meta = "新しい開発案件の内容を入力し、承認申請を行います" %}
 {% set content_footer_enabled = true %}
@@ -255,6 +255,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 
 {% block content %}
 <div class="mock-project-new">
+  {% include "partials/_flash.html" %}
   <div class="mock-page-action-row">
     <button type="button" class="project-new-draft-open-btn" data-draft-drawer-open>
       <span>下書きから作成</span>
@@ -281,40 +282,42 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   </div>
 
   <div class="page-layout">
+    <form id="projectNewForm" method="post" action="{{ url_for('applicant_project_new') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="confirmed" name="confirmed" value="0">
+      <input type="hidden" id="draftIdField" name="draft_id" value="{{ form_data.draft_id|default('') }}">
     <div class="form-card">
       <div class="fc-section">
         <div class="fc-sec-title"><div class="fc-num">1</div> 基本情報</div>
         <div class="field">
           <div class="field-label">案件名 <span class="req-badge">必須</span></div>
           <div class="field-hint">30〜50文字程度で、内容が伝わる名称にしてください。</div>
-          <input type="text" class="f-input" id="projName" maxlength="60" placeholder="例：顧客管理システム刷新（クラウド移行）" oninput="updateProjectCC(this,'nameCC',60);updateProjectProgress()">
-          <div class="char-counter" id="nameCC">0 / 60 文字</div>
-          <div class="field-error" id="nameErr">案件名を入力してください。</div>
+          <input type="text" class="f-input{% if form_errors.title %} error{% endif %}" id="projName" name="title" maxlength="60" value="{{ form_data.title|default('') }}" placeholder="例：顧客管理システム刷新（クラウド移行）" oninput="updateProjectCC(this,'nameCC',60);updateProjectProgress()">
+          <div class="char-counter" id="nameCC">{{ (form_data.title|default(''))|length }} / 60 文字</div>
+          <div class="field-error{% if form_errors.title %} show{% endif %}" id="nameErr">{{ form_errors.title|default("案件名を入力してください。") }}</div>
         </div>
         <div class="field">
           <div class="field-label">担当部門 <span class="req-badge">必須</span></div>
-          {# 将来は departments から取得 #}
-          <select class="f-select" id="dept" onchange="updateProjectProgress()">
-            <option value="" selected>── 部門を選択してください ──</option>
-            <option value="dept1">第一開発部</option>
-            <option value="dept2">第二開発部</option>
-            <option value="dept3">第三開発部</option>
+          <select class="f-select{% if form_errors.department_id %} error{% endif %}" id="dept" name="department_id" onchange="updateProjectProgress()" {% if not departments %}disabled{% endif %}>
+            <option value="" {% if not form_data.department_id %}selected{% endif %}>── 部門を選択してください ──</option>
+            {% for department in departments %}
+            <option value="{{ department.id }}" {% if form_data.department_id|string == department.id|string %}selected{% endif %}>{{ department.name }}</option>
+            {% endfor %}
           </select>
-          <div class="field-error" id="deptErr">担当部門を選択してください。</div>
+          <div class="field-error{% if form_errors.department_id %} show{% endif %}" id="deptErr">{{ form_errors.department_id|default("担当部門を選択してください。") }}</div>
         </div>
         <div class="field">
           <div class="field-label">申請者名 <span class="opt-badge">自動</span></div>
-          {# 将来は current_user から表示 #}
-          <input type="text" class="f-input" value="申請者：山田 太郎" readonly>
+          <input type="text" class="f-input" value="申請者：{{ current_user.display_name }}" readonly>
         </div>
         <div class="field">
           <div class="field-label">目的・概要 <span class="req-badge">必須</span></div>
           <div class="field-hint">なぜ必要か・何を達成するかを記載。承認者が判断しやすいよう、背景と効果を具体的に書いてください。</div>
           <div class="voice-row">
-            <textarea class="f-textarea" id="projDesc" maxlength="500" rows="6" placeholder="例：旧システムの保守期限切れに伴い、顧客管理業務の継続性と効率化を目的としてクラウド型CRMへ移行する。" oninput="updateProjectCC(this,'descCC',500);updateProjectProgress()"></textarea>
+            <textarea class="f-textarea{% if form_errors.purpose %} error{% endif %}" id="projDesc" name="purpose" maxlength="500" rows="6" placeholder="例：旧システムの保守期限切れに伴い、顧客管理業務の継続性と効率化を目的としてクラウド型CRMへ移行する。" oninput="updateProjectCC(this,'descCC',500);updateProjectProgress()">{{ form_data.purpose|default('') }}</textarea>
           </div>
-          <div class="char-counter" id="descCC">0 / 500 文字</div>
-          <div class="field-error" id="descErr">目的・概要は5文字以上で入力してください。</div>
+          <div class="char-counter" id="descCC">{{ (form_data.purpose|default(''))|length }} / 500 文字</div>
+          <div class="field-error{% if form_errors.purpose %} show{% endif %}" id="descErr">{{ form_errors.purpose|default("目的・概要は5文字以上で入力してください。") }}</div>
         </div>
       </div>
 
@@ -325,27 +328,29 @@ body.is-project-draft-drawer-open { overflow: hidden; }
             <div class="field-label">金額（予算） <span class="req-badge">必須</span></div>
             <div class="money-wrap" id="mwAmount">
               <div class="money-prefix">¥</div>
-              <input type="number" class="money-input" id="budgetAmount" placeholder="例：5000000" inputmode="numeric" min="0" oninput="updateProjectProgress()">
+              <input type="number" class="money-input{% if form_errors.estimated_budget_amount %} error{% endif %}" id="budgetAmount" name="estimated_budget_amount" value="{{ form_data.estimated_budget_amount|default('') }}" placeholder="例：5000000" inputmode="numeric" min="0" oninput="updateProjectProgress()">
             </div>
-            <div class="field-error" id="amtErr">金額（予算）を入力してください。</div>
+            <div class="field-error{% if form_errors.estimated_budget_amount %} show{% endif %}" id="amtErr">{{ form_errors.estimated_budget_amount|default("金額（予算）を入力してください。") }}</div>
           </div>
           <div class="field">
             <div class="field-label">工数（人月） <span class="req-badge">必須</span></div>
             <div style="display:flex; gap:8px;">
               <div class="money-wrap" style="flex:1;" id="mwMm">
-                <input type="number" class="money-input" id="manmonth" placeholder="例：24" inputmode="numeric" min="0" style="padding-left:12px;" oninput="updateProjectProgress()">
+                <input type="number" class="money-input{% if form_errors.estimated_person_months %} error{% endif %}" id="manmonth" name="estimated_person_months" value="{{ form_data.estimated_person_months|default('') }}" placeholder="例：24" inputmode="numeric" min="0" style="padding-left:12px;" oninput="updateProjectProgress()">
               </div>
             </div>
+            <div class="field-error{% if form_errors.estimated_person_months %} show{% endif %}" id="mmErr">{{ form_errors.estimated_person_months|default("") }}</div>
           </div>
           <div class="field">
             <div class="field-label">開始予定日 <span class="opt-badge">任意</span></div>
-            <input type="date" class="f-input" id="startDate">
+            <input type="date" class="f-input" id="startDate" name="planned_start_date" value="{{ form_data.planned_start_date|default('') }}">
           </div>
           <div class="field">
             <div class="field-label">完了予定日 <span class="opt-badge">任意</span></div>
-            <input type="date" class="f-input" id="endDate">
+            <input type="date" class="f-input" id="endDate" name="planned_end_date" value="{{ form_data.planned_end_date|default('') }}">
           </div>
         </div>
+        <div class="field-error{% if form_errors.planned_dates %} show{% endif %}" id="dateErr">{{ form_errors.planned_dates|default("") }}</div>
         <div class="budget-note">
           <div class="bn-icon"></div>
           <div class="bn-text"><strong>概算での申請で構いません。</strong>承認後にこの金額が「確定予算」となります。予算超過リスクを踏まえ、余裕を持った金額を設定してください。</div>
@@ -353,6 +358,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
       </div>
 
     </div>
+    </form>
 
     <div class="side-col">
       <div class="progress-card">
@@ -382,17 +388,14 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   <div class="dialog-overlay" id="dialogOverlay">
     <div class="dialog-box">
       <div class="dlg-big-icon"></div>
-      <div class="dlg-title">申請が完了しました！</div>
+      <div class="dlg-title">この内容で申請しますか？</div>
       <div class="dlg-body">
-        <strong id="dlgProjName">—</strong> の申請を受け付けました。<br>
-        部門管理者へ確認通知を送信しました。<br>
-        承認状況はダッシュボードで随時確認できます。
-        <br><br>
-        <span class="dlg-num" id="dlgReqNum">申請番号：—</span>
+        入力内容を確認のうえ、問題なければ申請してください。<br>
+        申請後は内容確認画面へ移動します。
       </div>
       <div class="dlg-btns">
-        <button type="button" class="dlg-cancel" onclick="closeProjectSubmitDialog()">続けて申請</button>
-        <button type="button" class="dlg-ok" onclick="closeProjectSubmitDialog()">ダッシュボードへ →</button>
+        <button type="button" class="dlg-cancel" onclick="closeProjectSubmitDialog()">キャンセル</button>
+        <button type="button" class="dlg-ok" id="confirmSubmitBtn">申請する</button>
       </div>
     </div>
   </div>
@@ -417,9 +420,9 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   {% set footer_info_text = "" %}
   {% set footer_info_value = "" %}
   {% set footer_actions %}
-    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済</span>
-    <button type="button" class="project-new-footer-draft-save" onclick="saveProjectNewMockDraft()">下書き保存</button>
-    <button type="button" class="project-new-footer-submit" onclick="submitProjectNewMockForm()">この内容で申請する</button>
+    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済み</span>
+    <button type="button" class="project-new-footer-draft-save" id="draftSaveBtn">下書き保存</button>
+    <button type="button" class="project-new-footer-submit" id="submitOpenBtn" {% if not departments %}disabled{% endif %}>この内容で申請する</button>
   {% endset %}
   {% include "partials/_content_footer.html" %}
 {% endblock %}
@@ -428,16 +431,14 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 <script>
 function getProjectEl(id) { return document.getElementById(id); }
 function escapeProjectMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
-
-/* 将来は project_drafts から取得 */
-let projectDrafts = [
-  { id: 1, name: "BI分析基盤整備（可視化ダッシュボード構築）", dept: "dept1", desc: "Excelベースの集計作業をBI基盤で自動化し、全社KPIをリアルタイムで可視化する。月次レポート作成工数を80%削減することを目標とする。DWH設計・ETLパイプライン・BIツール選定・ユーザートレーニングを含む。", amount: 8000000, manmonth: 16, startDate: "2025-07-01", endDate: "2026-02-28", savedAt: "2025/05/10 14:30" },
-  { id: 2, name: "顧客管理システム刷新（CRM移行）", dept: "dept1", desc: "旧オンプレCRMをSaaS型に移行し、モバイル対応・API連携を実現する。営業チームの入力作業を50%削減し、顧客対応品質を向上させる。データ移行・SSO設定・カスタマイズ開発を含む。", amount: 15000000, manmonth: 20, startDate: "2025-08-01", endDate: "2026-03-31", savedAt: "2025/05/12 09:15" },
-  { id: 3, name: "ログ監視基盤 構築（セキュリティ強化）", dept: "dept3", desc: "各サーバーのログを集約・分析するSIEM基盤を構築し、セキュリティインシデントの早期検知を実現する。コンプライアンス要件への対応も含む。", amount: 4500000, manmonth: 9, startDate: "2025-09-01", endDate: "2026-01-31", savedAt: "2025/05/14 16:48" }
-];
+let projectDrafts = {{ drafts_json|tojson }};
 let pendingApplyId = null;
 
-function projectDeptLabel(v) { return { dept1: "第一開発部", dept2: "第二開発部", dept3: "第三開発部" }[v] || v; }
+function projectDeptLabel(v) {
+  const dept = String(v || "");
+  const found = document.querySelector("#dept option[value=\"" + dept + "\"]");
+  return found ? found.textContent : "";
+}
 
 function openProjectDraftDrawer() {
   renderProjectDraftList(projectDrafts);
@@ -458,18 +459,20 @@ function renderProjectDraftList(list) {
   const draftCountBadge = getProjectEl("draftCountBadge");
   const draftBadge = getProjectEl("draftBadge");
   if (list.length === 0) {
-    el.innerHTML = "<div class=\"drawer-empty\"><div class=\"drawer-empty-text\">一致する下書きが見つかりません</div></div>";
+    el.innerHTML = "<div class=\"drawer-empty\"><div class=\"drawer-empty-text\">保存した下書きはまだありません</div><div class=\"drawer-empty-text\">入力途中の内容を下書き保存すると、ここから再開できます。</div></div>";
     if (draftCountBadge) draftCountBadge.textContent = projectDrafts.length + "件";
     if (draftBadge) draftBadge.textContent = String(projectDrafts.length);
     return;
   }
   el.innerHTML = list.map(function(d) {
-    const name = escapeProjectMockHtml(d.name);
-    const dept = escapeProjectMockHtml(projectDeptLabel(d.dept));
-    const desc = escapeProjectMockHtml(d.desc);
-    const savedAt = escapeProjectMockHtml(d.savedAt);
-    const budget = "¥" + (d.amount / 10000).toFixed(0) + "万 / " + d.manmonth + "人月";
-    const preview = d.desc.length > 120 ? d.desc.slice(0, 120) + "…" : d.desc;
+    const name = escapeProjectMockHtml(d.title || "（無題）");
+    const dept = escapeProjectMockHtml(d.department_name || "");
+    const desc = escapeProjectMockHtml(d.purpose || "");
+    const savedAt = escapeProjectMockHtml(d.updated_at_display || "");
+    const budgetPart = d.estimated_budget_amount != null ? ("¥" + Number(d.estimated_budget_amount).toLocaleString()) : "金額未入力";
+    const mmPart = d.estimated_person_months != null ? (d.estimated_person_months + "人月") : "工数未入力";
+    const budget = budgetPart + " / " + mmPart;
+    const preview = (d.purpose_preview || "");
     return "<div class=\"draft-card\" data-id=\"" + d.id + "\">"
       + "<div class=\"dc-header\"><div class=\"dc-name\">" + name + "</div><div class=\"dc-date\">保存：" + savedAt + "</div></div>"
       + "<div class=\"dc-meta\"><span class=\"dc-chip\">" + dept + "</span><span class=\"dc-chip dc-budget-chip\">" + escapeProjectMockHtml(budget) + "</span></div>"
@@ -484,15 +487,35 @@ function renderProjectDraftList(list) {
 function filterProjectDrafts(q) {
   const kw = (q || "").trim().toLowerCase();
   if (!kw) { renderProjectDraftList(projectDrafts); return; }
-  renderProjectDraftList(projectDrafts.filter(function(d) {
-    return d.name.toLowerCase().includes(kw) || d.desc.toLowerCase().includes(kw) || projectDeptLabel(d.dept).toLowerCase().includes(kw);
-  }));
+  const filtered = projectDrafts.filter(function(d) {
+    const title = String(d.title || "").toLowerCase();
+    const purpose = String(d.purpose || "").toLowerCase();
+    const department = String(d.department_name || "").toLowerCase();
+    return title.includes(kw) || purpose.includes(kw) || department.includes(kw);
+  });
+  if (filtered.length === 0) {
+    const el = getProjectEl("draftList");
+    if (el) {
+      el.innerHTML = "<div class=\"drawer-empty\"><div class=\"drawer-empty-text\">一致する下書きがありません</div><div class=\"drawer-empty-text\">検索条件を変更すると見つかる場合があります。</div></div>";
+    }
+    return;
+  }
+  renderProjectDraftList(filtered);
 }
 function deleteProjectDraft(e, id) {
   e.stopPropagation();
-  projectDrafts = projectDrafts.filter(function(d) { return d.id !== id; });
-  renderProjectDraftList(projectDrafts);
-  showProjectNewToast("下書きを削除しました");
+  fetch("/applicant/project-drafts/" + id + "/delete", {
+    method: "POST",
+    headers: { "X-CSRFToken": getCsrfToken() }
+  }).then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (!data.ok) { showProjectNewToast(data.message || "下書き削除に失敗しました。"); return; }
+    projectDrafts = data.drafts || [];
+    renderProjectDraftList(projectDrafts);
+    showProjectNewToast(data.message || "下書きを削除しました");
+  }).catch(function() {
+    showProjectNewToast("下書き削除に失敗しました。");
+  });
 }
 function applyProjectDraft(e, id) {
   e.stopPropagation();
@@ -518,20 +541,22 @@ function doProjectDraftApply(id) {
   const prefillBannerText = getProjectEl("prefillBannerText");
   const prefillBanner = getProjectEl("prefillBanner");
   if (!dept || !budgetAmount || !manmonth || !startDate || !endDate || !mwAmount || !mwMm || !prefillBannerText || !prefillBanner) return;
-  setProjectField("projName", d.name, "nameCC", 60);
-  setProjectField("projDesc", d.desc, "descCC", 500);
-  dept.value = d.dept;
-  budgetAmount.value = d.amount;
-  manmonth.value = d.manmonth;
-  startDate.value = d.startDate;
-  endDate.value = d.endDate;
+  setProjectField("projName", d.title || "", "nameCC", 60);
+  setProjectField("projDesc", d.purpose || "", "descCC", 500);
+  dept.value = d.department_id ? String(d.department_id) : "";
+  budgetAmount.value = d.estimated_budget_amount != null ? String(d.estimated_budget_amount) : "";
+  manmonth.value = d.estimated_person_months != null ? String(d.estimated_person_months) : "";
+  startDate.value = d.planned_start_date || "";
+  endDate.value = d.planned_end_date || "";
+  const draftIdField = getProjectEl("draftIdField");
+  if (draftIdField) draftIdField.value = String(d.id);
   ["projName", "projDesc", "dept"].forEach(function(id2) {
     const target = getProjectEl(id2);
     if (target) target.classList.add("prefilled");
   });
   mwAmount.classList.add("prefilled");
   mwMm.classList.add("prefilled");
-  prefillBannerText.textContent = "「" + d.name + "」の下書きをフォームに反映しました。修正してそのまま申請できます。";
+  prefillBannerText.textContent = "「" + (d.title || "（無題）") + "」の下書きをフォームに反映しました。修正してそのまま申請できます。";
   prefillBanner.classList.add("show");
   updateProjectProgress();
   closeProjectDraftDrawer();
@@ -563,6 +588,10 @@ function clearProjectPrefill() {
   if (mwMm) mwMm.classList.remove("prefilled");
   const prefillBanner = getProjectEl("prefillBanner");
   if (prefillBanner) prefillBanner.classList.remove("show");
+  const draftIdField = getProjectEl("draftIdField");
+  if (draftIdField) draftIdField.value = "";
+  const confirmed = getProjectEl("confirmed");
+  if (confirmed) confirmed.value = "0";
   updateProjectProgress();
   updateProjectCC(getProjectEl("projName"), "nameCC", 60);
   updateProjectCC(getProjectEl("projDesc"), "descCC", 500);
@@ -578,24 +607,32 @@ function saveProjectNewMockDraft() {
   const startDate = getProjectEl("startDate");
   const endDate = getProjectEl("endDate");
   if (!projName || !dept || !projDesc || !budgetAmount || !manmonth || !startDate || !endDate) return;
-  const name = projName.value.trim();
-  const label = name || "（無題）";
-  const now = new Date();
-  const ts = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
-  projectDrafts.unshift({
-    id: Date.now(),
-    name: name || "（無題の下書き）",
-    dept: dept.value,
-    desc: projDesc.value,
-    amount: parseInt(budgetAmount.value, 10) || 0,
-    manmonth: parseFloat(manmonth.value) || 0,
-    startDate: startDate.value,
-    endDate: endDate.value,
-    savedAt: "2025/05/16 " + ts
+  const payload = {
+    title: projName.value,
+    department_id: dept.value,
+    purpose: projDesc.value,
+    estimated_budget_amount: budgetAmount.value,
+    estimated_person_months: manmonth.value,
+    planned_start_date: startDate.value,
+    planned_end_date: endDate.value
+  };
+  fetch("/applicant/project-drafts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCsrfToken()
+    },
+    body: JSON.stringify(payload)
+  }).then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (!data.ok) { showProjectNewToast(data.message || "下書き保存に失敗しました。"); return; }
+    projectDrafts = data.drafts || [];
+    renderProjectDraftList(projectDrafts);
+    clearProjectPrefill();
+    showProjectNewToast(data.message || "下書きを保存しました");
+  }).catch(function() {
+    showProjectNewToast("下書き保存に失敗しました。");
   });
-  const draftBadge = getProjectEl("draftBadge");
-  if (draftBadge) draftBadge.textContent = projectDrafts.length;
-  showProjectNewToast("「" + label + "」を下書きとして保存しました");
 }
 function updateProjectCC(el, id, max) {
   const c = getProjectEl(id);
@@ -663,20 +700,16 @@ function validateProjectNewMock() {
   return ok;
 }
 function submitProjectNewMockForm() {
-  const projName = getProjectEl("projName");
-  const dlgProjName = getProjectEl("dlgProjName");
-  const dlgReqNum = getProjectEl("dlgReqNum");
   const dialogOverlay = getProjectEl("dialogOverlay");
-  if (!projName || !dlgProjName || !dlgReqNum || !dialogOverlay) return;
+  if (!dialogOverlay) return;
+  const confirmed = getProjectEl("confirmed");
+  if (confirmed) confirmed.value = "0";
   if (!validateProjectNewMock()) {
     showProjectNewToast("必須項目を入力してください");
     const firstErr = document.querySelector(".f-input.error, .f-select.error, .f-textarea.error");
     if (firstErr) firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  const name = projName.value.trim();
-  dlgProjName.textContent = name;
-  dlgReqNum.textContent = "REQ-2025-" + String(Math.floor(Math.random() * 900 + 100)).padStart(5, "0");
   dialogOverlay.classList.add("open");
 }
 function closeProjectSubmitDialog() {
@@ -691,10 +724,40 @@ function showProjectNewToast(msg) {
   t.classList.add("show");
   setTimeout(function() { t.classList.remove("show"); }, 2500);
 }
+function getCsrfToken() {
+  const el = document.querySelector("input[name='csrf_token']");
+  return el ? el.value : "";
+}
+function submitConfirmedProjectForm() {
+  const form = getProjectEl("projectNewForm");
+  const confirmed = getProjectEl("confirmed");
+  const submitBtn = getProjectEl("submitOpenBtn");
+  const confirmSubmitBtn = getProjectEl("confirmSubmitBtn");
+  if (!form || !confirmed) return;
+  confirmed.value = "1";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "申請中...";
+  }
+  if (confirmSubmitBtn) confirmSubmitBtn.disabled = true;
+  form.submit();
+}
 
 (function initProjectNewPage() {
   const openBtn = document.querySelector("[data-draft-drawer-open]");
   if (openBtn) openBtn.addEventListener("click", openProjectDraftDrawer);
+  const draftSaveBtn = getProjectEl("draftSaveBtn");
+  if (draftSaveBtn) draftSaveBtn.addEventListener("click", saveProjectNewMockDraft);
+  const submitOpenBtn = getProjectEl("submitOpenBtn");
+  if (submitOpenBtn) submitOpenBtn.addEventListener("click", submitProjectNewMockForm);
+  const confirmSubmitBtn = getProjectEl("confirmSubmitBtn");
+  if (confirmSubmitBtn) confirmSubmitBtn.addEventListener("click", submitConfirmedProjectForm);
+  const form = getProjectEl("projectNewForm");
+  if (form) {
+    form.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && e.target && e.target.tagName !== "TEXTAREA") e.preventDefault();
+    });
+  }
   updateProjectProgress();
   renderProjectDraftList(projectDrafts);
 })();

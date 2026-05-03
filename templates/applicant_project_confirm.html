@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% set page_role = "applicant" %}
+{% set active_menu = "applicant_confirm" %}
+{% set header_title = "申請内容確認" %}
+{% set header_meta = "申請者メニュー" %}
+
+{% block title %}申請内容確認{% endblock %}
+
+{% block content %}
+{% include "partials/_flash.html" %}
+<section class="card">
+    <h1 class="card-title">申請内容確認</h1>
+    <dl class="detail-list">
+        <div><dt>案件番号</dt><dd>{{ project.project_code }}</dd></div>
+        <div><dt>案件名</dt><dd>{{ project.title }}</dd></div>
+        <div><dt>現在ステータス</dt><dd>{{ project.status }}</dd></div>
+    </dl>
+</section>
+{% endblock %}
