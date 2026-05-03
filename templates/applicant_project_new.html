@@ -3,7 +3,7 @@
 {% set page_role = "applicant" %}
 {% set active_nav = "applicant_new" %}
 {% set header_title = "新規案件申請" %}
-{% set header_meta = "申請者メニュー" %}
+{% set header_meta = "新しい開発案件の内容を入力し、承認申請を行います" %}
 {% set content_footer_enabled = true %}
 {% set content_width_class = "app-content-wide" %}
 
@@ -237,6 +237,9 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 .project-new-footer-submit {
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #4ba8b4; background: #68bcc7;
   color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+@media (min-width: 601px) {
+  .mock-project-new { margin-top: -16px; }
 }
 @media (max-width: 1024px) {
   .mock-project-new .page-layout { grid-template-columns: 1fr; }
