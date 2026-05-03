@@ -163,11 +163,6 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 .mock-project-new .field-error.show { display: block; }
 .mock-project-new .voice-row { display: flex; gap: 8px; align-items: flex-start; }
 .mock-project-new .voice-row .f-textarea { flex: 1; }
-.mock-project-new .voice-btn {
-  width: 44px; height: 44px; border: 1.5px solid var(--project-new-border); border-radius: 9px; background: #fff; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
-}
-.mock-project-new .voice-btn.recording { background: var(--project-new-danger-bg); border-color: var(--project-new-danger); }
 .mock-project-new .budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .mock-project-new .money-wrap {
   display: flex; align-items: center; border: 1.5px solid var(--project-new-border); border-radius: 9px;
@@ -190,25 +185,6 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 .mock-project-new .bn-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 .mock-project-new .bn-text { font-size: 12px; color: #92400e; line-height: 1.7; }
 .mock-project-new .bn-text strong { font-weight: 700; }
-.mock-project-new .attach-drop {
-  border: 2px dashed var(--project-new-teal-mid); border-radius: 10px; background: var(--project-new-teal-light);
-  padding: 24px 20px; text-align: center; cursor: pointer; transition: all .15s;
-}
-.mock-project-new .attach-drop.dragover { background: #caeef4; border-color: var(--project-new-header); transform: scale(1.01); }
-.mock-project-new .ad-text { font-size: 13px; font-weight: 700; color: var(--project-new-header); }
-.mock-project-new .ad-sub { font-size: 11px; color: var(--project-new-muted); margin-top: 4px; }
-.mock-project-new .attach-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.mock-project-new .attach-btn {
-  border: 1px solid var(--project-new-border); background: #fff; color: var(--project-new-text); border-radius: 8px;
-  font-size: 12px; font-weight: 700; padding: 6px 10px; cursor: pointer;
-}
-.mock-project-new .file-list { margin-top: 10px; display: grid; gap: 8px; }
-.mock-project-new .file-item {
-  border: 1px solid var(--project-new-border); border-radius: 8px; padding: 8px 10px; background: #fff;
-  display: flex; align-items: center; gap: 8px;
-}
-.mock-project-new .file-name { flex: 1; font-size: 12px; color: var(--project-new-text); }
-.mock-project-new .file-remove { font-size: 12px; color: var(--project-new-danger); cursor: pointer; }
 .mock-project-new .side-col { display: grid; align-content: start; gap: 14px; }
 .mock-project-new .progress-card, .mock-project-new .tips-card {
   background: var(--project-new-card); border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius);
@@ -333,7 +309,6 @@ body.is-project-draft-drawer-open { overflow: hidden; }
           <div class="field-hint">なぜ必要か・何を達成するかを記載。承認者が判断しやすいよう、背景と効果を具体的に書いてください。</div>
           <div class="voice-row">
             <textarea class="f-textarea" id="projDesc" maxlength="500" rows="6" placeholder="例：旧システムの保守期限切れに伴い、顧客管理業務の継続性と効率化を目的としてクラウド型CRMへ移行する。" oninput="updateProjectCC(this,'descCC',500);updateProjectProgress()"></textarea>
-            <button type="button" class="voice-btn" id="voiceBtn" onclick="toggleProjectVoiceInput()">音声</button>
           </div>
           <div class="char-counter" id="descCC">0 / 500 文字</div>
           <div class="field-error" id="descErr">目的・概要は5文字以上で入力してください。</div>
@@ -352,16 +327,11 @@ body.is-project-draft-drawer-open { overflow: hidden; }
             <div class="field-error" id="amtErr">金額（予算）を入力してください。</div>
           </div>
           <div class="field">
-            <div class="field-label">工数 <span class="req-badge">必須</span></div>
+            <div class="field-label">工数（人月） <span class="req-badge">必須</span></div>
             <div style="display:flex; gap:8px;">
               <div class="money-wrap" style="flex:1;" id="mwMm">
                 <input type="number" class="money-input" id="manmonth" placeholder="例：24" inputmode="numeric" min="0" style="padding-left:12px;" oninput="updateProjectProgress()">
               </div>
-              <select class="f-select" id="mmUnit" style="width:86px;flex-shrink:0;">
-                <option value="人月" selected>人月</option>
-                <option value="時間">時間</option>
-                <option value="人日">人日</option>
-              </select>
             </div>
           </div>
           <div class="field">
@@ -379,19 +349,6 @@ body.is-project-draft-drawer-open { overflow: hidden; }
         </div>
       </div>
 
-      <div class="fc-section">
-        <div class="fc-sec-title"><div class="fc-num">3</div> 添付資料・エビデンス <span class="opt-badge">任意</span></div>
-        <div class="attach-drop" id="dropZone" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleProjectFileDrop(event)">
-          <div class="ad-text">ファイルをドラッグ＆ドロップ</div>
-          <div class="ad-sub">PDF・Word・Excel・画像（最大10MB）</div>
-        </div>
-        <div class="attach-btns">
-          <button type="button" class="attach-btn" onclick="simulateProjectAttach('見積書.pdf')">ファイルを選択</button>
-          <button type="button" class="attach-btn" onclick="simulateProjectAttach('現場写真.jpg')">カメラ撮影</button>
-        </div>
-        <div class="file-list" id="fileList"></div>
-        {# 将来は Flask 側で添付処理 #}
-      </div>
     </div>
 
     <div class="side-col">
@@ -414,7 +371,6 @@ body.is-project-draft-drawer-open { overflow: hidden; }
           <div class="tip-item"><div class="tip-num">1</div><div class="tip-text"><strong>案件名は具体的に</strong>。「システム改修」より「顧客管理システム刷新（クラウド移行）」のように範囲を明確に。</div></div>
           <div class="tip-item"><div class="tip-num">2</div><div class="tip-text"><strong>目的欄はなぜ必要か</strong>を中心に。承認者が判断するための最重要情報です。</div></div>
           <div class="tip-item"><div class="tip-num">3</div><div class="tip-text"><strong>予算は多めに見積もる</strong>のが鉄則。承認後の超過申請は手続きが増えます。</div></div>
-          <div class="tip-item"><div class="tip-num">4</div><div class="tip-text"><strong>見積書を添付</strong>すると承認率が上がります。</div></div>
         </div>
       </div>
     </div>
@@ -458,7 +414,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   {% set footer_info_text = "" %}
   {% set footer_info_value = "" %}
   {% set footer_actions %}
-    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済み</span>
+    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済</span>
     <button type="button" class="project-new-footer-draft-save" onclick="saveProjectNewMockDraft()">下書き保存</button>
     <button type="button" class="project-new-footer-submit" onclick="submitProjectNewMockForm()">この内容で申請する</button>
   {% endset %}
@@ -472,12 +428,11 @@ function escapeProjectMockHtml(value) { return String(value).replace(/&/g, "&amp
 
 /* 将来は project_drafts から取得 */
 let projectDrafts = [
-  { id: 1, name: "BI分析基盤整備（可視化ダッシュボード構築）", dept: "dept1", desc: "Excelベースの集計作業をBI基盤で自動化し、全社KPIをリアルタイムで可視化する。月次レポート作成工数を80%削減することを目標とする。DWH設計・ETLパイプライン・BIツール選定・ユーザートレーニングを含む。", amount: 8000000, manmonth: 16, mmUnit: "人月", startDate: "2025-07-01", endDate: "2026-02-28", savedAt: "2025/05/10 14:30" },
-  { id: 2, name: "顧客管理システム刷新（CRM移行）", dept: "dept1", desc: "旧オンプレCRMをSaaS型に移行し、モバイル対応・API連携を実現する。営業チームの入力作業を50%削減し、顧客対応品質を向上させる。データ移行・SSO設定・カスタマイズ開発を含む。", amount: 15000000, manmonth: 20, mmUnit: "人月", startDate: "2025-08-01", endDate: "2026-03-31", savedAt: "2025/05/12 09:15" },
-  { id: 3, name: "ログ監視基盤 構築（セキュリティ強化）", dept: "dept3", desc: "各サーバーのログを集約・分析するSIEM基盤を構築し、セキュリティインシデントの早期検知を実現する。コンプライアンス要件への対応も含む。", amount: 4500000, manmonth: 9, mmUnit: "人月", startDate: "2025-09-01", endDate: "2026-01-31", savedAt: "2025/05/14 16:48" }
+  { id: 1, name: "BI分析基盤整備（可視化ダッシュボード構築）", dept: "dept1", desc: "Excelベースの集計作業をBI基盤で自動化し、全社KPIをリアルタイムで可視化する。月次レポート作成工数を80%削減することを目標とする。DWH設計・ETLパイプライン・BIツール選定・ユーザートレーニングを含む。", amount: 8000000, manmonth: 16, startDate: "2025-07-01", endDate: "2026-02-28", savedAt: "2025/05/10 14:30" },
+  { id: 2, name: "顧客管理システム刷新（CRM移行）", dept: "dept1", desc: "旧オンプレCRMをSaaS型に移行し、モバイル対応・API連携を実現する。営業チームの入力作業を50%削減し、顧客対応品質を向上させる。データ移行・SSO設定・カスタマイズ開発を含む。", amount: 15000000, manmonth: 20, startDate: "2025-08-01", endDate: "2026-03-31", savedAt: "2025/05/12 09:15" },
+  { id: 3, name: "ログ監視基盤 構築（セキュリティ強化）", dept: "dept3", desc: "各サーバーのログを集約・分析するSIEM基盤を構築し、セキュリティインシデントの早期検知を実現する。コンプライアンス要件への対応も含む。", amount: 4500000, manmonth: 9, startDate: "2025-09-01", endDate: "2026-01-31", savedAt: "2025/05/14 16:48" }
 ];
 let pendingApplyId = null;
-const attachedFiles = [];
 
 function projectDeptLabel(v) { return { dept1: "第一開発部", dept2: "第二開発部", dept3: "第三開発部" }[v] || v; }
 
@@ -510,7 +465,7 @@ function renderProjectDraftList(list) {
     const dept = escapeProjectMockHtml(projectDeptLabel(d.dept));
     const desc = escapeProjectMockHtml(d.desc);
     const savedAt = escapeProjectMockHtml(d.savedAt);
-    const budget = "¥" + (d.amount / 10000).toFixed(0) + "万 / " + d.manmonth + d.mmUnit;
+    const budget = "¥" + (d.amount / 10000).toFixed(0) + "万 / " + d.manmonth + "人月";
     const preview = d.desc.length > 120 ? d.desc.slice(0, 120) + "…" : d.desc;
     return "<div class=\"draft-card\" data-id=\"" + d.id + "\">"
       + "<div class=\"dc-header\"><div class=\"dc-name\">" + name + "</div><div class=\"dc-date\">保存：" + savedAt + "</div></div>"
@@ -553,20 +508,18 @@ function doProjectDraftApply(id) {
   const dept = getProjectEl("dept");
   const budgetAmount = getProjectEl("budgetAmount");
   const manmonth = getProjectEl("manmonth");
-  const mmUnit = getProjectEl("mmUnit");
   const startDate = getProjectEl("startDate");
   const endDate = getProjectEl("endDate");
   const mwAmount = getProjectEl("mwAmount");
   const mwMm = getProjectEl("mwMm");
   const prefillBannerText = getProjectEl("prefillBannerText");
   const prefillBanner = getProjectEl("prefillBanner");
-  if (!dept || !budgetAmount || !manmonth || !mmUnit || !startDate || !endDate || !mwAmount || !mwMm || !prefillBannerText || !prefillBanner) return;
+  if (!dept || !budgetAmount || !manmonth || !startDate || !endDate || !mwAmount || !mwMm || !prefillBannerText || !prefillBanner) return;
   setProjectField("projName", d.name, "nameCC", 60);
   setProjectField("projDesc", d.desc, "descCC", 500);
   dept.value = d.dept;
   budgetAmount.value = d.amount;
   manmonth.value = d.manmonth;
-  mmUnit.value = d.mmUnit;
   startDate.value = d.startDate;
   endDate.value = d.endDate;
   ["projName", "projDesc", "dept"].forEach(function(id2) {
@@ -619,10 +572,9 @@ function saveProjectNewMockDraft() {
   const projDesc = getProjectEl("projDesc");
   const budgetAmount = getProjectEl("budgetAmount");
   const manmonth = getProjectEl("manmonth");
-  const mmUnit = getProjectEl("mmUnit");
   const startDate = getProjectEl("startDate");
   const endDate = getProjectEl("endDate");
-  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth || !mmUnit || !startDate || !endDate) return;
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth || !startDate || !endDate) return;
   const name = projName.value.trim();
   const label = name || "（無題）";
   const now = new Date();
@@ -634,7 +586,6 @@ function saveProjectNewMockDraft() {
     desc: projDesc.value,
     amount: parseInt(budgetAmount.value, 10) || 0,
     manmonth: parseFloat(manmonth.value) || 0,
-    mmUnit: mmUnit.value,
     startDate: startDate.value,
     endDate: endDate.value,
     savedAt: "2025/05/16 " + ts
@@ -684,55 +635,6 @@ function updateProjectProgress() {
   if (progressPct) progressPct.textContent = pct + "%";
   const footerPct = getProjectEl("footerPct");
   if (footerPct) footerPct.textContent = pct + "％";
-}
-function toggleProjectVoiceInput() {
-  const btn = getProjectEl("voiceBtn");
-  const ta = getProjectEl("projDesc");
-  if (!btn || !ta) return;
-  if (btn.classList.contains("recording")) {
-    btn.classList.remove("recording");
-    btn.textContent = "音声";
-    showProjectNewToast("音声入力を終了しました");
-  } else {
-    btn.classList.add("recording");
-    btn.textContent = "停止";
-    showProjectNewToast("録音中… もう一度タップで終了");
-    setTimeout(function() {
-      const ta2 = getProjectEl("projDesc");
-      if (!ta2) return;
-      ta2.value += (ta2.value ? "\n" : "") + "（音声入力）老朽化システムを刷新し業務効率化を図ります。";
-      btn.classList.remove("recording");
-      btn.textContent = "音声";
-      updateProjectProgress();
-      updateProjectCC(ta2, "descCC", 500);
-    }, 3000);
-  }
-}
-function simulateProjectAttach(name) { addProjectFile(name); }
-function handleProjectFileDrop(e) {
-  e.preventDefault();
-  getProjectEl("dropZone").classList.remove("dragover");
-  if (e.dataTransfer && e.dataTransfer.files.length) addProjectFile(e.dataTransfer.files[0].name);
-}
-function addProjectFile(name) {
-  if (attachedFiles.includes(name)) { showProjectNewToast("同じファイルが既に追加されています"); return; }
-  attachedFiles.push(name);
-  renderProjectFileList();
-  showProjectNewToast(name + " を添付しました");
-}
-function removeProjectFile(name) {
-  const i = attachedFiles.indexOf(name);
-  if (i >= 0) attachedFiles.splice(i, 1);
-  renderProjectFileList();
-}
-function renderProjectFileList() {
-  const fileList = getProjectEl("fileList");
-  if (!fileList) return;
-  fileList.innerHTML = attachedFiles.map(function(n) {
-    const safe = escapeProjectMockHtml(n);
-    const param = JSON.stringify(String(n));
-    return "<div class=\"file-item\"><span class=\"file-name\">" + safe + "</span><span class=\"file-remove\" onclick='removeProjectFile(" + param + ")' title=\"削除\">削除</span></div>";
-  }).join("");
 }
 function validateProjectNewMock() {
   const projName = getProjectEl("projName");
