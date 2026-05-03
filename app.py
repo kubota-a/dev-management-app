@@ -108,6 +108,14 @@ def applicant_top():
 
 
 # =============================
+# ■ ■ 申請者：新規案件申請画面
+# =============================
+@app.route("/applicant/projects/new")
+def applicant_project_new():
+    return render_template("applicant_project_new.html")
+
+
+# =============================
 # ■ 部門管理者：トップ画面
 # =============================
 @app.route("/top/manager")

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/static/css/layout.css">
     <link rel="stylesheet" href="/static/css/themes.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+    {% block head_extra %}{% endblock %}
 </head>
 <body>
     <div class="app-shell">
@@ -36,5 +37,6 @@
     {% include "partials/_toast.html" %}
 
     <script src="/static/js/app.js"></script>
+    {% block script_extra %}{% endblock %}
 </body>
 </html>

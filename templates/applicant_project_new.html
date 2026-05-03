@@ -1,0 +1,797 @@
+{% extends "base.html" %}
+
+{% set page_role = "applicant" %}
+{% set active_nav = "applicant_new" %}
+{% set header_title = "新規案件申請" %}
+{% set header_meta = "申請者メニュー" %}
+{% set content_footer_enabled = true %}
+{% set content_width_class = "app-content-wide" %}
+
+{% block page_title %}新規案件申請{% endblock %}
+
+{% block head_extra %}
+<style>
+body.is-project-draft-drawer-open { overflow: hidden; }
+
+.mock-project-new {
+  --project-new-header: #1a7585;
+  --project-new-header-dark: #155f6d;
+  --project-new-teal-light: #e0f5f8;
+  --project-new-teal-mid: #a8dfe6;
+  --project-new-bg: #f2f6f8;
+  --project-new-card: #ffffff;
+  --project-new-border: #d8e8ec;
+  --project-new-text: #1c2b30;
+  --project-new-muted: #6b8c94;
+  --project-new-danger: #dc3545;
+  --project-new-danger-bg: #fff0f0;
+  --project-new-danger-mid: #fecaca;
+  --project-new-warning: #d97706;
+  --project-new-warning-bg: #fff8ec;
+  --project-new-success: #0d9469;
+  --project-new-success-bg: #edfaf4;
+  --project-new-success-mid: #a7f3d0;
+  --project-new-radius: 12px;
+  --project-new-shadow: 0 2px 12px rgba(26, 117, 133, .10);
+  --project-new-shadow-card: 0 4px 20px rgba(26, 117, 133, .09);
+  font-family: var(--font-family-base);
+  color: var(--project-new-text);
+}
+.mock-project-new .mock-page-action-row { margin-bottom: 14px; display: flex; justify-content: flex-end; }
+.mock-project-new .project-new-draft-open-btn {
+  display: inline-flex; align-items: center; gap: 7px; background: #6fc1cc; color: #fff;
+  border: 1.5px solid rgba(255,255,255,.4); padding: 7px 16px; border-radius: 9px;
+  font-size: 13px; font-weight: 700; cursor: pointer; position: relative;
+}
+.mock-project-new .project-new-draft-badge {
+  position: absolute; top: -6px; right: -6px; background: #fbbf24; color: #1c2b30;
+  font-size: 9px; font-weight: 900; min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; border: 2px solid #6fc1cc; padding: 0 3px;
+}
+.mock-project-new .drawer-overlay {
+  position: fixed; inset: 0; background: rgba(28,43,48,.38); z-index: 200; opacity: 0;
+  pointer-events: none; transition: opacity .28s ease; backdrop-filter: blur(2px);
+}
+.mock-project-new .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.mock-project-new .drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: var(--project-new-card);
+  box-shadow: -6px 0 36px rgba(26,117,133,.18); z-index: 210; transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column;
+}
+.mock-project-new .drawer.open { transform: translateX(0); }
+.mock-project-new .drawer-handle { display: none; justify-content: center; padding: 10px 0 4px; }
+.mock-project-new .drawer-handle-bar { width: 36px; height: 4px; background: var(--project-new-border); border-radius: 2px; }
+.mock-project-new .drawer-header {
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--project-new-border); display: flex;
+  align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.mock-project-new .drawer-title { font-size: 16px; font-weight: 800; color: var(--project-new-text); display: flex; align-items: center; gap: 8px; }
+.mock-project-new .drawer-close {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--project-new-border); background: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--project-new-muted);
+}
+.mock-project-new .drawer-search-wrap { padding: 12px 22px; border-bottom: 1px solid var(--project-new-border); flex-shrink: 0; }
+.mock-project-new .drawer-search {
+  width: 100%; height: 38px; border: 1.5px solid var(--project-new-border); border-radius: 8px; padding: 0 12px 0 36px;
+  font-size: 13px; color: var(--project-new-text); outline: none; background: var(--project-new-bg); transition: border-color .15s;
+  background-repeat: no-repeat; background-position: 12px center;
+}
+.mock-project-new .drawer-list { flex: 1; overflow-y: auto; padding: 10px 12px 12px; }
+.mock-project-new .drawer-empty { text-align: center; padding: 40px 20px; color: var(--project-new-muted); }
+.mock-project-new .drawer-empty-text { font-size: 13px; }
+.mock-project-new .draft-card {
+  border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius);
+  margin-bottom: 10px; background: #fff; cursor: pointer; transition: all .18s; overflow: hidden; position: relative;
+}
+.mock-project-new .draft-card:hover { border-color: var(--project-new-teal-mid); box-shadow: 0 4px 16px rgba(26,117,133,.12); transform: translateY(-1px); }
+.mock-project-new .dc-header { padding: 12px 14px 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.mock-project-new .dc-name { font-size: 13px; font-weight: 700; color: var(--project-new-text); line-height: 1.4; flex: 1; }
+.mock-project-new .dc-date { font-size: 10px; color: var(--project-new-muted); white-space: nowrap; }
+.mock-project-new .dc-meta { padding: 0 14px 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+.mock-project-new .dc-chip {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: var(--project-new-teal-light);
+  color: var(--project-new-header); border: 1px solid var(--project-new-teal-mid);
+}
+.mock-project-new .dc-budget-chip { background: var(--project-new-bg); color: var(--project-new-muted); border-color: var(--project-new-border); }
+.mock-project-new .dc-preview-popup {
+  position: absolute; left: calc(100% + 10px); top: 0; width: 260px; background: var(--project-new-text); color: #fff;
+  border-radius: 10px; padding: 12px 14px; font-size: 12px; line-height: 1.7; box-shadow: 0 8px 28px rgba(28,43,48,.28);
+  z-index: 300; opacity: 0; pointer-events: none; transform: translateX(-6px); transition: opacity .18s ease, transform .18s ease;
+}
+.mock-project-new .draft-card:hover .dc-preview-popup { opacity: 1; pointer-events: auto; transform: translateX(0); }
+.mock-project-new .popup-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 4px; }
+.mock-project-new .dc-footer {
+  padding: 8px 14px 12px; border-top: 1px solid var(--project-new-bg); display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.mock-project-new .dc-desc-preview { font-size: 11px; color: var(--project-new-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.mock-project-new .dc-apply-btn {
+  padding: 5px 14px; background: var(--project-new-header); color: #fff; border: none; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.mock-project-new .dc-delete-btn {
+  padding: 5px 10px; background: transparent; color: var(--project-new-muted); border: 1px solid var(--project-new-border);
+  border-radius: 7px; font-size: 12px; cursor: pointer;
+}
+.mock-project-new .prefill-banner {
+  display: none; align-items: center; gap: 10px; background: var(--project-new-teal-light); border: 1px solid var(--project-new-teal-mid);
+  border-radius: 10px; padding: 11px 16px; margin-bottom: 18px;
+}
+.mock-project-new .prefill-banner.show { display: flex; }
+.mock-project-new .pb-text { font-size: 13px; color: var(--project-new-header); font-weight: 600; flex: 1; }
+.mock-project-new .pb-clear {
+  font-size: 12px; color: var(--project-new-muted); cursor: pointer; font-weight: 600; padding: 4px 10px;
+  border: 1px solid var(--project-new-border); border-radius: 6px; background: #fff;
+}
+.mock-project-new .page-layout { display: grid; grid-template-columns: 1fr 280px; gap: 22px; }
+.mock-project-new .form-card { background: var(--project-new-card); border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius); box-shadow: var(--project-new-shadow-card); overflow: hidden; }
+.mock-project-new .fc-section { padding: 24px 26px; border-bottom: 1px solid var(--project-new-bg); }
+.mock-project-new .fc-section:last-child { border-bottom: none; }
+.mock-project-new .fc-sec-title {
+  font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--project-new-header); display: flex; align-items: center; gap: 8px;
+  margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--project-new-teal-light);
+}
+.mock-project-new .fc-num {
+  width: 24px; height: 24px; background: var(--project-new-header); color: #fff; border-radius: 50%; font-size: 12px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+.mock-project-new .field { margin-bottom: 18px; }
+.mock-project-new .field:last-child { margin-bottom: 0; }
+.mock-project-new .field-label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; font-weight: 700; color: var(--project-new-text); margin-bottom: 7px; }
+.mock-project-new .req-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: #fef2f2; color: var(--project-new-danger); border: 1px solid var(--project-new-danger-mid); }
+.mock-project-new .opt-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--project-new-bg); color: var(--project-new-muted); border: 1px solid var(--project-new-border); }
+.mock-project-new .field-hint { font-size: 11px; color: var(--project-new-muted); margin-bottom: 7px; margin-top: -3px; line-height: 1.6; }
+.mock-project-new .f-input {
+  width: 100%; height: 44px; border: 1.5px solid var(--project-new-border); border-radius: 9px;
+  padding: 0 14px; font-size: 14px; color: var(--project-new-text); background: #fff; outline: none;
+}
+.mock-project-new .f-input::placeholder { color: #b0c8ce; }
+.mock-project-new .f-input.error { border-color: var(--project-new-danger); }
+.mock-project-new .f-input.prefilled { border-color: var(--project-new-teal-mid); background: #f7fdfe; }
+.mock-project-new .f-select {
+  width: 100%; height: 44px; border: 1.5px solid var(--project-new-border); border-radius: 9px; padding: 0 14px;
+  font-size: 14px; color: var(--project-new-text); background: #fff; appearance: none; outline: none; cursor: pointer;
+}
+.mock-project-new .f-select.prefilled { border-color: var(--project-new-teal-mid); background-color: #f7fdfe; }
+.mock-project-new .f-textarea {
+  width: 100%; min-height: 130px; border: 1.5px solid var(--project-new-border); border-radius: 9px; padding: 12px 14px;
+  font-size: 14px; color: var(--project-new-text); line-height: 1.8; background: #fff; resize: vertical; outline: none;
+}
+.mock-project-new .f-textarea::placeholder { color: #b0c8ce; }
+.mock-project-new .f-textarea.prefilled { border-color: var(--project-new-teal-mid); background: #f7fdfe; }
+.mock-project-new .char-counter { text-align: right; font-size: 11px; color: var(--project-new-muted); margin-top: 4px; }
+.mock-project-new .char-counter.warn { color: var(--project-new-warning); font-weight: 700; }
+.mock-project-new .field-error { margin-top: 6px; font-size: 11px; color: var(--project-new-danger); display: none; }
+.mock-project-new .field-error.show { display: block; }
+.mock-project-new .voice-row { display: flex; gap: 8px; align-items: flex-start; }
+.mock-project-new .voice-row .f-textarea { flex: 1; }
+.mock-project-new .voice-btn {
+  width: 44px; height: 44px; border: 1.5px solid var(--project-new-border); border-radius: 9px; background: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
+}
+.mock-project-new .voice-btn.recording { background: var(--project-new-danger-bg); border-color: var(--project-new-danger); }
+.mock-project-new .budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mock-project-new .money-wrap {
+  display: flex; align-items: center; border: 1.5px solid var(--project-new-border); border-radius: 9px;
+  overflow: hidden; background: #fff;
+}
+.mock-project-new .money-wrap.prefilled { border-color: var(--project-new-teal-mid); background: #f7fdfe; }
+.mock-project-new .money-prefix {
+  padding: 0 12px; font-size: 14px; font-weight: 700; color: var(--project-new-muted); background: var(--project-new-bg);
+  border-right: 1px solid var(--project-new-border); height: 44px; display: flex; align-items: center; flex-shrink: 0;
+}
+.mock-project-new .money-input {
+  flex: 1; border: none; outline: none; padding: 0 12px; font-size: 15px; font-weight: 700;
+  color: var(--project-new-text); background: transparent; height: 44px; min-width: 0;
+}
+.mock-project-new .money-input::placeholder { color: #b0c8ce; font-weight: 400; font-size: 13px; }
+.mock-project-new .budget-note {
+  margin-top: 14px; padding: 12px 16px; background: var(--project-new-warning-bg); border: 1px solid #fed7aa;
+  border-radius: 9px; display: flex; align-items: flex-start; gap: 8px;
+}
+.mock-project-new .bn-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.mock-project-new .bn-text { font-size: 12px; color: #92400e; line-height: 1.7; }
+.mock-project-new .bn-text strong { font-weight: 700; }
+.mock-project-new .attach-drop {
+  border: 2px dashed var(--project-new-teal-mid); border-radius: 10px; background: var(--project-new-teal-light);
+  padding: 24px 20px; text-align: center; cursor: pointer; transition: all .15s;
+}
+.mock-project-new .attach-drop.dragover { background: #caeef4; border-color: var(--project-new-header); transform: scale(1.01); }
+.mock-project-new .ad-text { font-size: 13px; font-weight: 700; color: var(--project-new-header); }
+.mock-project-new .ad-sub { font-size: 11px; color: var(--project-new-muted); margin-top: 4px; }
+.mock-project-new .attach-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.mock-project-new .attach-btn {
+  border: 1px solid var(--project-new-border); background: #fff; color: var(--project-new-text); border-radius: 8px;
+  font-size: 12px; font-weight: 700; padding: 6px 10px; cursor: pointer;
+}
+.mock-project-new .file-list { margin-top: 10px; display: grid; gap: 8px; }
+.mock-project-new .file-item {
+  border: 1px solid var(--project-new-border); border-radius: 8px; padding: 8px 10px; background: #fff;
+  display: flex; align-items: center; gap: 8px;
+}
+.mock-project-new .file-name { flex: 1; font-size: 12px; color: var(--project-new-text); }
+.mock-project-new .file-remove { font-size: 12px; color: var(--project-new-danger); cursor: pointer; }
+.mock-project-new .side-col { display: grid; align-content: start; gap: 14px; }
+.mock-project-new .progress-card, .mock-project-new .tips-card {
+  background: var(--project-new-card); border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius);
+  box-shadow: var(--project-new-shadow); padding: 14px;
+}
+.mock-project-new .pc-title, .mock-project-new .tips-title { font-size: 13px; font-weight: 800; color: var(--project-new-header); }
+.mock-project-new .pi-bar-track { margin-top: 10px; height: 8px; border-radius: 999px; background: var(--project-new-bg); overflow: hidden; }
+.mock-project-new .pi-bar-fill { height: 100%; width: 0; background: #68bcc7; }
+.mock-project-new .pi-pct { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--project-new-text); }
+.mock-project-new .pi-items { margin-top: 8px; display: grid; gap: 6px; }
+.mock-project-new .pi-item { font-size: 12px; color: var(--project-new-muted); display: flex; align-items: center; gap: 8px; }
+.mock-project-new .pi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--project-new-border); }
+.mock-project-new .pi-item.done { color: var(--project-new-success); font-weight: 700; }
+.mock-project-new .tips-head { margin-bottom: 10px; }
+.mock-project-new .tips-body { display: grid; gap: 8px; }
+.mock-project-new .tip-item { display: flex; gap: 8px; }
+.mock-project-new .tip-num {
+  width: 20px; height: 20px; border-radius: 50%; background: var(--project-new-teal-light);
+  color: var(--project-new-header); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;
+}
+.mock-project-new .tip-text { font-size: 12px; line-height: 1.7; color: var(--project-new-text); }
+.mock-project-new .dialog-overlay, .mock-project-new .overwrite-dialog {
+  position: fixed; inset: 0; background: rgba(28,43,48,.45); z-index: 220; display: none; align-items: center; justify-content: center; padding: 18px;
+}
+.mock-project-new .dialog-overlay.open, .mock-project-new .overwrite-dialog.open { display: flex; }
+.mock-project-new .dialog-box, .mock-project-new .ow-box {
+  background: #fff; border: 1px solid var(--project-new-border); border-radius: 12px; padding: 22px; width: min(480px, 100%);
+}
+.mock-project-new .dlg-big-icon, .mock-project-new .ow-icon { font-size: 18px; margin-bottom: 8px; color: var(--project-new-header); }
+.mock-project-new .dlg-title, .mock-project-new .ow-title { font-size: 18px; font-weight: 800; color: var(--project-new-text); margin-bottom: 8px; }
+.mock-project-new .dlg-body, .mock-project-new .ow-body { font-size: 13px; line-height: 1.8; color: var(--project-new-muted); }
+.mock-project-new .dlg-num { display: inline-block; margin-top: 8px; color: var(--project-new-header); font-weight: 700; }
+.mock-project-new .dlg-btns, .mock-project-new .ow-btns { margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px; }
+.mock-project-new .dlg-cancel, .mock-project-new .ow-no {
+  padding: 7px 12px; border: 1px solid var(--project-new-border); background: #fff; color: var(--project-new-muted); border-radius: 8px; cursor: pointer;
+}
+.mock-project-new .dlg-ok, .mock-project-new .ow-yes {
+  padding: 7px 12px; border: 1px solid #4ba8b4; background: #68bcc7; color: #fff; border-radius: 8px; cursor: pointer;
+}
+.mock-project-new .toast {
+  position: fixed; right: 20px; bottom: 96px; z-index: 230; background: #20353a; color: #fff;
+  border-radius: 8px; padding: 10px 12px; font-size: 12px; opacity: 0; pointer-events: none;
+}
+.mock-project-new .toast.show { opacity: 1; }
+.project-new-footer-progress { margin-right: 10px; color: #6b8c94; font-size: 13px; }
+.project-new-footer-draft-save {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #d8e8ec; background: #fff;
+  color: #1c2b30; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.project-new-footer-submit {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #4ba8b4; background: #68bcc7;
+  color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+@media (max-width: 1024px) {
+  .mock-project-new .page-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .mock-project-new .drawer { top: auto; right: 0; left: 0; bottom: 0; width: 100%; height: 75vh; border-radius: 20px 20px 0 0; transform: translateY(100%); }
+  .mock-project-new .drawer.open { transform: translateY(0); }
+  .mock-project-new .drawer-handle { display: flex; }
+  .mock-project-new .budget-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mock-project-new">
+  <div class="mock-page-action-row">
+    <button type="button" class="project-new-draft-open-btn" data-draft-drawer-open>
+      <span>下書きから作成</span>
+      <span class="project-new-draft-badge" id="draftBadge">3</span>
+    </button>
+  </div>
+
+  <div class="drawer-overlay" id="draftDrawerOverlay" onclick="closeProjectDraftDrawer()"></div>
+  <aside class="drawer" id="draftDrawer">
+    <div class="drawer-handle"><div class="drawer-handle-bar"></div></div>
+    <div class="drawer-header">
+      <div class="drawer-title">保存した下書き <span id="draftCountBadge">3件</span></div>
+      <button type="button" class="drawer-close" onclick="closeProjectDraftDrawer()">×</button>
+    </div>
+    <div class="drawer-search-wrap">
+      <input type="text" class="drawer-search" id="draftSearch" placeholder="案件名・目的・部門で検索" oninput="filterProjectDrafts(this.value)">
+    </div>
+    <div class="drawer-list" id="draftList"></div>
+  </aside>
+
+  <div class="prefill-banner" id="prefillBanner">
+    <div class="pb-text" id="prefillBannerText"></div>
+    <button type="button" class="pb-clear" onclick="clearProjectPrefill()">反映内容をクリア</button>
+  </div>
+
+  <div class="page-layout">
+    <div class="form-card">
+      <div class="fc-section">
+        <div class="fc-sec-title"><div class="fc-num">1</div> 基本情報</div>
+        <div class="field">
+          <div class="field-label">案件名 <span class="req-badge">必須</span></div>
+          <div class="field-hint">30〜50文字程度で、内容が伝わる名称にしてください。</div>
+          <input type="text" class="f-input" id="projName" maxlength="60" placeholder="例：顧客管理システム刷新（クラウド移行）" oninput="updateProjectCC(this,'nameCC',60);updateProjectProgress()">
+          <div class="char-counter" id="nameCC">0 / 60 文字</div>
+          <div class="field-error" id="nameErr">案件名を入力してください。</div>
+        </div>
+        <div class="field">
+          <div class="field-label">担当部門 <span class="req-badge">必須</span></div>
+          {# 将来は departments から取得 #}
+          <select class="f-select" id="dept" onchange="updateProjectProgress()">
+            <option value="" selected>── 部門を選択してください ──</option>
+            <option value="dept1">第一開発部</option>
+            <option value="dept2">第二開発部</option>
+            <option value="dept3">第三開発部</option>
+          </select>
+          <div class="field-error" id="deptErr">担当部門を選択してください。</div>
+        </div>
+        <div class="field">
+          <div class="field-label">申請者名 <span class="opt-badge">自動</span></div>
+          {# 将来は current_user から表示 #}
+          <input type="text" class="f-input" value="申請者：山田 太郎" readonly>
+        </div>
+        <div class="field">
+          <div class="field-label">目的・概要 <span class="req-badge">必須</span></div>
+          <div class="field-hint">なぜ必要か・何を達成するかを記載。承認者が判断しやすいよう、背景と効果を具体的に書いてください。</div>
+          <div class="voice-row">
+            <textarea class="f-textarea" id="projDesc" maxlength="500" rows="6" placeholder="例：旧システムの保守期限切れに伴い、顧客管理業務の継続性と効率化を目的としてクラウド型CRMへ移行する。" oninput="updateProjectCC(this,'descCC',500);updateProjectProgress()"></textarea>
+            <button type="button" class="voice-btn" id="voiceBtn" onclick="toggleProjectVoiceInput()">音声</button>
+          </div>
+          <div class="char-counter" id="descCC">0 / 500 文字</div>
+          <div class="field-error" id="descErr">目的・概要は5文字以上で入力してください。</div>
+        </div>
+      </div>
+
+      <div class="fc-section">
+        <div class="fc-sec-title"><div class="fc-num">2</div> 予算・工数</div>
+        <div class="budget-grid">
+          <div class="field">
+            <div class="field-label">金額（予算） <span class="req-badge">必須</span></div>
+            <div class="money-wrap" id="mwAmount">
+              <div class="money-prefix">¥</div>
+              <input type="number" class="money-input" id="budgetAmount" placeholder="例：5000000" inputmode="numeric" min="0" oninput="updateProjectProgress()">
+            </div>
+            <div class="field-error" id="amtErr">金額（予算）を入力してください。</div>
+          </div>
+          <div class="field">
+            <div class="field-label">工数 <span class="req-badge">必須</span></div>
+            <div style="display:flex; gap:8px;">
+              <div class="money-wrap" style="flex:1;" id="mwMm">
+                <input type="number" class="money-input" id="manmonth" placeholder="例：24" inputmode="numeric" min="0" style="padding-left:12px;" oninput="updateProjectProgress()">
+              </div>
+              <select class="f-select" id="mmUnit" style="width:86px;flex-shrink:0;">
+                <option value="人月" selected>人月</option>
+                <option value="時間">時間</option>
+                <option value="人日">人日</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">開始予定日 <span class="opt-badge">任意</span></div>
+            <input type="date" class="f-input" id="startDate">
+          </div>
+          <div class="field">
+            <div class="field-label">完了予定日 <span class="opt-badge">任意</span></div>
+            <input type="date" class="f-input" id="endDate">
+          </div>
+        </div>
+        <div class="budget-note">
+          <div class="bn-icon"></div>
+          <div class="bn-text"><strong>概算での申請で構いません。</strong>承認後にこの金額が「確定予算」となります。予算超過リスクを踏まえ、余裕を持った金額を設定してください。</div>
+        </div>
+      </div>
+
+      <div class="fc-section">
+        <div class="fc-sec-title"><div class="fc-num">3</div> 添付資料・エビデンス <span class="opt-badge">任意</span></div>
+        <div class="attach-drop" id="dropZone" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleProjectFileDrop(event)">
+          <div class="ad-text">ファイルをドラッグ＆ドロップ</div>
+          <div class="ad-sub">PDF・Word・Excel・画像（最大10MB）</div>
+        </div>
+        <div class="attach-btns">
+          <button type="button" class="attach-btn" onclick="simulateProjectAttach('見積書.pdf')">ファイルを選択</button>
+          <button type="button" class="attach-btn" onclick="simulateProjectAttach('現場写真.jpg')">カメラ撮影</button>
+        </div>
+        <div class="file-list" id="fileList"></div>
+        {# 将来は Flask 側で添付処理 #}
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="progress-card">
+        <div class="pc-title">入力状況</div>
+        <div class="pi-bar-track"><div class="pi-bar-fill" id="progressBar" style="width:0%"></div></div>
+        <div class="pi-pct" id="progressPct">0%</div>
+        <div class="pi-items">
+          <div class="pi-item" id="pi0"><div class="pi-dot"></div>案件名</div>
+          <div class="pi-item" id="pi1"><div class="pi-dot"></div>担当部門</div>
+          <div class="pi-item" id="pi2"><div class="pi-dot"></div>目的・概要</div>
+          <div class="pi-item" id="pi3"><div class="pi-dot"></div>金額（予算）</div>
+          <div class="pi-item" id="pi4"><div class="pi-dot"></div>工数</div>
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <div class="tips-head"><div class="tips-title">申請のコツ</div></div>
+        <div class="tips-body">
+          <div class="tip-item"><div class="tip-num">1</div><div class="tip-text"><strong>案件名は具体的に</strong>。「システム改修」より「顧客管理システム刷新（クラウド移行）」のように範囲を明確に。</div></div>
+          <div class="tip-item"><div class="tip-num">2</div><div class="tip-text"><strong>目的欄はなぜ必要か</strong>を中心に。承認者が判断するための最重要情報です。</div></div>
+          <div class="tip-item"><div class="tip-num">3</div><div class="tip-text"><strong>予算は多めに見積もる</strong>のが鉄則。承認後の超過申請は手続きが増えます。</div></div>
+          <div class="tip-item"><div class="tip-num">4</div><div class="tip-text"><strong>見積書を添付</strong>すると承認率が上がります。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="dialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-big-icon"></div>
+      <div class="dlg-title">申請が完了しました！</div>
+      <div class="dlg-body">
+        <strong id="dlgProjName">—</strong> の申請を受け付けました。<br>
+        部門管理者へ確認通知を送信しました。<br>
+        承認状況はダッシュボードで随時確認できます。
+        <br><br>
+        <span class="dlg-num" id="dlgReqNum">申請番号：—</span>
+      </div>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-cancel" onclick="closeProjectSubmitDialog()">続けて申請</button>
+        <button type="button" class="dlg-ok" onclick="closeProjectSubmitDialog()">ダッシュボードへ →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overwrite-dialog" id="owDialog">
+    <div class="ow-box">
+      <div class="ow-icon"></div>
+      <div class="ow-title">入力内容を上書きしますか？</div>
+      <div class="ow-body">現在入力中の内容が下書きのデータで上書きされます。<br>入力中の内容は失われます。よろしいですか？</div>
+      <div class="ow-btns">
+        <button type="button" class="ow-no" onclick="closeProjectOwDialog()">キャンセル</button>
+        <button type="button" class="ow-yes" id="owYesBtn">上書きして反映</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+{% endblock %}
+
+{% block content_footer %}
+  {% set footer_info_text = "" %}
+  {% set footer_info_value = "" %}
+  {% set footer_actions %}
+    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済み</span>
+    <button type="button" class="project-new-footer-draft-save" onclick="saveProjectNewMockDraft()">下書き保存</button>
+    <button type="button" class="project-new-footer-submit" onclick="submitProjectNewMockForm()">この内容で申請する</button>
+  {% endset %}
+  {% include "partials/_content_footer.html" %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+function getProjectEl(id) { return document.getElementById(id); }
+function escapeProjectMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+
+/* 将来は project_drafts から取得 */
+let projectDrafts = [
+  { id: 1, name: "BI分析基盤整備（可視化ダッシュボード構築）", dept: "dept1", desc: "Excelベースの集計作業をBI基盤で自動化し、全社KPIをリアルタイムで可視化する。月次レポート作成工数を80%削減することを目標とする。DWH設計・ETLパイプライン・BIツール選定・ユーザートレーニングを含む。", amount: 8000000, manmonth: 16, mmUnit: "人月", startDate: "2025-07-01", endDate: "2026-02-28", savedAt: "2025/05/10 14:30" },
+  { id: 2, name: "顧客管理システム刷新（CRM移行）", dept: "dept1", desc: "旧オンプレCRMをSaaS型に移行し、モバイル対応・API連携を実現する。営業チームの入力作業を50%削減し、顧客対応品質を向上させる。データ移行・SSO設定・カスタマイズ開発を含む。", amount: 15000000, manmonth: 20, mmUnit: "人月", startDate: "2025-08-01", endDate: "2026-03-31", savedAt: "2025/05/12 09:15" },
+  { id: 3, name: "ログ監視基盤 構築（セキュリティ強化）", dept: "dept3", desc: "各サーバーのログを集約・分析するSIEM基盤を構築し、セキュリティインシデントの早期検知を実現する。コンプライアンス要件への対応も含む。", amount: 4500000, manmonth: 9, mmUnit: "人月", startDate: "2025-09-01", endDate: "2026-01-31", savedAt: "2025/05/14 16:48" }
+];
+let pendingApplyId = null;
+const attachedFiles = [];
+
+function projectDeptLabel(v) { return { dept1: "第一開発部", dept2: "第二開発部", dept3: "第三開発部" }[v] || v; }
+
+function openProjectDraftDrawer() {
+  renderProjectDraftList(projectDrafts);
+  getProjectEl("draftDrawer").classList.add("open");
+  getProjectEl("draftDrawerOverlay").classList.add("open");
+  document.body.classList.add("is-project-draft-drawer-open");
+}
+function closeProjectDraftDrawer() {
+  getProjectEl("draftDrawer").classList.remove("open");
+  getProjectEl("draftDrawerOverlay").classList.remove("open");
+  document.body.classList.remove("is-project-draft-drawer-open");
+  const search = getProjectEl("draftSearch");
+  if (search) search.value = "";
+}
+function renderProjectDraftList(list) {
+  const el = getProjectEl("draftList");
+  if (!el) return;
+  const draftCountBadge = getProjectEl("draftCountBadge");
+  const draftBadge = getProjectEl("draftBadge");
+  if (list.length === 0) {
+    el.innerHTML = "<div class=\"drawer-empty\"><div class=\"drawer-empty-text\">一致する下書きが見つかりません</div></div>";
+    if (draftCountBadge) draftCountBadge.textContent = projectDrafts.length + "件";
+    if (draftBadge) draftBadge.textContent = String(projectDrafts.length);
+    return;
+  }
+  el.innerHTML = list.map(function(d) {
+    const name = escapeProjectMockHtml(d.name);
+    const dept = escapeProjectMockHtml(projectDeptLabel(d.dept));
+    const desc = escapeProjectMockHtml(d.desc);
+    const savedAt = escapeProjectMockHtml(d.savedAt);
+    const budget = "¥" + (d.amount / 10000).toFixed(0) + "万 / " + d.manmonth + d.mmUnit;
+    const preview = d.desc.length > 120 ? d.desc.slice(0, 120) + "…" : d.desc;
+    return "<div class=\"draft-card\" data-id=\"" + d.id + "\">"
+      + "<div class=\"dc-header\"><div class=\"dc-name\">" + name + "</div><div class=\"dc-date\">保存：" + savedAt + "</div></div>"
+      + "<div class=\"dc-meta\"><span class=\"dc-chip\">" + dept + "</span><span class=\"dc-chip dc-budget-chip\">" + escapeProjectMockHtml(budget) + "</span></div>"
+      + "<div class=\"dc-footer\"><div class=\"dc-desc-preview\">" + desc + "</div>"
+      + "<button class=\"dc-delete-btn\" onclick=\"deleteProjectDraft(event," + d.id + ")\">削除</button>"
+      + "<button class=\"dc-apply-btn\" onclick=\"applyProjectDraft(event," + d.id + ")\">フォームに反映</button></div>"
+      + "<div class=\"dc-preview-popup\"><div class=\"popup-label\">目的・概要プレビュー</div>" + escapeProjectMockHtml(preview) + "</div></div>";
+  }).join("");
+  if (draftCountBadge) draftCountBadge.textContent = projectDrafts.length + "件";
+  if (draftBadge) draftBadge.textContent = String(projectDrafts.length);
+}
+function filterProjectDrafts(q) {
+  const kw = (q || "").trim().toLowerCase();
+  if (!kw) { renderProjectDraftList(projectDrafts); return; }
+  renderProjectDraftList(projectDrafts.filter(function(d) {
+    return d.name.toLowerCase().includes(kw) || d.desc.toLowerCase().includes(kw) || projectDeptLabel(d.dept).toLowerCase().includes(kw);
+  }));
+}
+function deleteProjectDraft(e, id) {
+  e.stopPropagation();
+  projectDrafts = projectDrafts.filter(function(d) { return d.id !== id; });
+  renderProjectDraftList(projectDrafts);
+  showProjectNewToast("下書きを削除しました");
+}
+function applyProjectDraft(e, id) {
+  e.stopPropagation();
+  const hasContent = getProjectEl("projName").value.trim() || getProjectEl("projDesc").value.trim() || getProjectEl("budgetAmount").value;
+  if (hasContent) {
+    pendingApplyId = id;
+    getProjectEl("owDialog").classList.add("open");
+    getProjectEl("owYesBtn").onclick = function() { doProjectDraftApply(pendingApplyId); closeProjectOwDialog(); };
+    return;
+  }
+  doProjectDraftApply(id);
+}
+function doProjectDraftApply(id) {
+  const d = projectDrafts.find(function(x) { return x.id === id; });
+  if (!d) return;
+  const dept = getProjectEl("dept");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  const mmUnit = getProjectEl("mmUnit");
+  const startDate = getProjectEl("startDate");
+  const endDate = getProjectEl("endDate");
+  const mwAmount = getProjectEl("mwAmount");
+  const mwMm = getProjectEl("mwMm");
+  const prefillBannerText = getProjectEl("prefillBannerText");
+  const prefillBanner = getProjectEl("prefillBanner");
+  if (!dept || !budgetAmount || !manmonth || !mmUnit || !startDate || !endDate || !mwAmount || !mwMm || !prefillBannerText || !prefillBanner) return;
+  setProjectField("projName", d.name, "nameCC", 60);
+  setProjectField("projDesc", d.desc, "descCC", 500);
+  dept.value = d.dept;
+  budgetAmount.value = d.amount;
+  manmonth.value = d.manmonth;
+  mmUnit.value = d.mmUnit;
+  startDate.value = d.startDate;
+  endDate.value = d.endDate;
+  ["projName", "projDesc", "dept"].forEach(function(id2) {
+    const target = getProjectEl(id2);
+    if (target) target.classList.add("prefilled");
+  });
+  mwAmount.classList.add("prefilled");
+  mwMm.classList.add("prefilled");
+  prefillBannerText.textContent = "「" + d.name + "」の下書きをフォームに反映しました。修正してそのまま申請できます。";
+  prefillBanner.classList.add("show");
+  updateProjectProgress();
+  closeProjectDraftDrawer();
+  showProjectNewToast("下書きを反映しました");
+}
+function setProjectField(id, val, ccId, max) {
+  const el = getProjectEl(id);
+  if (!el) return;
+  el.value = val;
+  if (ccId) {
+    const cc = getProjectEl(ccId);
+    if (cc) cc.textContent = val.length + " / " + max + " 文字";
+  }
+}
+function clearProjectPrefill() {
+  ["projName", "projDesc", "dept"].forEach(function(id) {
+    const target = getProjectEl(id);
+    if (!target) return;
+    target.value = "";
+    target.classList.remove("prefilled");
+  });
+  const budgetAmount = getProjectEl("budgetAmount");
+  if (budgetAmount) budgetAmount.value = "";
+  const manmonth = getProjectEl("manmonth");
+  if (manmonth) manmonth.value = "";
+  const mwAmount = getProjectEl("mwAmount");
+  if (mwAmount) mwAmount.classList.remove("prefilled");
+  const mwMm = getProjectEl("mwMm");
+  if (mwMm) mwMm.classList.remove("prefilled");
+  const prefillBanner = getProjectEl("prefillBanner");
+  if (prefillBanner) prefillBanner.classList.remove("show");
+  updateProjectProgress();
+  updateProjectCC(getProjectEl("projName"), "nameCC", 60);
+  updateProjectCC(getProjectEl("projDesc"), "descCC", 500);
+  showProjectNewToast("フォームをクリアしました");
+}
+function closeProjectOwDialog() { getProjectEl("owDialog").classList.remove("open"); }
+function saveProjectNewMockDraft() {
+  const projName = getProjectEl("projName");
+  const dept = getProjectEl("dept");
+  const projDesc = getProjectEl("projDesc");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  const mmUnit = getProjectEl("mmUnit");
+  const startDate = getProjectEl("startDate");
+  const endDate = getProjectEl("endDate");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth || !mmUnit || !startDate || !endDate) return;
+  const name = projName.value.trim();
+  const label = name || "（無題）";
+  const now = new Date();
+  const ts = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  projectDrafts.unshift({
+    id: Date.now(),
+    name: name || "（無題の下書き）",
+    dept: dept.value,
+    desc: projDesc.value,
+    amount: parseInt(budgetAmount.value, 10) || 0,
+    manmonth: parseFloat(manmonth.value) || 0,
+    mmUnit: mmUnit.value,
+    startDate: startDate.value,
+    endDate: endDate.value,
+    savedAt: "2025/05/16 " + ts
+  });
+  const draftBadge = getProjectEl("draftBadge");
+  if (draftBadge) draftBadge.textContent = projectDrafts.length;
+  showProjectNewToast("「" + label + "」を下書きとして保存しました");
+}
+function updateProjectCC(el, id, max) {
+  const c = getProjectEl(id);
+  if (!c || !el) return;
+  c.textContent = el.value.length + " / " + max + " 文字";
+  c.classList.toggle("warn", el.value.length > max * 0.85);
+}
+const piChecks = [
+  { id: "pi0", ok: function() { return getProjectEl("projName").value.trim().length >= 3; } },
+  { id: "pi1", ok: function() { return getProjectEl("dept").value !== ""; } },
+  { id: "pi2", ok: function() { return getProjectEl("projDesc").value.trim().length >= 10; } },
+  { id: "pi3", ok: function() { return parseInt(getProjectEl("budgetAmount").value, 10) > 0; } },
+  { id: "pi4", ok: function() { return parseFloat(getProjectEl("manmonth").value) > 0; } }
+];
+function updateProjectProgress() {
+  const projName = getProjectEl("projName");
+  const dept = getProjectEl("dept");
+  const projDesc = getProjectEl("projDesc");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth) return;
+  let done = 0;
+  piChecks.forEach(function(c, idx) {
+    const ok = idx === 0 ? projName.value.trim().length >= 3
+      : idx === 1 ? dept.value !== ""
+      : idx === 2 ? projDesc.value.trim().length >= 10
+      : idx === 3 ? parseInt(budgetAmount.value, 10) > 0
+      : parseFloat(manmonth.value) > 0;
+    if (ok) done += 1;
+    const el = getProjectEl(c.id);
+    if (!el) return;
+    el.classList.toggle("done", ok);
+    const dot = el.querySelector(".pi-dot");
+    if (dot) dot.style.background = ok ? "var(--project-new-success)" : "var(--project-new-border)";
+  });
+  const pct = Math.round(done / piChecks.length * 100);
+  const progressBar = getProjectEl("progressBar");
+  if (progressBar) progressBar.style.width = pct + "%";
+  const progressPct = getProjectEl("progressPct");
+  if (progressPct) progressPct.textContent = pct + "%";
+  const footerPct = getProjectEl("footerPct");
+  if (footerPct) footerPct.textContent = pct + "％";
+}
+function toggleProjectVoiceInput() {
+  const btn = getProjectEl("voiceBtn");
+  const ta = getProjectEl("projDesc");
+  if (!btn || !ta) return;
+  if (btn.classList.contains("recording")) {
+    btn.classList.remove("recording");
+    btn.textContent = "音声";
+    showProjectNewToast("音声入力を終了しました");
+  } else {
+    btn.classList.add("recording");
+    btn.textContent = "停止";
+    showProjectNewToast("録音中… もう一度タップで終了");
+    setTimeout(function() {
+      const ta2 = getProjectEl("projDesc");
+      if (!ta2) return;
+      ta2.value += (ta2.value ? "\n" : "") + "（音声入力）老朽化システムを刷新し業務効率化を図ります。";
+      btn.classList.remove("recording");
+      btn.textContent = "音声";
+      updateProjectProgress();
+      updateProjectCC(ta2, "descCC", 500);
+    }, 3000);
+  }
+}
+function simulateProjectAttach(name) { addProjectFile(name); }
+function handleProjectFileDrop(e) {
+  e.preventDefault();
+  getProjectEl("dropZone").classList.remove("dragover");
+  if (e.dataTransfer && e.dataTransfer.files.length) addProjectFile(e.dataTransfer.files[0].name);
+}
+function addProjectFile(name) {
+  if (attachedFiles.includes(name)) { showProjectNewToast("同じファイルが既に追加されています"); return; }
+  attachedFiles.push(name);
+  renderProjectFileList();
+  showProjectNewToast(name + " を添付しました");
+}
+function removeProjectFile(name) {
+  const i = attachedFiles.indexOf(name);
+  if (i >= 0) attachedFiles.splice(i, 1);
+  renderProjectFileList();
+}
+function renderProjectFileList() {
+  const fileList = getProjectEl("fileList");
+  if (!fileList) return;
+  fileList.innerHTML = attachedFiles.map(function(n) {
+    const safe = escapeProjectMockHtml(n);
+    const param = JSON.stringify(String(n));
+    return "<div class=\"file-item\"><span class=\"file-name\">" + safe + "</span><span class=\"file-remove\" onclick='removeProjectFile(" + param + ")' title=\"削除\">削除</span></div>";
+  }).join("");
+}
+function validateProjectNewMock() {
+  const projName = getProjectEl("projName");
+  const dept = getProjectEl("dept");
+  const projDesc = getProjectEl("projDesc");
+  const budgetAmount = getProjectEl("budgetAmount");
+  if (!projName || !dept || !projDesc || !budgetAmount) return false;
+  const checks = [
+    { fid: "projName", eid: "nameErr", fail: function() { return !projName.value.trim(); } },
+    { fid: "dept", eid: "deptErr", fail: function() { return !dept.value; } },
+    { fid: "projDesc", eid: "descErr", fail: function() { return projDesc.value.trim().length < 5; } },
+    { fid: "budgetAmount", eid: "amtErr", fail: function() { return !(parseInt(budgetAmount.value, 10) > 0); } }
+  ];
+  let ok = true;
+  checks.forEach(function(c) {
+    const fail = c.fail();
+    const field = getProjectEl(c.fid);
+    if (field) field.classList.toggle("error", fail);
+    const err = getProjectEl(c.eid);
+    if (err) err.classList.toggle("show", fail);
+    if (fail) ok = false;
+  });
+  return ok;
+}
+function submitProjectNewMockForm() {
+  const projName = getProjectEl("projName");
+  const dlgProjName = getProjectEl("dlgProjName");
+  const dlgReqNum = getProjectEl("dlgReqNum");
+  const dialogOverlay = getProjectEl("dialogOverlay");
+  if (!projName || !dlgProjName || !dlgReqNum || !dialogOverlay) return;
+  if (!validateProjectNewMock()) {
+    showProjectNewToast("必須項目を入力してください");
+    const firstErr = document.querySelector(".f-input.error, .f-select.error, .f-textarea.error");
+    if (firstErr) firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  const name = projName.value.trim();
+  dlgProjName.textContent = name;
+  dlgReqNum.textContent = "REQ-2025-" + String(Math.floor(Math.random() * 900 + 100)).padStart(5, "0");
+  dialogOverlay.classList.add("open");
+}
+function closeProjectSubmitDialog() {
+  const dialogOverlay = getProjectEl("dialogOverlay");
+  if (!dialogOverlay) return;
+  dialogOverlay.classList.remove("open");
+}
+function showProjectNewToast(msg) {
+  const t = getProjectEl("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+(function initProjectNewPage() {
+  const openBtn = document.querySelector("[data-draft-drawer-open]");
+  if (openBtn) openBtn.addEventListener("click", openProjectDraftDrawer);
+  updateProjectProgress();
+  renderProjectDraftList(projectDrafts);
+})();
+</script>
+{% endblock %}
