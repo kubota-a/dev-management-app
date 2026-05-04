@@ -222,8 +222,8 @@
   {% set footer_actions %}
     <div class="applicant-project-status-footer-info">案件名：<strong id="footerProjectName">基幹システム刷新PJ</strong></div>
     <div class="applicant-project-status-footer-btns is-hidden" id="applicantProjectStatusFooterBtns">
-      <button type="button" class="applicant-project-status-footer-btn-withdraw" onclick="showApplicantProjectStatusToast('申請を取り消しました（モック）')">取り消す</button>
-      <button type="button" class="applicant-project-status-footer-btn-reapply" onclick="showApplicantProjectStatusToast('内容をコピーして再申請フォームへ（モック）')">内容をコピーして再編集 →</button>
+      <button type="button" class="applicant-project-status-footer-btn-withdraw">削除</button>
+      <button type="button" class="applicant-project-status-footer-btn-reapply">修正して再申請</button>
     </div>
   {% endset %}
   {% include "partials/_content_footer.html" %}
@@ -285,7 +285,7 @@ function switchApplicantProjectStatusCase(key) {
   showApplicantProjectStatusToast("「" + c.projName + "」 に切替えました");
 }
 
-function confirmApplicantProjectStatusWithdraw() {
+function confirmApplicantProjectStatusDelete() {
   const selectEl = getApplicantProjectStatusEl("caseSelect");
   const key = selectEl ? selectEl.value : "wait_dept";
   const name = APPLICANT_PROJECT_STATUS_CASES[key] ? APPLICANT_PROJECT_STATUS_CASES[key].projName : "本申請";
@@ -293,12 +293,12 @@ function confirmApplicantProjectStatusWithdraw() {
   const dlgBody = getApplicantProjectStatusEl("applicantProjectStatusDlgBody");
   const dlgOk = getApplicantProjectStatusEl("applicantProjectStatusDlgOk");
   if (!dlgTitle || !dlgBody || !dlgOk) return;
-  dlgTitle.textContent = "申請を取り消しますか？";
-  dlgBody.innerHTML = "<strong>「" + escapeApplicantProjectStatusMockHtml(name) + "」</strong> の申請を取り消します。この操作は元に戻せません。";
+  dlgTitle.textContent = "「" + name + "」の申請をあきらめて、データを削除しますか？";
+  dlgBody.textContent = "この操作は元に戻せません。";
   dlgOk.style.background = "#dc3545";
   dlgOk.style.color = "#fff";
-  dlgOk.textContent = "取り消す";
-  dlgOk.onclick = function() { closeApplicantProjectStatusDialog(); showApplicantProjectStatusToast("申請を取り消しました"); };
+  dlgOk.textContent = "削除";
+  dlgOk.onclick = function() { closeApplicantProjectStatusDialog(); };
   const overlay = getApplicantProjectStatusEl("applicantProjectStatusDialogOverlay");
   if (overlay) overlay.classList.add("open");
 }
@@ -318,7 +318,7 @@ function showApplicantProjectStatusToast(msg) {
 
 (function initApplicantProjectStatus() {
   const footerBtn = document.querySelector(".applicant-project-status-footer-btn-withdraw");
-  if (footerBtn) footerBtn.onclick = confirmApplicantProjectStatusWithdraw;
+  if (footerBtn) footerBtn.onclick = confirmApplicantProjectStatusDelete;
   applyApplicantProjectStatusCase("wait_dept");
 })();
 </script>
