@@ -134,6 +134,14 @@ def format_jst_date(dt: datetime | None, pattern: str = "%Y/%m/%d") -> str:
     return dt.astimezone(ZoneInfo("Asia/Tokyo")).strftime(pattern)
 
 
+def format_jst_date_ja(dt: datetime | None) -> str:
+    """UTC保存のDateTimeをJSTの日本語日付に整形する。"""
+    if dt is None:
+        return "—"
+    jst_dt = dt.astimezone(ZoneInfo("Asia/Tokyo"))
+    return f"{jst_dt.year}年{jst_dt.month}月{jst_dt.day}日"
+
+
 def format_business_date(d: date | None, pattern: str = "%Y/%m/%d") -> str:
     """Date型を業務日付として表示整形する。"""
     if d is None:
@@ -185,6 +193,7 @@ def build_project_status_view_data(project: Project) -> dict:
         logs_by_action[action] = max(logs, key=lambda item: (item.acted_at, item.id))
 
     submit_log = logs_by_action.get("submit")
+    submitted_at = submit_log.acted_at if submit_log else project.created_at
     dept_approved_log = logs_by_action.get("approve_department")
     rejection_log = get_latest_rejection_log(project)
 
@@ -248,8 +257,8 @@ def build_project_status_view_data(project: Project) -> dict:
         "banner_class": status_info["banner_class"],
         "project_name": project.title,
         "project_code": project.project_code,
-        "status_meta": f"申請日：{format_jst_date(project.created_at)} ／ {project.project_code}",
-        "created_at_display": format_jst_date(project.created_at, "%Y/%m/%d %H:%M"),
+        "status_meta": f"申請日：{format_jst_date(submitted_at)} ／ {project.project_code}",
+        "created_at_display": format_jst_date_ja(submitted_at),
         "applicant_name": project.applicant.display_name if project.applicant else "—",
         "department_name": project.department.name if project.department else "—",
         "purpose": project.purpose,
@@ -264,10 +273,7 @@ def build_project_status_view_data(project: Project) -> dict:
                 "class_name": "st-done",
                 "icon": "✓",
                 "label": "申請済み",
-                "date": format_jst_date(
-                    submit_log.acted_at if submit_log else project.created_at,
-                    "%m/%d",
-                ),
+                "date": format_jst_date(submitted_at, "%m/%d"),
             },
             {"class_name": step2_class, "icon": step2_icon, "label": step2_label, "date": step2_date},
             {"class_name": step3_class, "icon": step3_icon, "label": step3_label, "date": step3_date},
