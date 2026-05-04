@@ -322,6 +322,8 @@ class ProjectDraft(db.Model):
     department_id = db.Column(db.BigInteger, db.ForeignKey("departments.id"), nullable=True, index=True)
     estimated_person_months = db.Column(db.Numeric(12, 2), nullable=True)
     estimated_budget_amount = db.Column(db.Numeric(12, 2), nullable=True)
+    planned_start_date = db.Column(db.Date, nullable=True)
+    planned_end_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, index=True)
     updated_at = db.Column(
         db.DateTime(timezone=True),

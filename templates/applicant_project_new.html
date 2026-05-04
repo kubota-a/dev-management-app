@@ -1,0 +1,777 @@
+{% extends "base.html" %}
+
+{% set page_role = "applicant" %}
+{% set active_menu = "applicant_new" %}
+{% set header_title = "新規案件の申請" %}
+{% set header_meta = "新しい開発案件の内容を入力し、承認申請を行います" %}
+{% set content_footer_enabled = true %}
+{% set content_width_class = "app-content-wide" %}
+
+{% block title %}新規案件の申請{% endblock %}
+
+{% block head_extra %}
+<style>
+body.is-project-draft-drawer-open { overflow: hidden; }
+
+.mock-project-new {
+  --project-new-header: #1a7585;
+  --project-new-header-dark: #155f6d;
+  --project-new-teal-light: #e0f5f8;
+  --project-new-teal-mid: #a8dfe6;
+  --project-new-bg: #f2f6f8;
+  --project-new-card: #ffffff;
+  --project-new-border: #d8e8ec;
+  --project-new-text: #1c2b30;
+  --project-new-muted: #6b8c94;
+  --project-new-danger: #dc3545;
+  --project-new-danger-bg: #fff0f0;
+  --project-new-danger-mid: #fecaca;
+  --project-new-warning: #d97706;
+  --project-new-warning-bg: #fff8ec;
+  --project-new-success: #0d9469;
+  --project-new-success-bg: #edfaf4;
+  --project-new-success-mid: #a7f3d0;
+  --project-new-radius: 12px;
+  --project-new-shadow: 0 2px 12px rgba(26, 117, 133, .10);
+  --project-new-shadow-card: 0 4px 20px rgba(26, 117, 133, .09);
+  font-family: var(--font-family-base);
+  color: var(--project-new-text);
+}
+.mock-project-new .mock-page-action-row { margin-bottom: 14px; display: flex; justify-content: flex-end; }
+.mock-project-new .project-new-draft-open-btn {
+  display: inline-flex; align-items: center; gap: 7px; background: #6fc1cc; color: #fff;
+  border: 1.5px solid rgba(255,255,255,.4); padding: 7px 16px; border-radius: 9px;
+  font-size: 13px; font-weight: 700; cursor: pointer; position: relative;
+}
+.mock-project-new .project-new-draft-badge {
+  position: absolute; top: -6px; right: -6px; background: #fbbf24; color: #1c2b30;
+  font-size: 9px; font-weight: 900; min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; border: 2px solid #6fc1cc; padding: 0 3px;
+}
+.mock-project-new .drawer-overlay {
+  position: fixed; inset: 0; background: rgba(28,43,48,.38); z-index: 200; opacity: 0;
+  pointer-events: none; transition: opacity .28s ease; backdrop-filter: blur(2px);
+}
+.mock-project-new .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.mock-project-new .drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: var(--project-new-card);
+  box-shadow: -6px 0 36px rgba(26,117,133,.18); z-index: 210; transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column;
+}
+.mock-project-new .drawer.open { transform: translateX(0); }
+.mock-project-new .drawer-handle { display: none; justify-content: center; padding: 10px 0 4px; }
+.mock-project-new .drawer-handle-bar { width: 36px; height: 4px; background: var(--project-new-border); border-radius: 2px; }
+.mock-project-new .drawer-header {
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--project-new-border); display: flex;
+  align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.mock-project-new .drawer-title { font-size: 16px; font-weight: 800; color: var(--project-new-text); display: flex; align-items: center; gap: 8px; }
+.mock-project-new .drawer-close {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--project-new-border); background: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--project-new-muted);
+}
+.mock-project-new .drawer-search-wrap { padding: 12px 22px; border-bottom: 1px solid var(--project-new-border); flex-shrink: 0; }
+.mock-project-new .drawer-search {
+  width: 100%; height: 38px; border: 1.5px solid var(--project-new-border); border-radius: 8px; padding: 0 12px 0 36px;
+  font-size: 13px; color: var(--project-new-text); outline: none; background: var(--project-new-bg); transition: border-color .15s;
+  background-repeat: no-repeat; background-position: 12px center;
+}
+.mock-project-new .drawer-list { flex: 1; overflow-y: auto; padding: 10px 12px 12px; }
+.mock-project-new .drawer-empty { text-align: center; padding: 40px 20px; color: var(--project-new-muted); }
+.mock-project-new .drawer-empty-text { font-size: 13px; }
+.mock-project-new .draft-card {
+  border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius);
+  margin-bottom: 10px; background: #fff; cursor: pointer; transition: all .18s; overflow: hidden; position: relative;
+}
+.mock-project-new .draft-card:hover { border-color: var(--project-new-teal-mid); box-shadow: 0 4px 16px rgba(26,117,133,.12); transform: translateY(-1px); }
+.mock-project-new .dc-header { padding: 12px 14px 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.mock-project-new .dc-name { font-size: 13px; font-weight: 700; color: var(--project-new-text); line-height: 1.4; flex: 1; }
+.mock-project-new .dc-date { font-size: 10px; color: var(--project-new-muted); white-space: nowrap; }
+.mock-project-new .dc-meta { padding: 0 14px 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+.mock-project-new .dc-chip {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: var(--project-new-teal-light);
+  color: var(--project-new-header); border: 1px solid var(--project-new-teal-mid);
+}
+.mock-project-new .dc-budget-chip { background: var(--project-new-bg); color: var(--project-new-muted); border-color: var(--project-new-border); }
+.mock-project-new .dc-preview-popup {
+  position: absolute; left: calc(100% + 10px); top: 0; width: 260px; background: var(--project-new-text); color: #fff;
+  border-radius: 10px; padding: 12px 14px; font-size: 12px; line-height: 1.7; box-shadow: 0 8px 28px rgba(28,43,48,.28);
+  z-index: 300; opacity: 0; pointer-events: none; transform: translateX(-6px); transition: opacity .18s ease, transform .18s ease;
+}
+.mock-project-new .draft-card:hover .dc-preview-popup { opacity: 1; pointer-events: auto; transform: translateX(0); }
+.mock-project-new .popup-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 4px; }
+.mock-project-new .dc-footer {
+  padding: 8px 14px 12px; border-top: 1px solid var(--project-new-bg); display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.mock-project-new .dc-desc-preview { font-size: 11px; color: var(--project-new-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.mock-project-new .dc-apply-btn {
+  padding: 5px 14px; background: var(--project-new-header); color: #fff; border: none; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.mock-project-new .dc-delete-btn {
+  padding: 5px 10px; background: transparent; color: var(--project-new-muted); border: 1px solid var(--project-new-border);
+  border-radius: 7px; font-size: 12px; cursor: pointer;
+}
+.mock-project-new .prefill-banner {
+  display: none; align-items: center; gap: 10px; background: var(--project-new-teal-light); border: 1px solid var(--project-new-teal-mid);
+  border-radius: 10px; padding: 11px 16px; margin-bottom: 18px;
+}
+.mock-project-new .prefill-banner.show { display: flex; }
+.mock-project-new .pb-text { font-size: 13px; color: var(--project-new-header); font-weight: 600; flex: 1; }
+.mock-project-new .pb-clear {
+  font-size: 12px; color: var(--project-new-muted); cursor: pointer; font-weight: 600; padding: 4px 10px;
+  border: 1px solid var(--project-new-border); border-radius: 6px; background: #fff;
+}
+.mock-project-new .page-layout { display: grid; grid-template-columns: 1fr 280px; gap: 22px; }
+.mock-project-new .form-card { background: var(--project-new-card); border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius); box-shadow: var(--project-new-shadow-card); overflow: hidden; }
+.mock-project-new .fc-section { padding: 24px 26px; border-bottom: 1px solid var(--project-new-bg); }
+.mock-project-new .fc-section:last-child { border-bottom: none; }
+.mock-project-new .fc-sec-title {
+  font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--project-new-header); display: flex; align-items: center; gap: 8px;
+  margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--project-new-teal-light);
+}
+.mock-project-new .fc-num {
+  width: 24px; height: 24px; background: var(--project-new-header); color: #fff; border-radius: 50%; font-size: 12px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+.mock-project-new .field { margin-bottom: 18px; }
+.mock-project-new .field:last-child { margin-bottom: 0; }
+.mock-project-new .field-label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; font-weight: 700; color: var(--project-new-text); margin-bottom: 7px; }
+.mock-project-new .req-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: #fef2f2; color: var(--project-new-danger); border: 1px solid var(--project-new-danger-mid); }
+.mock-project-new .opt-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--project-new-bg); color: var(--project-new-muted); border: 1px solid var(--project-new-border); }
+.mock-project-new .field-hint { font-size: 11px; color: var(--project-new-muted); margin-bottom: 7px; margin-top: -3px; line-height: 1.6; }
+.mock-project-new .f-input {
+  width: 100%; height: 44px; border: 1.5px solid var(--project-new-border); border-radius: 9px;
+  padding: 0 14px; font-size: 14px; color: var(--project-new-text); background: #fff; outline: none;
+}
+.mock-project-new .f-input::placeholder { color: #b0c8ce; }
+.mock-project-new .f-input.error { border-color: var(--project-new-danger); }
+.mock-project-new .f-input.prefilled { border-color: var(--project-new-teal-mid); background: #f7fdfe; }
+.mock-project-new .f-select {
+  width: 100%; height: 44px; border: 1.5px solid var(--project-new-border); border-radius: 9px; padding: 0 14px;
+  font-size: 14px; color: var(--project-new-text); background: #fff; appearance: none; outline: none; cursor: pointer;
+}
+.mock-project-new .f-select.prefilled { border-color: var(--project-new-teal-mid); background-color: #f7fdfe; }
+.mock-project-new .f-textarea {
+  width: 100%; min-height: 130px; border: 1.5px solid var(--project-new-border); border-radius: 9px; padding: 12px 14px;
+  font-size: 14px; color: var(--project-new-text); line-height: 1.8; background: #fff; resize: vertical; outline: none;
+}
+.mock-project-new .f-textarea::placeholder { color: #b0c8ce; }
+.mock-project-new .f-textarea.prefilled { border-color: var(--project-new-teal-mid); background: #f7fdfe; }
+.mock-project-new .char-counter { text-align: right; font-size: 11px; color: var(--project-new-muted); margin-top: 4px; }
+.mock-project-new .char-counter.warn { color: var(--project-new-warning); font-weight: 700; }
+.mock-project-new .field-error { margin-top: 6px; font-size: 11px; color: var(--project-new-danger); display: none; }
+.mock-project-new .field-error.show { display: block; }
+.mock-project-new .voice-row { display: flex; gap: 8px; align-items: flex-start; }
+.mock-project-new .voice-row .f-textarea { flex: 1; }
+.mock-project-new .budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mock-project-new .money-wrap {
+  display: flex; align-items: center; border: 1.5px solid var(--project-new-border); border-radius: 9px;
+  overflow: hidden; background: #fff;
+}
+.mock-project-new .money-wrap.prefilled { border-color: var(--project-new-teal-mid); background: #f7fdfe; }
+.mock-project-new .money-prefix {
+  padding: 0 12px; font-size: 14px; font-weight: 700; color: var(--project-new-muted); background: var(--project-new-bg);
+  border-right: 1px solid var(--project-new-border); height: 44px; display: flex; align-items: center; flex-shrink: 0;
+}
+.mock-project-new .money-input {
+  flex: 1; border: none; outline: none; padding: 0 12px; font-size: 15px; font-weight: 700;
+  color: var(--project-new-text); background: transparent; height: 44px; min-width: 0;
+}
+.mock-project-new .money-input::placeholder { color: #b0c8ce; font-weight: 400; font-size: 13px; }
+.mock-project-new .budget-note {
+  margin-top: 14px; padding: 12px 16px; background: var(--project-new-warning-bg); border: 1px solid #fed7aa;
+  border-radius: 9px; display: flex; align-items: flex-start; gap: 8px;
+}
+.mock-project-new .bn-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.mock-project-new .bn-text { font-size: 12px; color: #92400e; line-height: 1.7; }
+.mock-project-new .bn-text strong { font-weight: 700; }
+.mock-project-new .side-col { display: grid; align-content: start; gap: 14px; }
+.mock-project-new .progress-card, .mock-project-new .tips-card {
+  background: var(--project-new-card); border: 1px solid var(--project-new-border); border-radius: var(--project-new-radius);
+  box-shadow: var(--project-new-shadow); padding: 14px;
+}
+.mock-project-new .pc-title, .mock-project-new .tips-title { font-size: 13px; font-weight: 800; color: var(--project-new-header); }
+.mock-project-new .pi-bar-track { margin-top: 10px; height: 8px; border-radius: 999px; background: var(--project-new-bg); overflow: hidden; }
+.mock-project-new .pi-bar-fill { height: 100%; width: 0; background: #68bcc7; }
+.mock-project-new .pi-pct { margin-top: 8px; font-size: 13px; font-weight: 800; color: var(--project-new-text); }
+.mock-project-new .pi-items { margin-top: 8px; display: grid; gap: 6px; }
+.mock-project-new .pi-item { font-size: 12px; color: var(--project-new-muted); display: flex; align-items: center; gap: 8px; }
+.mock-project-new .pi-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--project-new-border); }
+.mock-project-new .pi-item.done { color: var(--project-new-success); font-weight: 700; }
+.mock-project-new .tips-head { margin-bottom: 10px; }
+.mock-project-new .tips-body { display: grid; gap: 8px; }
+.mock-project-new .tip-item { display: flex; gap: 8px; }
+.mock-project-new .tip-num {
+  width: 20px; height: 20px; border-radius: 50%; background: var(--project-new-teal-light);
+  color: var(--project-new-header); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0;
+}
+.mock-project-new .tip-text { font-size: 12px; line-height: 1.7; color: var(--project-new-text); }
+.mock-project-new .dialog-overlay, .mock-project-new .overwrite-dialog {
+  position: fixed; inset: 0; background: rgba(28,43,48,.45); z-index: 220; display: none; align-items: center; justify-content: center; padding: 18px;
+}
+.mock-project-new .dialog-overlay.open, .mock-project-new .overwrite-dialog.open { display: flex; }
+.mock-project-new .dialog-box, .mock-project-new .ow-box {
+  background: #fff; border: 1px solid var(--project-new-border); border-radius: 12px; padding: 22px; width: min(480px, 100%);
+}
+.mock-project-new .dlg-big-icon, .mock-project-new .ow-icon { font-size: 18px; margin-bottom: 8px; color: var(--project-new-header); }
+.mock-project-new .dlg-title, .mock-project-new .ow-title { font-size: 18px; font-weight: 800; color: var(--project-new-text); margin-bottom: 8px; }
+.mock-project-new .dlg-body, .mock-project-new .ow-body { font-size: 13px; line-height: 1.8; color: var(--project-new-muted); }
+.mock-project-new .dlg-num { display: inline-block; margin-top: 8px; color: var(--project-new-header); font-weight: 700; }
+.mock-project-new .dlg-btns, .mock-project-new .ow-btns { margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px; }
+.mock-project-new .dlg-cancel, .mock-project-new .ow-no {
+  padding: 7px 12px; border: 1px solid var(--project-new-border); background: #fff; color: var(--project-new-muted); border-radius: 8px; cursor: pointer;
+}
+.mock-project-new .dlg-ok, .mock-project-new .ow-yes {
+  padding: 7px 12px; border: 1px solid #4ba8b4; background: #68bcc7; color: #fff; border-radius: 8px; cursor: pointer;
+}
+.mock-project-new .toast {
+  position: fixed; right: 20px; bottom: 96px; z-index: 230; background: #20353a; color: #fff;
+  border-radius: 8px; padding: 10px 12px; font-size: 12px; opacity: 0; pointer-events: none;
+}
+.mock-project-new .toast.show { opacity: 1; }
+.project-new-footer-progress { margin-right: 10px; color: #6b8c94; font-size: 13px; }
+.project-new-footer-draft-save {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #d8e8ec; background: #fff;
+  color: #1c2b30; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.project-new-footer-submit {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #4ba8b4; background: #68bcc7;
+  color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+@media (min-width: 601px) {
+  .mock-project-new { margin-top: -16px; }
+}
+@media (max-width: 1024px) {
+  .mock-project-new .page-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .mock-project-new .drawer { top: auto; right: 0; left: 0; bottom: 0; width: 100%; height: 75vh; border-radius: 20px 20px 0 0; transform: translateY(100%); }
+  .mock-project-new .drawer.open { transform: translateY(0); }
+  .mock-project-new .drawer-handle { display: flex; }
+  .mock-project-new .budget-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mock-project-new">
+  {% include "partials/_flash.html" %}
+  <div class="mock-page-action-row">
+    <button type="button" class="project-new-draft-open-btn" data-draft-drawer-open>
+      <span>下書きから作成</span>
+      <span class="project-new-draft-badge" id="draftBadge">3</span>
+    </button>
+  </div>
+
+  <div class="drawer-overlay" id="draftDrawerOverlay" onclick="closeProjectDraftDrawer()"></div>
+  <aside class="drawer" id="draftDrawer">
+    <div class="drawer-handle"><div class="drawer-handle-bar"></div></div>
+    <div class="drawer-header">
+      <div class="drawer-title">保存した下書き <span id="draftCountBadge">3件</span></div>
+      <button type="button" class="drawer-close" onclick="closeProjectDraftDrawer()">×</button>
+    </div>
+    <div class="drawer-search-wrap">
+      <input type="text" class="drawer-search" id="draftSearch" placeholder="案件名・目的・部門で検索" oninput="filterProjectDrafts(this.value)">
+    </div>
+    <div class="drawer-list" id="draftList"></div>
+  </aside>
+
+  <div class="prefill-banner" id="prefillBanner">
+    <div class="pb-text" id="prefillBannerText"></div>
+    <button type="button" class="pb-clear" onclick="clearProjectPrefill()">反映内容をクリア</button>
+  </div>
+
+  <div class="page-layout">
+    <form id="projectNewForm" method="post" action="{{ url_for('applicant_project_new') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="confirmed" name="confirmed" value="0">
+      <input type="hidden" id="draftIdField" name="draft_id" value="{{ form_data.draft_id|default('') }}">
+    <div class="form-card">
+      <div class="fc-section">
+        <div class="fc-sec-title"><div class="fc-num">1</div> 基本情報</div>
+        <div class="field">
+          <div class="field-label">案件名 <span class="req-badge">必須</span></div>
+          <div class="field-hint">30〜50文字程度で、内容が伝わる名称にしてください。</div>
+          <input type="text" class="f-input{% if form_errors.title %} error{% endif %}" id="projName" name="title" maxlength="60" value="{{ form_data.title|default('') }}" placeholder="例：顧客管理システム刷新（クラウド移行）" oninput="updateProjectCC(this,'nameCC',60);updateProjectProgress()">
+          <div class="char-counter" id="nameCC">{{ (form_data.title|default(''))|length }} / 60 文字</div>
+          <div class="field-error{% if form_errors.title %} show{% endif %}" id="nameErr">{{ form_errors.title|default("案件名を入力してください。") }}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">担当部門 <span class="req-badge">必須</span></div>
+          <select class="f-select{% if form_errors.department_id %} error{% endif %}" id="dept" name="department_id" onchange="updateProjectProgress()" {% if not departments %}disabled{% endif %}>
+            <option value="" {% if not form_data.department_id %}selected{% endif %}>── 部門を選択してください ──</option>
+            {% for department in departments %}
+            <option value="{{ department.id }}" {% if form_data.department_id|string == department.id|string %}selected{% endif %}>{{ department.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="field-error{% if form_errors.department_id %} show{% endif %}" id="deptErr">{{ form_errors.department_id|default("担当部門を選択してください。") }}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">申請者名 <span class="opt-badge">自動</span></div>
+          <input type="text" class="f-input" value="申請者：{{ current_user.display_name }}" readonly>
+        </div>
+        <div class="field">
+          <div class="field-label">目的・概要 <span class="req-badge">必須</span></div>
+          <div class="field-hint">なぜ必要か・何を達成するかを記載。承認者が判断しやすいよう、背景と効果を具体的に書いてください。</div>
+          <div class="voice-row">
+            <textarea class="f-textarea{% if form_errors.purpose %} error{% endif %}" id="projDesc" name="purpose" maxlength="500" rows="6" placeholder="例：旧システムの保守期限切れに伴い、顧客管理業務の継続性と効率化を目的としてクラウド型CRMへ移行する。" oninput="updateProjectCC(this,'descCC',500);updateProjectProgress()">{{ form_data.purpose|default('') }}</textarea>
+          </div>
+          <div class="char-counter" id="descCC">{{ (form_data.purpose|default(''))|length }} / 500 文字</div>
+          <div class="field-error{% if form_errors.purpose %} show{% endif %}" id="descErr">{{ form_errors.purpose|default("目的・概要は5文字以上で入力してください。") }}</div>
+        </div>
+      </div>
+
+      <div class="fc-section">
+        <div class="fc-sec-title"><div class="fc-num">2</div> 予算・工数</div>
+        <div class="budget-grid">
+          <div class="field">
+            <div class="field-label">金額（予算） <span class="req-badge">必須</span></div>
+            <div class="money-wrap" id="mwAmount">
+              <div class="money-prefix">¥</div>
+              <input type="number" class="money-input{% if form_errors.estimated_budget_amount %} error{% endif %}" id="budgetAmount" name="estimated_budget_amount" value="{{ form_data.estimated_budget_amount|default('') }}" placeholder="例：5000000" inputmode="numeric" min="0" oninput="updateProjectProgress()">
+            </div>
+            <div class="field-error{% if form_errors.estimated_budget_amount %} show{% endif %}" id="amtErr">{{ form_errors.estimated_budget_amount|default("金額（予算）を入力してください。") }}</div>
+          </div>
+          <div class="field">
+            <div class="field-label">工数（人月） <span class="req-badge">必須</span></div>
+            <div style="display:flex; gap:8px;">
+              <div class="money-wrap" style="flex:1;" id="mwMm">
+                <input type="number" class="money-input{% if form_errors.estimated_person_months %} error{% endif %}" id="manmonth" name="estimated_person_months" value="{{ form_data.estimated_person_months|default('') }}" placeholder="例：24" inputmode="numeric" min="0" style="padding-left:12px;" oninput="updateProjectProgress()">
+              </div>
+            </div>
+            <div class="field-error{% if form_errors.estimated_person_months %} show{% endif %}" id="mmErr">{{ form_errors.estimated_person_months|default("") }}</div>
+          </div>
+          <div class="field">
+            <div class="field-label">開始予定日 <span class="opt-badge">任意</span></div>
+            <input type="date" class="f-input" id="startDate" name="planned_start_date" value="{{ form_data.planned_start_date|default('') }}">
+          </div>
+          <div class="field">
+            <div class="field-label">完了予定日 <span class="opt-badge">任意</span></div>
+            <input type="date" class="f-input" id="endDate" name="planned_end_date" value="{{ form_data.planned_end_date|default('') }}">
+          </div>
+        </div>
+        <div class="field-error{% if form_errors.planned_dates %} show{% endif %}" id="dateErr">{{ form_errors.planned_dates|default("") }}</div>
+        <div class="budget-note">
+          <div class="bn-icon"></div>
+          <div class="bn-text"><strong>概算での申請で構いません。</strong>承認後にこの金額が「確定予算」となります。予算超過リスクを踏まえ、余裕を持った金額を設定してください。</div>
+        </div>
+      </div>
+
+    </div>
+    </form>
+
+    <div class="side-col">
+      <div class="progress-card">
+        <div class="pc-title">入力状況</div>
+        <div class="pi-bar-track"><div class="pi-bar-fill" id="progressBar" style="width:0%"></div></div>
+        <div class="pi-pct" id="progressPct">0%</div>
+        <div class="pi-items">
+          <div class="pi-item" id="pi0"><div class="pi-dot"></div>案件名</div>
+          <div class="pi-item" id="pi1"><div class="pi-dot"></div>担当部門</div>
+          <div class="pi-item" id="pi2"><div class="pi-dot"></div>目的・概要</div>
+          <div class="pi-item" id="pi3"><div class="pi-dot"></div>金額（予算）</div>
+          <div class="pi-item" id="pi4"><div class="pi-dot"></div>工数</div>
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <div class="tips-head"><div class="tips-title">申請のコツ</div></div>
+        <div class="tips-body">
+          <div class="tip-item"><div class="tip-num">1</div><div class="tip-text"><strong>案件名は具体的に</strong>。「システム改修」より「顧客管理システム刷新（クラウド移行）」のように範囲を明確に。</div></div>
+          <div class="tip-item"><div class="tip-num">2</div><div class="tip-text"><strong>目的欄はなぜ必要か</strong>を中心に。承認者が判断するための最重要情報です。</div></div>
+          <div class="tip-item"><div class="tip-num">3</div><div class="tip-text"><strong>予算は多めに見積もる</strong>のが鉄則。承認後の超過申請は手続きが増えます。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="dialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-big-icon"></div>
+      <div class="dlg-title">この内容で申請しますか？</div>
+      <div class="dlg-body">
+        入力内容を確認のうえ、問題なければ申請してください。<br>
+        申請後は内容確認画面へ移動します。
+      </div>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-cancel" onclick="closeProjectSubmitDialog()">キャンセル</button>
+        <button type="button" class="dlg-ok" id="confirmSubmitBtn">申請する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overwrite-dialog" id="owDialog">
+    <div class="ow-box">
+      <div class="ow-icon"></div>
+      <div class="ow-title">入力内容を上書きしますか？</div>
+      <div class="ow-body">現在入力中の内容が下書きのデータで上書きされます。<br>入力中の内容は失われます。よろしいですか？</div>
+      <div class="ow-btns">
+        <button type="button" class="ow-no" onclick="closeProjectOwDialog()">キャンセル</button>
+        <button type="button" class="ow-yes" id="owYesBtn">上書きして反映</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+{% endblock %}
+
+{% block content_footer %}
+  {% set footer_info_text = "" %}
+  {% set footer_info_value = "" %}
+  {% set footer_actions %}
+    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済み</span>
+    <button type="button" class="project-new-footer-draft-save" id="draftSaveBtn">下書き保存</button>
+    <button type="button" class="project-new-footer-submit" id="submitOpenBtn" {% if not departments %}disabled{% endif %}>この内容で申請する</button>
+  {% endset %}
+  {% include "partials/_content_footer.html" %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+function getProjectEl(id) { return document.getElementById(id); }
+function escapeProjectMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+let projectDrafts = {{ drafts_json|tojson }};
+let pendingApplyId = null;
+
+function projectDeptLabel(v) {
+  const dept = String(v || "");
+  const found = document.querySelector("#dept option[value=\"" + dept + "\"]");
+  return found ? found.textContent : "";
+}
+
+function openProjectDraftDrawer() {
+  renderProjectDraftList(projectDrafts);
+  getProjectEl("draftDrawer").classList.add("open");
+  getProjectEl("draftDrawerOverlay").classList.add("open");
+  document.body.classList.add("is-project-draft-drawer-open");
+}
+function closeProjectDraftDrawer() {
+  getProjectEl("draftDrawer").classList.remove("open");
+  getProjectEl("draftDrawerOverlay").classList.remove("open");
+  document.body.classList.remove("is-project-draft-drawer-open");
+  const search = getProjectEl("draftSearch");
+  if (search) search.value = "";
+}
+function renderProjectDraftList(list) {
+  const el = getProjectEl("draftList");
+  if (!el) return;
+  const draftCountBadge = getProjectEl("draftCountBadge");
+  const draftBadge = getProjectEl("draftBadge");
+  if (list.length === 0) {
+    el.innerHTML = "<div class=\"drawer-empty\"><div class=\"drawer-empty-text\">保存した下書きはまだありません</div><div class=\"drawer-empty-text\">入力途中の内容を下書き保存すると、ここから再開できます。</div></div>";
+    if (draftCountBadge) draftCountBadge.textContent = projectDrafts.length + "件";
+    if (draftBadge) draftBadge.textContent = String(projectDrafts.length);
+    return;
+  }
+  el.innerHTML = list.map(function(d) {
+    const name = escapeProjectMockHtml(d.title || "（無題）");
+    const dept = escapeProjectMockHtml(d.department_name || "");
+    const desc = escapeProjectMockHtml(d.purpose || "");
+    const savedAt = escapeProjectMockHtml(d.updated_at_display || "");
+    const budgetPart = d.estimated_budget_amount != null ? ("¥" + Number(d.estimated_budget_amount).toLocaleString()) : "金額未入力";
+    const mmPart = d.estimated_person_months != null ? (d.estimated_person_months + "人月") : "工数未入力";
+    const budget = budgetPart + " / " + mmPart;
+    const preview = (d.purpose_preview || "");
+    return "<div class=\"draft-card\" data-id=\"" + d.id + "\">"
+      + "<div class=\"dc-header\"><div class=\"dc-name\">" + name + "</div><div class=\"dc-date\">保存：" + savedAt + "</div></div>"
+      + "<div class=\"dc-meta\"><span class=\"dc-chip\">" + dept + "</span><span class=\"dc-chip dc-budget-chip\">" + escapeProjectMockHtml(budget) + "</span></div>"
+      + "<div class=\"dc-footer\"><div class=\"dc-desc-preview\">" + desc + "</div>"
+      + "<button class=\"dc-delete-btn\" onclick=\"deleteProjectDraft(event," + d.id + ")\">削除</button>"
+      + "<button class=\"dc-apply-btn\" onclick=\"applyProjectDraft(event," + d.id + ")\">フォームに反映</button></div>"
+      + "<div class=\"dc-preview-popup\"><div class=\"popup-label\">目的・概要プレビュー</div>" + escapeProjectMockHtml(preview) + "</div></div>";
+  }).join("");
+  if (draftCountBadge) draftCountBadge.textContent = projectDrafts.length + "件";
+  if (draftBadge) draftBadge.textContent = String(projectDrafts.length);
+}
+function filterProjectDrafts(q) {
+  const kw = (q || "").trim().toLowerCase();
+  if (!kw) { renderProjectDraftList(projectDrafts); return; }
+  const filtered = projectDrafts.filter(function(d) {
+    const title = String(d.title || "").toLowerCase();
+    const purpose = String(d.purpose || "").toLowerCase();
+    const department = String(d.department_name || "").toLowerCase();
+    return title.includes(kw) || purpose.includes(kw) || department.includes(kw);
+  });
+  if (filtered.length === 0) {
+    const el = getProjectEl("draftList");
+    if (el) {
+      el.innerHTML = "<div class=\"drawer-empty\"><div class=\"drawer-empty-text\">一致する下書きがありません</div><div class=\"drawer-empty-text\">検索条件を変更すると見つかる場合があります。</div></div>";
+    }
+    return;
+  }
+  renderProjectDraftList(filtered);
+}
+function deleteProjectDraft(e, id) {
+  e.stopPropagation();
+  fetch("/applicant/project-drafts/" + id + "/delete", {
+    method: "POST",
+    headers: { "X-CSRFToken": getCsrfToken() }
+  }).then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (!data.ok) { showProjectNewToast(data.message || "下書き削除に失敗しました。"); return; }
+    projectDrafts = data.drafts || [];
+    renderProjectDraftList(projectDrafts);
+    showProjectNewToast(data.message || "下書きを削除しました");
+  }).catch(function() {
+    showProjectNewToast("下書き削除に失敗しました。");
+  });
+}
+function applyProjectDraft(e, id) {
+  e.stopPropagation();
+  const hasContent =
+    getProjectEl("projName").value.trim() ||
+    getProjectEl("projDesc").value.trim() ||
+    getProjectEl("budgetAmount").value ||
+    getProjectEl("manmonth").value ||
+    getProjectEl("startDate").value ||
+    getProjectEl("endDate").value;
+  if (hasContent) {
+    pendingApplyId = id;
+    getProjectEl("owDialog").classList.add("open");
+    getProjectEl("owYesBtn").onclick = function() { doProjectDraftApply(pendingApplyId); closeProjectOwDialog(); };
+    return;
+  }
+  doProjectDraftApply(id);
+}
+function doProjectDraftApply(id) {
+  const d = projectDrafts.find(function(x) { return x.id === id; });
+  if (!d) return;
+  const dept = getProjectEl("dept");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  const startDate = getProjectEl("startDate");
+  const endDate = getProjectEl("endDate");
+  const mwAmount = getProjectEl("mwAmount");
+  const mwMm = getProjectEl("mwMm");
+  const prefillBannerText = getProjectEl("prefillBannerText");
+  const prefillBanner = getProjectEl("prefillBanner");
+  if (!dept || !budgetAmount || !manmonth || !startDate || !endDate || !mwAmount || !mwMm || !prefillBannerText || !prefillBanner) return;
+  setProjectField("projName", d.title || "", "nameCC", 60);
+  setProjectField("projDesc", d.purpose || "", "descCC", 500);
+  dept.value = d.department_id ? String(d.department_id) : "";
+  budgetAmount.value = d.estimated_budget_amount != null ? String(d.estimated_budget_amount) : "";
+  manmonth.value = d.estimated_person_months != null ? String(d.estimated_person_months) : "";
+  startDate.value = d.planned_start_date || "";
+  endDate.value = d.planned_end_date || "";
+  const draftIdField = getProjectEl("draftIdField");
+  if (draftIdField) draftIdField.value = String(d.id);
+  ["projName", "projDesc", "dept"].forEach(function(id2) {
+    const target = getProjectEl(id2);
+    if (target) target.classList.add("prefilled");
+  });
+  mwAmount.classList.add("prefilled");
+  mwMm.classList.add("prefilled");
+  prefillBannerText.textContent = "「" + (d.title || "（無題）") + "」の下書きをフォームに反映しました。修正してそのまま申請できます。";
+  prefillBanner.classList.add("show");
+  updateProjectProgress();
+  closeProjectDraftDrawer();
+  showProjectNewToast("下書きを反映しました");
+}
+function setProjectField(id, val, ccId, max) {
+  const el = getProjectEl(id);
+  if (!el) return;
+  el.value = val;
+  if (ccId) {
+    const cc = getProjectEl(ccId);
+    if (cc) cc.textContent = val.length + " / " + max + " 文字";
+  }
+}
+function clearProjectPrefill(showToast = true) {
+  ["projName", "projDesc", "dept"].forEach(function(id) {
+    const target = getProjectEl(id);
+    if (!target) return;
+    target.value = "";
+    target.classList.remove("prefilled");
+  });
+  const budgetAmount = getProjectEl("budgetAmount");
+  if (budgetAmount) budgetAmount.value = "";
+  const manmonth = getProjectEl("manmonth");
+  if (manmonth) manmonth.value = "";
+  const startDate = getProjectEl("startDate");
+  if (startDate) startDate.value = "";
+  const endDate = getProjectEl("endDate");
+  if (endDate) endDate.value = "";
+  const mwAmount = getProjectEl("mwAmount");
+  if (mwAmount) mwAmount.classList.remove("prefilled");
+  const mwMm = getProjectEl("mwMm");
+  if (mwMm) mwMm.classList.remove("prefilled");
+  const prefillBanner = getProjectEl("prefillBanner");
+  if (prefillBanner) prefillBanner.classList.remove("show");
+  const draftIdField = getProjectEl("draftIdField");
+  if (draftIdField) draftIdField.value = "";
+  const confirmed = getProjectEl("confirmed");
+  if (confirmed) confirmed.value = "0";
+  updateProjectProgress();
+  updateProjectCC(getProjectEl("projName"), "nameCC", 60);
+  updateProjectCC(getProjectEl("projDesc"), "descCC", 500);
+    if (showToast) showProjectNewToast("フォームをクリアしました");
+}
+function closeProjectOwDialog() { getProjectEl("owDialog").classList.remove("open"); }
+function saveProjectNewMockDraft() {
+  const projName = getProjectEl("projName");
+  const dept = getProjectEl("dept");
+  const projDesc = getProjectEl("projDesc");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  const startDate = getProjectEl("startDate");
+  const endDate = getProjectEl("endDate");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth || !startDate || !endDate) return;
+  const payload = {
+    title: projName.value,
+    department_id: dept.value,
+    purpose: projDesc.value,
+    estimated_budget_amount: budgetAmount.value,
+    estimated_person_months: manmonth.value,
+    planned_start_date: startDate.value,
+    planned_end_date: endDate.value
+  };
+  fetch("/applicant/project-drafts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCsrfToken()
+    },
+    body: JSON.stringify(payload)
+  }).then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (!data.ok) { showProjectNewToast(data.message || "下書き保存に失敗しました。"); return; }
+    projectDrafts = data.drafts || [];
+    renderProjectDraftList(projectDrafts);
+    clearProjectPrefill(false);
+    showProjectNewToast(data.message || "下書きを保存しました");
+  }).catch(function() {
+    showProjectNewToast("下書き保存に失敗しました。");
+  });
+}
+function updateProjectCC(el, id, max) {
+  const c = getProjectEl(id);
+  if (!c || !el) return;
+  c.textContent = el.value.length + " / " + max + " 文字";
+  c.classList.toggle("warn", el.value.length > max * 0.85);
+}
+const piChecks = [
+  { id: "pi0", ok: function() { return getProjectEl("projName").value.trim().length >= 3; } },
+  { id: "pi1", ok: function() { return getProjectEl("dept").value !== ""; } },
+  { id: "pi2", ok: function() { return getProjectEl("projDesc").value.trim().length >= 10; } },
+  { id: "pi3", ok: function() { return parseInt(getProjectEl("budgetAmount").value, 10) > 0; } },
+  { id: "pi4", ok: function() { return parseFloat(getProjectEl("manmonth").value) > 0; } }
+];
+function updateProjectProgress() {
+  const projName = getProjectEl("projName");
+  const dept = getProjectEl("dept");
+  const projDesc = getProjectEl("projDesc");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth) return;
+  let done = 0;
+  piChecks.forEach(function(c, idx) {
+    const ok = idx === 0 ? projName.value.trim().length >= 3
+      : idx === 1 ? dept.value !== ""
+      : idx === 2 ? projDesc.value.trim().length >= 10
+      : idx === 3 ? parseInt(budgetAmount.value, 10) > 0
+      : parseFloat(manmonth.value) > 0;
+    if (ok) done += 1;
+    const el = getProjectEl(c.id);
+    if (!el) return;
+    el.classList.toggle("done", ok);
+    const dot = el.querySelector(".pi-dot");
+    if (dot) dot.style.background = ok ? "var(--project-new-success)" : "var(--project-new-border)";
+  });
+  const pct = Math.round(done / piChecks.length * 100);
+  const progressBar = getProjectEl("progressBar");
+  if (progressBar) progressBar.style.width = pct + "%";
+  const progressPct = getProjectEl("progressPct");
+  if (progressPct) progressPct.textContent = pct + "%";
+  const footerPct = getProjectEl("footerPct");
+  if (footerPct) footerPct.textContent = pct + "％";
+}
+function validateProjectNewMock() {
+  const projName = getProjectEl("projName");
+  const dept = getProjectEl("dept");
+  const projDesc = getProjectEl("projDesc");
+  const budgetAmount = getProjectEl("budgetAmount");
+  const manmonth = getProjectEl("manmonth");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth) return false;
+  const checks = [
+    { fid: "projName", eid: "nameErr", fail: function() { return !projName.value.trim(); } },
+    { fid: "dept", eid: "deptErr", fail: function() { return !dept.value; } },
+    { fid: "projDesc", eid: "descErr", fail: function() { return projDesc.value.trim().length < 5; } },
+    { fid: "budgetAmount", eid: "amtErr", fail: function() { return !(parseInt(budgetAmount.value, 10) > 0); } },
+    { fid: "manmonth", eid: "mmErr", fail: function() { return !manmonth.value || !(parseFloat(manmonth.value) > 0); } }
+  ];
+  let ok = true;
+  checks.forEach(function(c) {
+    const fail = c.fail();
+    const field = getProjectEl(c.fid);
+    if (field) field.classList.toggle("error", fail);
+    const err = getProjectEl(c.eid);
+    if (err) err.classList.toggle("show", fail);
+    if (fail) ok = false;
+  });
+  return ok;
+}
+function submitProjectNewMockForm() {
+  const dialogOverlay = getProjectEl("dialogOverlay");
+  if (!dialogOverlay) return;
+  const confirmed = getProjectEl("confirmed");
+  if (confirmed) confirmed.value = "0";
+  if (!validateProjectNewMock()) {
+    showProjectNewToast("必須項目を入力してください");
+    const firstErr = document.querySelector(".f-input.error, .f-select.error, .f-textarea.error");
+    if (firstErr) firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  dialogOverlay.classList.add("open");
+}
+function closeProjectSubmitDialog() {
+  const dialogOverlay = getProjectEl("dialogOverlay");
+  if (!dialogOverlay) return;
+  dialogOverlay.classList.remove("open");
+}
+function showProjectNewToast(msg) {
+  const t = getProjectEl("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+function getCsrfToken() {
+  const el = document.querySelector("input[name='csrf_token']");
+  return el ? el.value : "";
+}
+function submitConfirmedProjectForm() {
+  const form = getProjectEl("projectNewForm");
+  const confirmed = getProjectEl("confirmed");
+  const submitBtn = getProjectEl("submitOpenBtn");
+  const confirmSubmitBtn = getProjectEl("confirmSubmitBtn");
+  if (!form || !confirmed) return;
+  confirmed.value = "1";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "申請中...";
+  }
+  if (confirmSubmitBtn) confirmSubmitBtn.disabled = true;
+  form.submit();
+}
+
+(function initProjectNewPage() {
+  const openBtn = document.querySelector("[data-draft-drawer-open]");
+  if (openBtn) openBtn.addEventListener("click", openProjectDraftDrawer);
+  const draftSaveBtn = getProjectEl("draftSaveBtn");
+  if (draftSaveBtn) draftSaveBtn.addEventListener("click", saveProjectNewMockDraft);
+  const submitOpenBtn = getProjectEl("submitOpenBtn");
+  if (submitOpenBtn) submitOpenBtn.addEventListener("click", submitProjectNewMockForm);
+  const confirmSubmitBtn = getProjectEl("confirmSubmitBtn");
+  if (confirmSubmitBtn) confirmSubmitBtn.addEventListener("click", submitConfirmedProjectForm);
+  const form = getProjectEl("projectNewForm");
+  if (form) {
+    form.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && e.target && e.target.tagName !== "TEXTAREA") e.preventDefault();
+    });
+  }
+  updateProjectProgress();
+  renderProjectDraftList(projectDrafts);
+})();
+</script>
+{% endblock %}
