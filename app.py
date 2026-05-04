@@ -127,6 +127,160 @@ def get_unread_notifications_count() -> int:
     return Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
 
 
+def format_jst_date(dt: datetime | None, pattern: str = "%Y/%m/%d") -> str:
+    """UTC保存のDateTimeをJST表示文字列に整形する。"""
+    if dt is None:
+        return "—"
+    return dt.astimezone(ZoneInfo("Asia/Tokyo")).strftime(pattern)
+
+
+def format_business_date(d: date | None, pattern: str = "%Y年%-m月") -> str:
+    """Date型を業務日付として表示整形する。"""
+    if d is None:
+        return "未設定"
+    return d.strftime(pattern)
+
+
+def format_decimal_amount(value: Decimal | None) -> str:
+    """金額を3桁区切りの円表記に整形する。"""
+    if value is None:
+        return "¥0"
+    return f"¥{int(value):,}"
+
+
+def format_person_months(value: Decimal | None) -> str:
+    """工数を不要な末尾0を落として人月表記に整形する。"""
+    if value is None:
+        return "0 人月"
+    normalized = value.normalize()
+    text = format(normalized, "f").rstrip("0").rstrip(".")
+    return f"{text} 人月"
+
+
+def get_latest_rejection_log(project: Project) -> ProjectStatusLog | None:
+    """案件の最新却下ログを返す。"""
+    reject_logs = [
+        log
+        for log in project.project_status_logs
+        if log.to_status == "rejected" or log.action in {"reject_department", "reject_hq"}
+    ]
+    if not reject_logs:
+        return None
+    return max(reject_logs, key=lambda log: (log.acted_at, log.id))
+
+
+def build_project_status_view_data(project: Project) -> dict:
+    """申請状況画面の表示用データを作る。"""
+    status_map = {
+        "department_pending": {"banner_class": "s-wait-dept", "label": "部門承認待ち"},
+        "hq_pending": {"banner_class": "s-wait-hq", "label": "本部承認待ち"},
+        "rejected": {"banner_class": "s-reject", "label": "却下（要修正）"},
+    }
+    status_info = status_map.get(project.status, status_map["department_pending"])
+
+    logs_by_action = {}
+    for log in project.project_status_logs:
+        logs_by_action.setdefault(log.action, []).append(log)
+    for action, logs in logs_by_action.items():
+        logs_by_action[action] = max(logs, key=lambda item: (item.acted_at, item.id))
+
+    submit_log = logs_by_action.get("submit")
+    dept_approved_log = logs_by_action.get("approve_department")
+    rejection_log = get_latest_rejection_log(project)
+
+    planned_period = "未設定"
+    if project.planned_start_date and project.planned_end_date:
+        month_span = (
+            (project.planned_end_date.year - project.planned_start_date.year) * 12
+            + (project.planned_end_date.month - project.planned_start_date.month)
+            + 1
+        )
+        planned_period = (
+            f"{format_business_date(project.planned_start_date)}〜"
+            f"{format_business_date(project.planned_end_date)}（{month_span}ヶ月）"
+        )
+
+    step2_label = "部門確認"
+    step2_class = ""
+    step2_icon = "2"
+    step2_date = "—"
+    step3_label = "本部確認"
+    step3_class = ""
+    step3_icon = "3"
+    step3_date = "—"
+    step4_class = ""
+    step4_icon = "4"
+    step4_date = "—"
+
+    if project.status == "department_pending":
+        step2_class = "st-current"
+        step2_icon = "⋯"
+        step2_date = "待機中"
+    elif project.status == "hq_pending":
+        step2_class = "st-done"
+        step2_icon = "✓"
+        step2_label = "部門承認済"
+        step2_date = format_jst_date(dept_approved_log.acted_at, "%-m/%-d") if dept_approved_log else "—"
+        step3_class = "st-current"
+        step3_icon = "⋯"
+        step3_date = "待機中"
+    elif project.status == "rejected":
+        if rejection_log and rejection_log.action == "reject_hq":
+            step2_class = "st-done"
+            step2_icon = "✓"
+            step2_label = "部門承認済"
+            step2_date = format_jst_date(dept_approved_log.acted_at, "%-m/%-d") if dept_approved_log else "—"
+            step3_class = "st-reject"
+            step3_icon = "✕"
+            step3_label = "本部 却下"
+            step3_date = format_jst_date(rejection_log.acted_at, "%-m/%-d")
+        else:
+            step2_class = "st-reject"
+            step2_icon = "✕"
+            step2_label = "部門 却下"
+            step2_date = format_jst_date(rejection_log.acted_at, "%-m/%-d") if rejection_log else "—"
+
+    rejection_comment = (project.rejection_comment or "").strip() or "却下理由は登録されていません。"
+    reject_who = "—"
+    if rejection_log:
+        actor_name = rejection_log.actor.display_name if rejection_log.actor else "不明"
+        reject_who = f"{actor_name} / {format_jst_date(rejection_log.acted_at, '%-m/%-d')}"
+
+    return {
+        "project_id": project.id,
+        "status": project.status,
+        "status_label": status_info["label"],
+        "banner_class": status_info["banner_class"],
+        "project_name": project.title,
+        "project_code": project.project_code,
+        "status_meta": f"申請日：{format_jst_date(project.created_at)} ／ {project.project_code}",
+        "created_at_display": format_jst_date(project.created_at, "%Y年%-m月%-d日 %H:%M"),
+        "applicant_name": project.applicant.display_name if project.applicant else "—",
+        "department_name": project.department.name if project.department else "—",
+        "purpose": project.purpose,
+        "budget_display": format_decimal_amount(project.estimated_budget_amount),
+        "person_months_display": format_person_months(project.estimated_person_months),
+        "planned_period_display": planned_period,
+        "show_reject_panel": project.status == "rejected",
+        "reject_who": reject_who,
+        "reject_comment": rejection_comment,
+        "steps": [
+            {
+                "class_name": "st-done",
+                "icon": "✓",
+                "label": "申請済み",
+                "date": format_jst_date(
+                    submit_log.acted_at if submit_log else project.created_at,
+                    "%-m/%-d",
+                ),
+            },
+            {"class_name": step2_class, "icon": step2_icon, "label": step2_label, "date": step2_date},
+            {"class_name": step3_class, "icon": step3_icon, "label": step3_label, "date": step3_date},
+            {"class_name": step4_class, "icon": step4_icon, "label": "承認完了", "date": step4_date},
+        ],
+    }
+
+
 def serialize_project_draft(draft: ProjectDraft) -> dict:
     """下書きを画面表示・JS用に整形する。"""
     purpose = (draft.purpose or "").strip()
@@ -479,7 +633,7 @@ def applicant_project_new():
 
                 db.session.commit()
                 flash("案件を申請しました。承認状況はこの画面で確認できます。", "success")
-                return redirect(url_for("applicant_project_confirm", project_id=project.id))
+                return redirect(url_for("applicant_project_status", project_id=project.id))
             except Exception:
                 db.session.rollback()
                 flash("申請処理に失敗しました。入力内容を確認して、もう一度お試しください。", "danger")
@@ -579,22 +733,65 @@ def applicant_project_drafts_delete(draft_id):
     )
 
 
+# =============================
+# ■ 申請者：申請状況確認・管理画面
+# =============================
 @app.route("/applicant/projects/<int:project_id>/status")
 @login_required
-def applicant_project_confirm(project_id):
+def applicant_project_status(project_id):
     access_error = require_applicant()
     if access_error:
         return access_error
 
-    project = Project.query.filter_by(id=project_id, applicant_id=current_user.id).first()
+    target_statuses = ("department_pending", "hq_pending", "rejected")
+    project = (
+        Project.query.options(
+            joinedload(Project.applicant),
+            joinedload(Project.department),
+            joinedload(Project.project_status_logs).joinedload(ProjectStatusLog.actor),
+        )
+        .filter(Project.id == project_id, Project.applicant_id == current_user.id)
+        .first()
+    )
     if project is None:
         flash("対象の案件が見つかりません。", "danger")
         return redirect(url_for("applicant_top"))
+    if project.status not in target_statuses:
+        flash("この画面で確認できる申請状況はありません。", "danger")
+        return redirect(url_for("applicant_top"))
+
+    switch_projects = (
+        Project.query.filter(
+            Project.applicant_id == current_user.id,
+            Project.status.in_(target_statuses),
+        )
+        .order_by(Project.created_at.desc(), Project.id.desc())
+        .all()
+    )
+    if not switch_projects:
+        flash("確認できる申請中・却下案件はありません。", "danger")
+        return redirect(url_for("applicant_top"))
+
+    switcher_options = []
+    status_label_map = {
+        "department_pending": "部門承認待ち",
+        "hq_pending": "本部承認待ち",
+        "rejected": "却下（要修正）",
+    }
+    for item in switch_projects:
+        switcher_options.append(
+            {
+                "project_id": item.id,
+                "label": f"{item.title} — {status_label_map.get(item.status, item.status)}",
+            }
+        )
 
     return render_template(
         "applicant_project_status.html",
         active_menu="applicant_confirm",
-        project=project,
+        status_view=build_project_status_view_data(project),
+        switcher_options=switcher_options,
+        switcher_count=len(switcher_options),
         unread_notifications_count=get_unread_notifications_count(),
     )
 

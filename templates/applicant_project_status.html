@@ -151,12 +151,12 @@
     <div class="sw-label">申請中案件：</div>
     <div class="sw-select-wrap">
       <select class="sw-select" id="caseSelect" onchange="switchApplicantProjectStatusCase(this.value)">
-        <option value="wait_dept">基幹システム刷新PJ — 部門承認待ち</option>
-        <option value="wait_hq">BI分析基盤整備 — 本部承認待ち</option>
-        <option value="reject">データ連携基盤構築 — 却下（要修正）</option>
+        {% for option in switcher_options %}
+        <option value="{{ option.project_id }}" {% if option.project_id == status_view.project_id %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
       </select>
     </div>
-    <div class="sw-count">自分の申請：<strong>3</strong>件</div>
+    <div class="sw-count">自分の申請：<strong>{{ switcher_count }}</strong>件</div>
   </div>
 </div>
 {% endblock %}
@@ -166,38 +166,34 @@
   <div class="content">
     <div class="detail-layout">
       <div class="status-card">
-        <div class="status-banner s-wait-dept" id="statusBanner">
+        <div class="status-banner {{ status_view.banner_class }}" id="statusBanner">
           <div class="sb-left">
-            <div class="sb-proj-name" id="statusProjName">基幹システム刷新PJ</div>
-            <div class="sb-meta" id="statusMeta">申請日：2025/05/13 ／ REQ-2025-00142</div>
+            <div class="sb-proj-name" id="statusProjName">{{ status_view.project_name }}</div>
+            <div class="sb-meta" id="statusMeta">{{ status_view.status_meta }}</div>
           </div>
-          <div class="sb-badge-main" id="statusBadge">部門承認待ち</div>
+          <div class="sb-badge-main" id="statusBadge">{{ status_view.status_label }}</div>
         </div>
         <div class="stepper-wrap">
           <div class="stepper" id="stepper">
-            <div class="step st-done" id="st0"><div class="step-node">✓</div><div class="step-label">申請済み</div><div class="step-date" id="sd0">5/13</div></div>
-            <div class="step st-current" id="st1"><div class="step-node">⋯</div><div class="step-label">部門確認</div><div class="step-date" id="sd1">待機中</div></div>
-            <div class="step" id="st2"><div class="step-node">3</div><div class="step-label">本部確認</div><div class="step-date" id="sd2">—</div></div>
-            <div class="step" id="st3"><div class="step-node">4</div><div class="step-label">承認完了</div><div class="step-date" id="sd3">—</div></div>
+            <div class="step {{ status_view.steps[0].class_name }}" id="st0"><div class="step-node">{{ status_view.steps[0].icon }}</div><div class="step-label">{{ status_view.steps[0].label }}</div><div class="step-date" id="sd0">{{ status_view.steps[0].date }}</div></div>
+            <div class="step {{ status_view.steps[1].class_name }}" id="st1"><div class="step-node">{{ status_view.steps[1].icon }}</div><div class="step-label">{{ status_view.steps[1].label }}</div><div class="step-date" id="sd1">{{ status_view.steps[1].date }}</div></div>
+            <div class="step {{ status_view.steps[2].class_name }}" id="st2"><div class="step-node">{{ status_view.steps[2].icon }}</div><div class="step-label">{{ status_view.steps[2].label }}</div><div class="step-date" id="sd2">{{ status_view.steps[2].date }}</div></div>
+            <div class="step {{ status_view.steps[3].class_name }}" id="st3"><div class="step-node">{{ status_view.steps[3].icon }}</div><div class="step-label">{{ status_view.steps[3].label }}</div><div class="step-date" id="sd3">{{ status_view.steps[3].date }}</div></div>
           </div>
         </div>
-        <div class="reject-alert-panel" id="rejectPanel">
-          <div class="rap-head"><div class="rap-icon"></div><div class="rap-title">却下理由</div><div class="rap-who" id="rejectWho">山田 部長 / 5/15</div></div>
-          <div class="rap-body" id="rejectBody"><strong>却下者からのフィードバック</strong>概算予算の内訳（人月・費目別）が不明確です。¥12,000,000 の根拠となる見積書またはWBSを添付のうえ再申請してください。また、リスク対応策の記載が欠けています。プロジェクト遅延・コスト超過時の対処方針を追記してください。</div>
+        <div class="reject-alert-panel {% if status_view.show_reject_panel %}show{% endif %}" id="rejectPanel">
+          <div class="rap-head"><div class="rap-icon"></div><div class="rap-title">却下理由</div><div class="rap-who" id="rejectWho">{{ status_view.reject_who }}</div></div>
+          <div class="rap-body" id="rejectBody"><strong>却下者からのフィードバック</strong>{{ status_view.reject_comment }}</div>
         </div>
       </div>
       <div class="d-card">
         <div class="dc-head"><div class="dc-title">申請内容（基本情報）</div><div class="dc-badge-ro">読み取り専用</div></div>
         <div class="dc-body">
-          <div class="info-row"><div class="ir-label">案件名</div><div class="ir-value big" id="projName">基幹システム刷新PJ</div></div>
-          <div class="info-row"><div class="ir-label">目的・概要</div><div class="ir-value desc">老朽化した基幹システムをクラウドネイティブ構成へ刷新し、保守コストの削減と業務効率化を図る。将来的なBI連携も視野に入れたデータ基盤整備を含む。
-
-【期待効果】
-・年間保守コスト 約30%削減（推定 ¥4.5M/年）
-・デプロイリードタイム 5日 → 0.5日</div></div>
-          <div class="info-row"><div class="ir-label">申請者 / 担当部門</div><div class="person-chip" style="margin-top:6px;"><div><div class="pc-name">田中 太郎</div><div class="pc-dept">第一開発部</div></div></div></div>
-          <div class="info-row"><div class="ir-label">概算予算</div><div class="budget-box"><div class="bb-row"><span class="bb-key">総額（金額）</span><span class="bb-val">¥12,000,000</span></div><div class="bb-row"><span class="bb-key">工数</span><span class="bb-val">24 人月</span></div><div class="bb-row"><span class="bb-key">実施期間</span><span class="bb-val">2025年6月〜2026年3月（10ヶ月）</span></div></div></div>
-          <div class="info-row" style="padding-bottom:0;border-bottom:none;"><div class="ir-label">申請日時 / 案件番号</div><div class="ir-value">2025年5月13日 10:24</div><div class="req-num-chip">REQ-2025-00142</div></div>
+          <div class="info-row"><div class="ir-label">案件名</div><div class="ir-value big" id="projName">{{ status_view.project_name }}</div></div>
+          <div class="info-row"><div class="ir-label">目的・概要</div><div class="ir-value desc">{{ status_view.purpose }}</div></div>
+          <div class="info-row"><div class="ir-label">申請者 / 担当部門</div><div class="person-chip" style="margin-top:6px;"><div><div class="pc-name">{{ status_view.applicant_name }}</div><div class="pc-dept">{{ status_view.department_name }}</div></div></div></div>
+          <div class="info-row"><div class="ir-label">概算予算</div><div class="budget-box"><div class="bb-row"><span class="bb-key">総額（金額）</span><span class="bb-val">{{ status_view.budget_display }}</span></div><div class="bb-row"><span class="bb-key">工数</span><span class="bb-val">{{ status_view.person_months_display }}</span></div><div class="bb-row"><span class="bb-key">実施期間</span><span class="bb-val">{{ status_view.planned_period_display }}</span></div></div></div>
+          <div class="info-row" style="padding-bottom:0;border-bottom:none;"><div class="ir-label">申請日時 / 案件番号</div><div class="ir-value">{{ status_view.created_at_display }}</div><div class="req-num-chip">{{ status_view.project_code }}</div></div>
         </div>
       </div>
     </div>
@@ -220,8 +216,8 @@
   {% set footer_info_text = "" %}
   {% set footer_info_value = "" %}
   {% set footer_actions %}
-    <div class="applicant-project-status-footer-info">案件名：<strong id="footerProjectName">基幹システム刷新PJ</strong></div>
-    <div class="applicant-project-status-footer-btns is-hidden" id="applicantProjectStatusFooterBtns">
+    <div class="applicant-project-status-footer-info">案件名：<strong id="footerProjectName">{{ status_view.project_name }}</strong></div>
+    <div class="applicant-project-status-footer-btns {% if not status_view.show_reject_panel %}is-hidden{% endif %}" id="applicantProjectStatusFooterBtns">
       <button type="button" class="applicant-project-status-footer-btn-withdraw">削除</button>
       <button type="button" class="applicant-project-status-footer-btn-reapply">修正して再申請</button>
     </div>
@@ -232,63 +228,13 @@
 {% block script_extra %}
 <script>
 function getApplicantProjectStatusEl(id) { return document.getElementById(id); }
-function escapeApplicantProjectStatusMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
-
-const APPLICANT_PROJECT_STATUS_CASES = {
-  wait_dept: { projName: "基幹システム刷新PJ", bannerClass: "s-wait-dept", badge: "部門承認待ち", meta: "申請日：2025/05/13 ／ REQ-2025-00142", steps: [{ cls: "st-done", icon: "✓", label: "申請済み", date: "5/13" }, { cls: "st-current", icon: "⋯", label: "部門確認", date: "待機中" }, { cls: "", icon: "3", label: "本部確認", date: "—" }, { cls: "", icon: "4", label: "承認完了", date: "—" }], showReject: false },
-  wait_hq: { projName: "BI分析基盤整備", bannerClass: "s-wait-hq", badge: "本部承認待ち", meta: "申請日：2025/05/08 ／ REQ-2025-00138", steps: [{ cls: "st-done", icon: "✓", label: "申請済み", date: "5/08" }, { cls: "st-done", icon: "✓", label: "部門承認済", date: "5/10" }, { cls: "st-current", icon: "⋯", label: "本部確認", date: "待機中" }, { cls: "", icon: "4", label: "承認完了", date: "—" }], showReject: false },
-  reject: { projName: "データ連携基盤構築", bannerClass: "s-reject", badge: "却下（要修正）", meta: "申請日：2025/05/10 ／ REQ-2025-00140", steps: [{ cls: "st-done", icon: "✓", label: "申請済み", date: "5/10" }, { cls: "st-reject", icon: "✕", label: "部門 却下", date: "5/15" }, { cls: "", icon: "3", label: "本部確認", date: "—" }, { cls: "", icon: "4", label: "承認完了", date: "—" }], showReject: true, rejectWho: "山田 部長 ／ 5/15", rejectBody: "概算予算の内訳（人月・費目別）が不明確です。¥12,000,000 の根拠となる見積書またはWBSを添付のうえ再申請してください。また、リスク対応策の記載が欠けています。プロジェクト遅延・コスト超過時の対処方針を追記してください。" }
-};
-
-function applyApplicantProjectStatusCase(key) {
-  const s = APPLICANT_PROJECT_STATUS_CASES[key];
-  if (!s) return;
-  const banner = getApplicantProjectStatusEl("statusBanner");
-  if (banner) banner.className = "status-banner " + s.bannerClass;
-  const badgeEl = getApplicantProjectStatusEl("statusBadge");
-  if (badgeEl) badgeEl.textContent = s.badge;
-  const projEl = getApplicantProjectStatusEl("statusProjName");
-  if (projEl) projEl.textContent = s.projName;
-  const metaEl = getApplicantProjectStatusEl("statusMeta");
-  if (metaEl) metaEl.textContent = s.meta;
-  const cardProjEl = getApplicantProjectStatusEl("projName");
-  if (cardProjEl) cardProjEl.textContent = s.projName;
-  const footerProjectNameEl = getApplicantProjectStatusEl("footerProjectName");
-  if (footerProjectNameEl) footerProjectNameEl.textContent = s.projName;
-  const steps = document.querySelectorAll("#stepper .step");
-  s.steps.forEach(function(st, i) {
-    if (!steps[i]) return;
-    steps[i].className = "step " + st.cls;
-    const node = steps[i].querySelector(".step-node");
-    const label = steps[i].querySelector(".step-label");
-    const date = steps[i].querySelector(".step-date");
-    if (node) node.textContent = st.icon;
-    if (label) label.textContent = st.label;
-    if (date) date.textContent = st.date;
-  });
-  const rp = getApplicantProjectStatusEl("rejectPanel");
-  if (rp) rp.classList.toggle("show", s.showReject);
-  if (s.showReject) {
-    const who = getApplicantProjectStatusEl("rejectWho");
-    const body = getApplicantProjectStatusEl("rejectBody");
-    if (who) who.textContent = s.rejectWho;
-    if (body) body.innerHTML = "<strong>却下者からのフィードバック</strong>" + escapeApplicantProjectStatusMockHtml(s.rejectBody);
-  }
-  const footerBtns = getApplicantProjectStatusEl("applicantProjectStatusFooterBtns");
-  if (footerBtns) footerBtns.classList.toggle("is-hidden", key !== "reject");
-}
-
-function switchApplicantProjectStatusCase(key) {
-  applyApplicantProjectStatusCase(key);
-  const c = APPLICANT_PROJECT_STATUS_CASES[key];
-  if (!c) return;
-  showApplicantProjectStatusToast("「" + c.projName + "」 に切替えました");
+function switchApplicantProjectStatusCase(projectId) {
+  if (!projectId) return;
+  window.location.href = "{{ url_for('applicant_project_status', project_id=0) }}".replace("/0/status", "/" + projectId + "/status");
 }
 
 function confirmApplicantProjectStatusDelete() {
-  const selectEl = getApplicantProjectStatusEl("caseSelect");
-  const key = selectEl ? selectEl.value : "wait_dept";
-  const name = APPLICANT_PROJECT_STATUS_CASES[key] ? APPLICANT_PROJECT_STATUS_CASES[key].projName : "本申請";
+  const name = "{{ status_view.project_name }}";
   const dlgTitle = getApplicantProjectStatusEl("applicantProjectStatusDlgTitle");
   const dlgBody = getApplicantProjectStatusEl("applicantProjectStatusDlgBody");
   const dlgOk = getApplicantProjectStatusEl("applicantProjectStatusDlgOk");
@@ -298,7 +244,7 @@ function confirmApplicantProjectStatusDelete() {
   dlgOk.style.background = "#dc3545";
   dlgOk.style.color = "#fff";
   dlgOk.textContent = "削除";
-  dlgOk.onclick = function() { closeApplicantProjectStatusDialog(); };
+  dlgOk.onclick = function() { closeApplicantProjectStatusDialog(); showApplicantProjectStatusToast("削除処理は本PoCでは未実装です"); };
   const overlay = getApplicantProjectStatusEl("applicantProjectStatusDialogOverlay");
   if (overlay) overlay.classList.add("open");
 }
@@ -319,7 +265,8 @@ function showApplicantProjectStatusToast(msg) {
 (function initApplicantProjectStatus() {
   const footerBtn = document.querySelector(".applicant-project-status-footer-btn-withdraw");
   if (footerBtn) footerBtn.onclick = confirmApplicantProjectStatusDelete;
-  applyApplicantProjectStatusCase("wait_dept");
+  const reapplyBtn = document.querySelector(".applicant-project-status-footer-btn-reapply");
+  if (reapplyBtn) reapplyBtn.onclick = function() { showApplicantProjectStatusToast("修正して再申請は後続実装予定です"); };
 })();
 </script>
 {% endblock %}
