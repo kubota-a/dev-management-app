@@ -53,8 +53,7 @@ USERS = [
 ]
 
 # README/ログイン画面向けおすすめアカウント
-# - 申請者（総合おすすめ）: watanabe / 渡辺 優菜
-# - 申請者（下書き確認おすすめ）: sato / 佐藤 美咲
+# - 申請者（おすすめ）: watanabe / 渡辺 優菜
 # - 部門管理者（おすすめ）: yamamoto / 山本 瑞希
 # - 本部管理者（おすすめ）: tajiri / 田尻 憲市郎
 
@@ -95,6 +94,15 @@ PROJECT_DRAFTS = [
         "estimated_budget_amount": "980000",
         "date_role": "draft_recent_d",
     },
+    {
+        "user_key": "watanabe",
+        "department_key": "biz_reform",
+        "title": "業務マニュアルAI検索機能の試験導入",
+        "purpose": None,
+        "estimated_person_months": "1.00",
+        "estimated_budget_amount": None,
+        "date_role": "draft_recent_e",
+    },
 ]
 
 PROJECTS = [
@@ -110,6 +118,9 @@ PROJECTS = [
     {"key": "proj_10", "project_code": "REQ-2026-00010", "title": "月次報告入力業務の簡素化対応", "applicant_key": "watanabe", "status": "in_progress", "approval_stage": "approved", "budget": "1800000", "pm": "2.30", "date_role": "progress_due_soon", "planned_role": "progress_start_recent"},
     {"key": "proj_11", "project_code": "REQ-2026-00011", "title": "予算執行状況の可視化機能追加", "applicant_key": "ito", "status": "in_progress", "approval_stage": "approved", "budget": "4200000", "pm": "4.00", "date_role": "progress_budget_over", "planned_role": "progress_start_mid"},
     {"key": "proj_12", "project_code": "REQ-2026-00012", "title": "旧申請システム移行準備案件", "applicant_key": "watanabe", "status": "rejected", "approval_stage": "rejected", "budget": "2700000", "pm": "3.00", "date_role": "rejected_recent", "planned_role": "pending_start_normal"},
+    {"key": "proj_13", "project_code": "REQ-2026-00013", "title": "業務ナレッジ共有ポータル改善", "applicant_key": "watanabe", "status": "department_pending", "approval_stage": "department_pending", "budget": "1900000", "pm": "2.20", "date_role": "pending_watanabe_recent", "planned_role": "pending_start_normal"},
+    {"key": "proj_14", "project_code": "REQ-2026-00014", "title": "月次報告自動生成機能の高度化", "applicant_key": "watanabe", "status": "in_progress", "approval_stage": "approved", "budget": "2600000", "pm": "3.10", "date_role": "progress_watanabe_attention", "planned_role": "progress_start_recent"},
+    {"key": "proj_15", "project_code": "REQ-2026-00015", "title": "社内申請ワークフロー簡素化対応", "applicant_key": "watanabe", "status": "completed", "approval_stage": "approved", "budget": "1700000", "pm": "2.00", "date_role": "completed_watanabe_recent", "planned_role": "completed_start_recent"},
 ]
 
 PROJECT_PURPOSE = {
@@ -125,6 +136,9 @@ PROJECT_PURPOSE = {
     "proj_10": "月次報告の入力負荷を軽減し、報告遅延の発生を抑制します。",
     "proj_11": "予算執行の見える化で、部門別の判断速度を高めます。",
     "proj_12": "移行対象を明確化し、次期移行計画の精度向上を図ります。",
+    "proj_13": "部門内に分散している業務ナレッジを探しやすくし、問い合わせ対応や引き継ぎにかかる時間を短縮します。",
+    "proj_14": "月次報告作成時の転記作業を減らし、報告内容のばらつきと提出遅延を抑制します。",
+    "proj_15": "申請内容の確認から承認依頼までの手順を整理し、申請者と承認者双方の確認負荷を軽減します。",
 }
 
 PROJECT_SUMMARIES = {
@@ -140,6 +154,9 @@ PROJECT_SUMMARIES = {
     "proj_10": "主な施策：\n・月次報告フォームの必須項目を整理し入力点数を削減\n・前月データの流用機能と入力補助を導入\n・提出前チェックを自動化して差し戻し要因を抑制\n\n期待効果：\n・報告作成時間の短縮\n・入力漏れの未然防止\n・月初の業務集中緩和",
     "proj_11": "主な施策：\n・予算計画と実績の差異を部門単位で可視化\n・執行率の閾値超過を把握しやすい表示へ改善\n・月次レビュー向けに時系列比較を追加\n\n期待効果：\n・予算超過傾向の早期把握\n・対策判断までのリードタイム短縮\n・部門マネジメントの説明力向上",
     "proj_12": "主な施策：\n・旧システム機能を対象範囲ごとに棚卸し\n・移行優先度と依存関係を整理した台帳を整備\n・現行運用との差分観点をレビュー可能な形で作成\n\n期待効果：\n・移行漏れリスクの抑制\n・次期案件化時の見積精度向上\n・関係部門との合意形成迅速化",
+    "proj_13": "主な施策：\n・業務カテゴリ別のナレッジ整理\n・よく使う手順への導線追加\n・検索結果の表示順見直し\n\n期待効果：\n・問い合わせ対応時間の短縮\n・属人化した手順確認の削減\n・新人メンバーの立ち上がり支援",
+    "proj_14": "主な施策：\n・前月データをもとにした報告文案の自動生成\n・入力漏れチェックの追加\n・提出前レビュー導線の改善\n\n期待効果：\n・報告作成時間の短縮\n・入力漏れの削減\n・月初業務の負荷分散",
+    "proj_15": "主な施策：\n・申請フォームの入力項目整理\n・承認前チェック項目の見直し\n・完了報告までの導線整備\n\n期待効果：\n・申請作成時間の短縮\n・差し戻し件数の削減\n・完了報告の抜け漏れ防止",
 }
 
 
@@ -148,6 +165,7 @@ PROJECT_DRAFT_DATE_RULES = {
     "draft_recent_b": {"fixed": {"created": -7, "updated": -3}, "relative": {"created": -7, "updated": -3}},
     "draft_recent_c": {"fixed": {"created": -8, "updated": -4}, "relative": {"created": -8, "updated": -4}},
     "draft_recent_d": {"fixed": {"created": -9, "updated": -5}, "relative": {"created": -9, "updated": -5}},
+    "draft_recent_e": {"fixed": {"created": -6, "updated": -2}, "relative": {"created": -6, "updated": -1}},
 }
 
 PROJECT_DATE_RULES = {
@@ -155,13 +173,16 @@ PROJECT_DATE_RULES = {
     "pending_recent": {"fixed": {"created": -12, "updated": -2, "approved": None, "completed": None, "rejected": None}, "relative": {"created": -12, "updated": -2, "approved": None, "completed": None, "rejected": None}},
     "hq_pending_normal": {"fixed": {"created": -14, "updated": -4, "approved": None, "completed": None, "rejected": None}, "relative": {"created": -14, "updated": -4, "approved": None, "completed": None, "rejected": None}},
     "hq_pending_recent": {"fixed": {"created": -10, "updated": -1, "approved": None, "completed": None, "rejected": None}, "relative": {"created": -10, "updated": -1, "approved": None, "completed": None, "rejected": None}},
-    "progress_normal": {"fixed": {"created": -20, "updated": -1, "approved": -12, "completed": None, "rejected": None}, "relative": {"created": -20, "updated": -1, "approved": -12, "completed": None, "rejected": None}},
-    "progress_delayed": {"fixed": {"created": -25, "updated": -1, "approved": -16, "completed": None, "rejected": None}, "relative": {"created": -25, "updated": -1, "approved": -16, "completed": None, "rejected": None}},
-    "progress_due_soon": {"fixed": {"created": -16, "updated": 0, "approved": -8, "completed": None, "rejected": None}, "relative": {"created": -16, "updated": 0, "approved": -8, "completed": None, "rejected": None}},
-    "progress_budget_over": {"fixed": {"created": -22, "updated": -1, "approved": -13, "completed": None, "rejected": None}, "relative": {"created": -22, "updated": -1, "approved": -13, "completed": None, "rejected": None}},
-    "completed_old": {"fixed": {"created": -35, "updated": -2, "approved": -28, "completed": -1, "rejected": None}, "relative": {"created": -35, "updated": -2, "approved": -28, "completed": -1, "rejected": None}},
-    "completed_recent": {"fixed": {"created": -24, "updated": -1, "approved": -16, "completed": 0, "rejected": None}, "relative": {"created": -24, "updated": -1, "approved": -16, "completed": 0, "rejected": None}},
+    "progress_normal": {"fixed": {"created": -20, "updated": -1, "approved": -2, "completed": None, "rejected": None}, "relative": {"created": -20, "updated": -1, "approved": -2, "completed": None, "rejected": None}},
+    "progress_delayed": {"fixed": {"created": -25, "updated": -1, "approved": -2, "completed": None, "rejected": None}, "relative": {"created": -25, "updated": -1, "approved": -2, "completed": None, "rejected": None}},
+    "progress_due_soon": {"fixed": {"created": -16, "updated": 0, "approved": -2, "completed": None, "rejected": None}, "relative": {"created": -16, "updated": 0, "approved": -2, "completed": None, "rejected": None}},
+    "progress_budget_over": {"fixed": {"created": -22, "updated": -1, "approved": -2, "completed": None, "rejected": None}, "relative": {"created": -22, "updated": -1, "approved": -2, "completed": None, "rejected": None}},
+    "completed_old": {"fixed": {"created": -35, "updated": -2, "approved": -8, "completed": -1, "rejected": None}, "relative": {"created": -35, "updated": -2, "approved": -8, "completed": -1, "rejected": None}},
+    "completed_recent": {"fixed": {"created": -24, "updated": -1, "approved": -8, "completed": 0, "rejected": None}, "relative": {"created": -24, "updated": -1, "approved": -8, "completed": -1, "rejected": None}},
     "rejected_recent": {"fixed": {"created": -11, "updated": -1, "approved": None, "completed": None, "rejected": -1}, "relative": {"created": -11, "updated": -1, "approved": None, "completed": None, "rejected": -1}},
+    "pending_watanabe_recent": {"fixed": {"created": -5, "updated": -1, "approved": None, "completed": None, "rejected": None}, "relative": {"created": -4, "updated": -1, "approved": None, "completed": None, "rejected": None}},
+    "progress_watanabe_attention": {"fixed": {"created": -24, "updated": -1, "approved": -2, "completed": None, "rejected": None}, "relative": {"created": -18, "updated": 0, "approved": -2, "completed": None, "rejected": None}},
+    "completed_watanabe_recent": {"fixed": {"created": -28, "updated": -1, "approved": -8, "completed": -1, "rejected": None}, "relative": {"created": -24, "updated": -1, "approved": -8, "completed": -1, "rejected": None}},
 }
 
 PLANNED_DATE_RULES = {
@@ -216,6 +237,16 @@ TASK_DATE_RULES = {
     "cr4": {"fixed": -1, "relative": -1},
     "cr5": {"fixed": 0, "relative": -1},
     "cr6": {"fixed": 1, "relative": -1},
+    "ws1": {"fixed": -5, "relative": -5},
+    "ws2": {"fixed": 7, "relative": 3},
+    "ws_delay": {"fixed": -1, "relative": -1},
+    "ws3": {"fixed": 10, "relative": 6},
+    "ws4": {"fixed": 14, "relative": 10},
+    "wc1": {"fixed": -10, "relative": -10},
+    "wc2": {"fixed": -8, "relative": -8},
+    "wc3": {"fixed": -6, "relative": -6},
+    "wc4": {"fixed": -4, "relative": -4},
+    "wc5": {"fixed": -2, "relative": -2},
 }
 
 BUDGET_LOG_DATE_RULES = {
@@ -488,6 +519,20 @@ def create_tasks(mode: str, projects_by_key: dict[str, Project]) -> list[Task]:
             ("利用部門確認", "中村 直樹", "done", 100, "cr5"),
             ("完了報告", "高橋 彩乃", "done", 100, "cr6"),
         ],
+        "proj_14": [
+            ("前月データ参照ロジック整理", "渡辺 優菜", "done", 100, "ws1"),
+            ("報告文案生成ルール作成", "渡辺 優菜", "in_progress", 65, "ws2"),
+            ("入力漏れチェック実装", "渡辺 優菜", "in_progress", 45, "ws_delay"),
+            ("レビュー導線UI調整", "小林 理絵", "not_started", 0, "ws3"),
+            ("受入確認シナリオ作成", "渡辺 優菜", "not_started", 0, "ws4"),
+        ],
+        "proj_15": [
+            ("申請手順の棚卸し", "渡辺 優菜", "done", 100, "wc1"),
+            ("入力項目の整理", "渡辺 優菜", "done", 100, "wc2"),
+            ("承認前チェック項目調整", "小林 理絵", "done", 100, "wc3"),
+            ("完了報告導線の確認", "渡辺 優菜", "done", 100, "wc4"),
+            ("操作説明の更新", "渡辺 優菜", "done", 100, "wc5"),
+        ],
     }
 
     rows: list[Task] = []
@@ -519,6 +564,18 @@ def create_budget_actual_logs(mode: str, projects_by_key: dict[str, Project]) ->
         "proj_11": [(910000, "要件定義費", "blog_older"), (880000, "集計処理開発費", "blog_old"), (940000, "可視化機能実装費", "blog_mid"), (860000, "テスト・調整費", "blog_mid"), (946000, "追加改修費", "blog_recent")],
         "proj_04": [(380000, "調査費", "blog_old"), (420000, "実装費", "blog_mid"), (416000, "最終調整費", "blog_recent")],
         "proj_08": [(590000, "設計費", "blog_old"), (640000, "開発費", "blog_mid"), (702000, "検証費", "blog_recent")],
+        "proj_14": [
+            (520000, "要件整理費", "blog_older"),
+            (610000, "自動生成ロジック実装費", "blog_old"),
+            (430000, "入力チェック調整費", "blog_mid"),
+            (380000, "レビュー導線改善費", "blog_recent"),
+        ],
+        "proj_15": [
+            (420000, "設計費", "blog_older"),
+            (520000, "実装費", "blog_old"),
+            (360000, "テスト費", "blog_mid"),
+            (280000, "操作説明整備費", "blog_recent"),
+        ],
     }
 
     rows: list[BudgetActualLog] = []
@@ -562,6 +619,10 @@ def create_notifications(mode: str, users_by_key: dict[str, User], projects_by_k
         ("tanaka", "proj_01", "application_received", "REQ-2026-00001 の申請を受け付けました。", True, "notif_old_a"),
         ("sato", "proj_02", "application_received", "REQ-2026-00002 の申請を受け付けました。", True, "notif_mid_b"),
         ("watanabe", "proj_10", "application_received", "REQ-2026-00010 の申請を受け付けました。", True, "notif_mid_a"),
+        ("watanabe", "proj_13", "application_received", "REQ-2026-00013 の申請を受け付けました。", False, "notif_recent_a"),
+        ("kobayashi", "proj_13", "department_pending", "REQ-2026-00013 が部門承認待ちです。", False, "notif_recent_a"),
+        ("watanabe", "proj_14", "approved", "REQ-2026-00014 が承認されました。", False, "notif_recent_b"),
+        ("watanabe", "proj_15", "completed", "REQ-2026-00015 が完了しました。", False, "notif_mid_a"),
     ]
 
     rows: list[Notification] = []
@@ -585,7 +646,7 @@ def create_project_status_logs(mode: str, users_by_key: dict[str, User], project
     rows: list[ProjectStatusLog] = []
 
     # submit 12件
-    for i, project in enumerate(PROJECTS):
+    for i, project in enumerate(PROJECTS[:12]):
         role = "sl_submit_old" if i < 4 else "sl_submit_mid" if i < 8 else "sl_submit_recent"
         row = ProjectStatusLog(
             project_id=projects_by_key[project["key"]].id,
@@ -689,6 +750,95 @@ def create_project_status_logs(mode: str, users_by_key: dict[str, User], project
     db.session.add(row_reject)
     rows.append(row_reject)
 
+    # 渡辺 優菜の追加デモ案件: 申請中1件
+    row_submit_13 = ProjectStatusLog(
+        project_id=projects_by_key["proj_13"].id,
+        actor_id=users_by_key["watanabe"].id,
+        from_status=None,
+        to_status="department_pending",
+        action="submit",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_submit_recent"),
+    )
+    db.session.add(row_submit_13)
+    rows.append(row_submit_13)
+
+    # 渡辺 優菜の追加デモ案件: 開発中1件（申請 → 部門承認 → 本部承認）
+    row_submit_14 = ProjectStatusLog(
+        project_id=projects_by_key["proj_14"].id,
+        actor_id=users_by_key["watanabe"].id,
+        from_status=None,
+        to_status="department_pending",
+        action="submit",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_submit_mid"),
+    )
+    row_dept_14 = ProjectStatusLog(
+        project_id=projects_by_key["proj_14"].id,
+        actor_id=users_by_key["kobayashi"].id,
+        from_status="department_pending",
+        to_status="hq_pending",
+        action="approve_department",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_approve_dept_old"),
+    )
+    row_hq_14 = ProjectStatusLog(
+        project_id=projects_by_key["proj_14"].id,
+        actor_id=users_by_key["tajiri"].id,
+        from_status="hq_pending",
+        to_status="in_progress",
+        action="approve_hq",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_approve_hq_recent"),
+    )
+    db.session.add(row_submit_14)
+    db.session.add(row_dept_14)
+    db.session.add(row_hq_14)
+    rows.extend([row_submit_14, row_dept_14, row_hq_14])
+
+    # 渡辺 優菜の追加デモ案件: 完了済み1件（申請 → 部門承認 → 本部承認 → 完了）
+    row_submit_15 = ProjectStatusLog(
+        project_id=projects_by_key["proj_15"].id,
+        actor_id=users_by_key["watanabe"].id,
+        from_status=None,
+        to_status="department_pending",
+        action="submit",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_submit_old"),
+    )
+    row_dept_15 = ProjectStatusLog(
+        project_id=projects_by_key["proj_15"].id,
+        actor_id=users_by_key["kobayashi"].id,
+        from_status="department_pending",
+        to_status="hq_pending",
+        action="approve_department",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_approve_dept_old"),
+    )
+    row_hq_15 = ProjectStatusLog(
+        project_id=projects_by_key["proj_15"].id,
+        actor_id=users_by_key["tajiri"].id,
+        from_status="hq_pending",
+        to_status="in_progress",
+        action="approve_hq",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_approve_hq_old"),
+    )
+    row_complete_15 = ProjectStatusLog(
+        project_id=projects_by_key["proj_15"].id,
+        actor_id=users_by_key["watanabe"].id,
+        from_status="in_progress",
+        to_status="completed",
+        action="complete",
+        comment=None,
+        acted_at=resolve_status_log_acted_at(mode, "sl_complete_old"),
+    )
+    db.session.add(row_submit_15)
+    db.session.add(row_dept_15)
+    db.session.add(row_hq_15)
+    db.session.add(row_complete_15)
+    rows.extend([row_submit_15, row_dept_15, row_hq_15, row_complete_15])
+
     db.session.flush()
     print(f"project_status_logs: {len(rows)}件作成")
     return rows
@@ -715,7 +865,7 @@ def main() -> None:
         db.session.commit()
         print("seed完了")
         print("投入モード:", SEED_MODE)
-        print("投入件数: departments=3, department_yearly_budgets=3, users=10, project_drafts=4, projects=12, tasks=40, budget_actual_logs=24, notifications=20, project_status_logs=29")
+        print("投入件数: departments=3, department_yearly_budgets=3, users=10, project_drafts=5, projects=15, tasks=50, budget_actual_logs=32, notifications=24, project_status_logs=37")
 
 
 if __name__ == "__main__":
