@@ -134,7 +134,7 @@ def format_jst_date(dt: datetime | None, pattern: str = "%Y/%m/%d") -> str:
     return dt.astimezone(ZoneInfo("Asia/Tokyo")).strftime(pattern)
 
 
-def format_business_date(d: date | None, pattern: str = "%Y年%-m月") -> str:
+def format_business_date(d: date | None, pattern: str = "%Y/%m/%d") -> str:
     """Date型を業務日付として表示整形する。"""
     if d is None:
         return "未設定"
@@ -188,17 +188,12 @@ def build_project_status_view_data(project: Project) -> dict:
     dept_approved_log = logs_by_action.get("approve_department")
     rejection_log = get_latest_rejection_log(project)
 
-    planned_period = "未設定"
-    if project.planned_start_date and project.planned_end_date:
-        month_span = (
-            (project.planned_end_date.year - project.planned_start_date.year) * 12
-            + (project.planned_end_date.month - project.planned_start_date.month)
-            + 1
-        )
-        planned_period = (
-            f"{format_business_date(project.planned_start_date)}〜"
-            f"{format_business_date(project.planned_end_date)}（{month_span}ヶ月）"
-        )
+    planned_start = format_business_date(project.planned_start_date) if project.planned_start_date else "未設定"
+    planned_end = format_business_date(project.planned_end_date) if project.planned_end_date else "未設定"
+    if project.planned_start_date or project.planned_end_date:
+        planned_period = f"{planned_start} 〜 {planned_end}"
+    else:
+        planned_period = "未設定"
 
     step2_label = "部門確認"
     step2_class = ""
@@ -220,7 +215,7 @@ def build_project_status_view_data(project: Project) -> dict:
         step2_class = "st-done"
         step2_icon = "✓"
         step2_label = "部門承認済"
-        step2_date = format_jst_date(dept_approved_log.acted_at, "%-m/%-d") if dept_approved_log else "—"
+        step2_date = format_jst_date(dept_approved_log.acted_at, "%m/%d") if dept_approved_log else "—"
         step3_class = "st-current"
         step3_icon = "⋯"
         step3_date = "待機中"
@@ -229,22 +224,22 @@ def build_project_status_view_data(project: Project) -> dict:
             step2_class = "st-done"
             step2_icon = "✓"
             step2_label = "部門承認済"
-            step2_date = format_jst_date(dept_approved_log.acted_at, "%-m/%-d") if dept_approved_log else "—"
+            step2_date = format_jst_date(dept_approved_log.acted_at, "%m/%d") if dept_approved_log else "—"
             step3_class = "st-reject"
             step3_icon = "✕"
             step3_label = "本部 却下"
-            step3_date = format_jst_date(rejection_log.acted_at, "%-m/%-d")
+            step3_date = format_jst_date(rejection_log.acted_at, "%m/%d")
         else:
             step2_class = "st-reject"
             step2_icon = "✕"
             step2_label = "部門 却下"
-            step2_date = format_jst_date(rejection_log.acted_at, "%-m/%-d") if rejection_log else "—"
+            step2_date = format_jst_date(rejection_log.acted_at, "%m/%d") if rejection_log else "—"
 
     rejection_comment = (project.rejection_comment or "").strip() or "却下理由は登録されていません。"
     reject_who = "—"
     if rejection_log:
         actor_name = rejection_log.actor.display_name if rejection_log.actor else "不明"
-        reject_who = f"{actor_name} / {format_jst_date(rejection_log.acted_at, '%-m/%-d')}"
+        reject_who = f"{actor_name} / {format_jst_date(rejection_log.acted_at, '%m/%d')}"
 
     return {
         "project_id": project.id,
@@ -254,7 +249,7 @@ def build_project_status_view_data(project: Project) -> dict:
         "project_name": project.title,
         "project_code": project.project_code,
         "status_meta": f"申請日：{format_jst_date(project.created_at)} ／ {project.project_code}",
-        "created_at_display": format_jst_date(project.created_at, "%Y年%-m月%-d日 %H:%M"),
+        "created_at_display": format_jst_date(project.created_at, "%Y/%m/%d %H:%M"),
         "applicant_name": project.applicant.display_name if project.applicant else "—",
         "department_name": project.department.name if project.department else "—",
         "purpose": project.purpose,
@@ -271,7 +266,7 @@ def build_project_status_view_data(project: Project) -> dict:
                 "label": "申請済み",
                 "date": format_jst_date(
                     submit_log.acted_at if submit_log else project.created_at,
-                    "%-m/%-d",
+                    "%m/%d",
                 ),
             },
             {"class_name": step2_class, "icon": step2_icon, "label": step2_label, "date": step2_date},

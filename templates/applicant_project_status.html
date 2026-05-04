@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% set page_role = "applicant" %}
-{% set active_nav = "applicant_confirm" %}
+{% set active_menu = "applicant_confirm" %}
 {% set header_title = "申請状況の確認・管理" %}
 {% set header_meta = "申請中案件の状況確認と、却下案件の管理を行います" %}
 {% set content_footer_enabled = true %}
@@ -234,7 +234,7 @@ function switchApplicantProjectStatusCase(projectId) {
 }
 
 function confirmApplicantProjectStatusDelete() {
-  const name = "{{ status_view.project_name }}";
+  const name = {{ status_view.project_name|tojson }};
   const dlgTitle = getApplicantProjectStatusEl("applicantProjectStatusDlgTitle");
   const dlgBody = getApplicantProjectStatusEl("applicantProjectStatusDlgBody");
   const dlgOk = getApplicantProjectStatusEl("applicantProjectStatusDlgOk");
