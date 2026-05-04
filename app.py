@@ -579,7 +579,7 @@ def applicant_project_drafts_delete(draft_id):
     )
 
 
-@app.route("/applicant/projects/<int:project_id>/confirm")
+@app.route("/applicant/projects/<int:project_id>/status")
 @login_required
 def applicant_project_confirm(project_id):
     access_error = require_applicant()
@@ -592,7 +592,7 @@ def applicant_project_confirm(project_id):
         return redirect(url_for("applicant_top"))
 
     return render_template(
-        "applicant_project_confirm.html",
+        "applicant_project_status.html",
         active_menu="applicant_confirm",
         project=project,
         unread_notifications_count=get_unread_notifications_count(),
