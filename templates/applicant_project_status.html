@@ -47,7 +47,7 @@
 .mock-applicant-project-status .sw-count { font-size: 12px; color: var(--aps-muted); white-space: nowrap; }
 .mock-applicant-project-status .sw-count strong { color: var(--aps-text); }
 .mock-applicant-project-status .switcher-bar { width: 100%; box-sizing: border-box; }
-.mock-applicant-project-status .content { padding: 24px 28px 24px; }
+.mock-applicant-project-status .content { padding: 0 28px 24px; }
 .mock-applicant-project-status .detail-layout { display: flex; flex-direction: column; gap: 20px; }
 .mock-applicant-project-status .d-card,
 .mock-applicant-project-status .status-card { background: var(--aps-card); border: 1px solid var(--aps-border); border-radius: var(--aps-radius); box-shadow: var(--aps-shadow-card); overflow: hidden; }
@@ -115,7 +115,7 @@
 .applicant-project-status-footer-btn-reapply { padding: 10px 22px; border-radius: 9px; background: #dc3545; color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
 @media (max-width: 820px) {
   .mock-applicant-project-status .switcher-bar { padding: 10px 14px; }
-  .mock-applicant-project-status .content { padding: 14px 12px; }
+  .mock-applicant-project-status .content { padding: 0 12px 14px; }
   .mock-applicant-project-status .status-banner { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 18px; }
   .mock-applicant-project-status .stepper-wrap { padding: 20px 16px 16px; }
   .mock-applicant-project-status .stepper::before { left: 14px; right: 14px; }
@@ -126,11 +126,16 @@
 @media (max-width: 480px) {
   .mock-applicant-project-status .sw-count { display: none; }
 }
+@media (max-width: 899px) {
+  .mock-applicant-project-status-header-after {
+    padding-top: var(--mobile-header-height);
+  }
+}
 </style>
 {% endblock %}
 
 {% block header_after %}
-<div class="mock-applicant-project-status">
+<div class="mock-applicant-project-status mock-applicant-project-status-header-after">
   <div class="switcher-bar">
     <div class="sw-label">申請中案件：</div>
     <div class="sw-select-wrap">
