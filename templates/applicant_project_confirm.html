@@ -14,7 +14,7 @@
     <dl class="detail-list">
         <div><dt>案件番号</dt><dd>{{ project.project_code }}</dd></div>
         <div><dt>案件名</dt><dd>{{ project.title }}</dd></div>
-        <div><dt>現在ステータス</dt><dd>{{ project.status }}</dd></div>
+        <div><dt>現在ステータス</dt><dd>{% if project.status == "department_pending" %}部門承認待ち{% elif project.status == "hq_pending" %}本部承認待ち{% elif project.status == "in_progress" %}開発中{% elif project.status == "completed" %}完了{% elif project.status == "rejected" %}却下{% else %}{{ project.status }}{% endif %}</dd></div>
     </dl>
 </section>
 {% endblock %}

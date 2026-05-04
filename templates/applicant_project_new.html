@@ -2,12 +2,12 @@
 
 {% set page_role = "applicant" %}
 {% set active_menu = "applicant_new" %}
-{% set header_title = "新規案件申請" %}
+{% set header_title = "新規案件の申請" %}
 {% set header_meta = "新しい開発案件の内容を入力し、承認申請を行います" %}
 {% set content_footer_enabled = true %}
 {% set content_width_class = "app-content-wide" %}
 
-{% block page_title %}新規案件申請{% endblock %}
+{% block title %}新規案件の申請{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -519,7 +519,13 @@ function deleteProjectDraft(e, id) {
 }
 function applyProjectDraft(e, id) {
   e.stopPropagation();
-  const hasContent = getProjectEl("projName").value.trim() || getProjectEl("projDesc").value.trim() || getProjectEl("budgetAmount").value;
+  const hasContent =
+    getProjectEl("projName").value.trim() ||
+    getProjectEl("projDesc").value.trim() ||
+    getProjectEl("budgetAmount").value ||
+    getProjectEl("manmonth").value ||
+    getProjectEl("startDate").value ||
+    getProjectEl("endDate").value;
   if (hasContent) {
     pendingApplyId = id;
     getProjectEl("owDialog").classList.add("open");
@@ -571,7 +577,7 @@ function setProjectField(id, val, ccId, max) {
     if (cc) cc.textContent = val.length + " / " + max + " 文字";
   }
 }
-function clearProjectPrefill() {
+function clearProjectPrefill(showToast = true) {
   ["projName", "projDesc", "dept"].forEach(function(id) {
     const target = getProjectEl(id);
     if (!target) return;
@@ -582,6 +588,10 @@ function clearProjectPrefill() {
   if (budgetAmount) budgetAmount.value = "";
   const manmonth = getProjectEl("manmonth");
   if (manmonth) manmonth.value = "";
+  const startDate = getProjectEl("startDate");
+  if (startDate) startDate.value = "";
+  const endDate = getProjectEl("endDate");
+  if (endDate) endDate.value = "";
   const mwAmount = getProjectEl("mwAmount");
   if (mwAmount) mwAmount.classList.remove("prefilled");
   const mwMm = getProjectEl("mwMm");
@@ -595,7 +605,7 @@ function clearProjectPrefill() {
   updateProjectProgress();
   updateProjectCC(getProjectEl("projName"), "nameCC", 60);
   updateProjectCC(getProjectEl("projDesc"), "descCC", 500);
-  showProjectNewToast("フォームをクリアしました");
+    if (showToast) showProjectNewToast("フォームをクリアしました");
 }
 function closeProjectOwDialog() { getProjectEl("owDialog").classList.remove("open"); }
 function saveProjectNewMockDraft() {
@@ -628,7 +638,7 @@ function saveProjectNewMockDraft() {
     if (!data.ok) { showProjectNewToast(data.message || "下書き保存に失敗しました。"); return; }
     projectDrafts = data.drafts || [];
     renderProjectDraftList(projectDrafts);
-    clearProjectPrefill();
+    clearProjectPrefill(false);
     showProjectNewToast(data.message || "下書きを保存しました");
   }).catch(function() {
     showProjectNewToast("下書き保存に失敗しました。");
@@ -681,12 +691,14 @@ function validateProjectNewMock() {
   const dept = getProjectEl("dept");
   const projDesc = getProjectEl("projDesc");
   const budgetAmount = getProjectEl("budgetAmount");
-  if (!projName || !dept || !projDesc || !budgetAmount) return false;
+  const manmonth = getProjectEl("manmonth");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth) return false;
   const checks = [
     { fid: "projName", eid: "nameErr", fail: function() { return !projName.value.trim(); } },
     { fid: "dept", eid: "deptErr", fail: function() { return !dept.value; } },
     { fid: "projDesc", eid: "descErr", fail: function() { return projDesc.value.trim().length < 5; } },
-    { fid: "budgetAmount", eid: "amtErr", fail: function() { return !(parseInt(budgetAmount.value, 10) > 0); } }
+    { fid: "budgetAmount", eid: "amtErr", fail: function() { return !(parseInt(budgetAmount.value, 10) > 0); } },
+    { fid: "manmonth", eid: "mmErr", fail: function() { return !manmonth.value || !(parseFloat(manmonth.value) > 0); } }
   ];
   let ok = true;
   checks.forEach(function(c) {
