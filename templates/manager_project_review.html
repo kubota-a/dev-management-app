@@ -270,18 +270,6 @@
 .mock-manager-project-review .qi-date { font-size: 11px; color: var(--mpr-muted); }
 .mock-manager-project-review .qi-urgency { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--mpr-danger-bg); color: var(--mpr-danger); border: 1px solid var(--mpr-danger-mid); }
 
-.mock-manager-project-review .mobile-action-bar {
-  display: none; position: fixed; bottom: 64px; left: 0; right: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(10px);
-  border-top: 1px solid var(--mpr-border); padding: 12px 20px; z-index: 200; gap: 10px;
-}
-.mock-manager-project-review .mab-reject {
-  flex: 1; padding: 10px 0; border-radius: 10px; border: 2px solid var(--mpr-danger-mid); background: var(--mpr-danger-bg);
-  color: var(--mpr-danger); font-size: 13px; font-weight: 700; font-family: var(--font-family-base);
-}
-.mock-manager-project-review .mab-approve {
-  flex: 2; padding: 10px 0; border-radius: 10px; border: none; background: var(--mpr-success);
-  color: #fff; font-size: 13px; font-weight: 800; font-family: var(--font-family-base);
-}
 
 .mock-manager-project-review .dialog-overlay {
   position: fixed; inset: 0; background: rgba(30,22,36,.45); z-index: 500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px);
@@ -334,7 +322,6 @@
 @media (max-width: 820px) {
   .mock-manager-project-review .content { padding: 16px 12px 136px; }
   .mock-manager-project-review .review-banner { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 16px; }
-  .mock-manager-project-review .mobile-action-bar { display: flex; }
 }
 </style>
 {% endblock %}
@@ -538,11 +525,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="mobile-action-bar" id="managerReviewMobileBar">
-    <button class="mab-reject" onclick="confirmManagerReviewAction('reject')">却下</button>
-    <button class="mab-approve" onclick="confirmManagerReviewAction('approve')">承認して本部へ送付</button>
   </div>
 
   <div class="dialog-overlay" id="managerReviewDialogOverlay">
