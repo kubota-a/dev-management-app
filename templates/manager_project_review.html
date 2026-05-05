@@ -159,7 +159,6 @@
   font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; min-width: 0;
 }
 .mock-manager-project-review .sb-seg.seg-used { background: var(--mpr-sidebar); }
-.mock-manager-project-review .sb-seg.seg-pending { background: var(--mpr-purple-mid); }
 .mock-manager-project-review .sb-seg.seg-this { background: var(--mpr-warning); position: relative; }
 .mock-manager-project-review .sb-seg.seg-this::after {
   content: '← この案件'; position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
@@ -410,13 +409,13 @@
             </p>
             <div class="impact-row">
               <div class="impact-box">
-                <div class="ib-label">承認後の部門執行率</div>
-                <div class="ib-val ibv-danger">91.2%</div>
+                <div class="ib-label">予算消化率（承認後予測）</div>
+                <div class="ib-val ibv-danger">84%</div>
                 <div class="ib-sub">+6%増加</div>
               </div>
               <div class="impact-box">
-                <div class="ib-label">承認後の残予算</div>
-                <div class="ib-val ibv-ok">1,765万円</div>
+                <div class="ib-label">予算残高（承認後）</div>
+                <div class="ib-val ibv-ok">3,200万円</div>
                 <div class="ib-sub">今期残り</div>
               </div>
               <div class="impact-box">
@@ -435,22 +434,20 @@
                 <span>0</span><span>5,000万円</span><span>1億円</span><span>1億5,000万円</span><span>2億円</span>
               </div>
               <div class="stack-bar" id="managerReviewSimBar">
-                <div class="sb-seg seg-used" id="managerReviewSeg1" style="width:0%" title="執行済 1億5,600万円"></div>
-                <div class="sb-seg seg-pending" id="managerReviewSeg2" style="width:0%" title="承認済・未着手 1,435万円（7.18%）"></div>
+                <div class="sb-seg seg-used" id="managerReviewSeg1" style="width:0%" title="実績額 1億5,600万円"></div>
                 <div class="sb-seg seg-this" id="managerReviewSeg3" style="width:0%" title="この案件 1,200万円"></div>
-                <div class="sb-seg seg-remain" id="managerReviewSeg4" style="width:100%" title="残予算"></div>
+                <div class="sb-seg seg-remain" id="managerReviewSeg4" style="width:100%" title="承認後の残予算 3,200万円"></div>
               </div>
             </div>
             <div class="sim-legend">
-              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-sidebar)"></div><span class="sl-key">執行済</span><span class="sl-val">1億5,600万円（78%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-purple-mid)"></div><span class="sl-key">承認済・未着手</span><span class="sl-val">1,435万円（7.2%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-warning)"></div><span class="sl-key">この案件（1,200万円）</span><span class="sl-val">6%</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:#e8e0eb"></div><span class="sl-key">承認後の残余</span><span class="sl-val">1,765万円（8.8%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">1億5,600万円（78%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-warning)"></div><span class="sl-key">この案件</span><span class="sl-val">1,200万円（6%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:#e8e0eb"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">3,200万円（16%）</span></div>
             </div>
             <div class="sim-result warn">
               <div class="sr-text">
-                <strong>承認後の残予算：1,765万円（8.8%）</strong>
-                <span>執行率が91.2%に達します。承認後は予算管理を慎重に行ってください。</span>
+                <strong>承認後の予算残高：3,200万円（16%）</strong>
+                <span>本案件を承認すると予算消化率が84%になります。年度内の追加申請に備え、残高を確認してください。</span>
               </div>
             </div>
           </div>
@@ -701,9 +698,8 @@ setManagerReviewVerdict("approve");
 (function initManagerReviewSimBar() {
   const segs = [
     { id: "managerReviewSeg1", w: 78 },
-    { id: "managerReviewSeg2", w: 7.18 },
     { id: "managerReviewSeg3", w: 6 },
-    { id: "managerReviewSeg4", w: 8.82 }
+    { id: "managerReviewSeg4", w: 16 }
   ];
   requestAnimationFrame(function() {
     setTimeout(function() {
@@ -716,7 +712,7 @@ setManagerReviewVerdict("approve");
       seg4.style.width = "0%";
       setTimeout(function() {
         const seg4Update = getManagerReviewEl("managerReviewSeg4");
-        if (seg4Update) seg4Update.style.width = "8.82%";
+        if (seg4Update) seg4Update.style.width = "16%";
       }, 50);
     }, 300);
   });
