@@ -644,7 +644,6 @@ def applicant_project_new():
 
     return render_template(
         "applicant_project_new.html",
-        active_menu="applicant_new",
         departments=departments,
         drafts=draft_records,
         drafts_json=drafts_json,
@@ -789,7 +788,6 @@ def applicant_project_status(project_id):
 
     return render_template(
         "applicant_project_status.html",
-        active_menu="applicant_confirm",
         status_view=build_project_status_view_data(project),
         switcher_options=switcher_options,
         switcher_count=len(switcher_options),
