@@ -807,6 +807,14 @@ def manager_top():
 
 
 # =============================
+# ■ 部門管理者：承認審査画面
+# =============================
+@app.route("/manager/projects/review")
+def manager_project_review():
+    return render_template("manager_project_review.html")
+
+
+# =============================
 # ■ 本部管理者：トップ画面
 # =============================
 @app.route("/top/hq")
