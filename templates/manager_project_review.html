@@ -631,8 +631,12 @@ function confirmManagerReviewAction(type) {
   if (!commentArea) return;
   const comment = commentArea.value.trim();
   if (type === "reject" && !comment) {
-    commentArea.classList.add("required-empty");
-    commentArea.focus();
+    setManagerReviewVerdict("reject");
+    const rejectCommentArea = getManagerReviewEl("commentArea");
+    if (rejectCommentArea) {
+      rejectCommentArea.classList.add("required-empty");
+      rejectCommentArea.focus();
+    }
     showManagerReviewToast("却下理由は必須です。コメントを入力してください。");
     return;
   }
@@ -666,7 +670,7 @@ function confirmManagerReviewAction(type) {
     preview.style.display = "block";
     preview.textContent = comment;
     okBtn.className = "dlg-ok-reject";
-    okBtn.textContent = "却下して返却する";
+    okBtn.textContent = "却下する";
     okBtn.onclick = function() { closeManagerReviewDialog(); executeManagerReviewAction("reject"); };
   }
   dlg.classList.add("open");
