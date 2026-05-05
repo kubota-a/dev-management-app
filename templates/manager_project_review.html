@@ -579,7 +579,7 @@
 function getManagerReviewEl(id) { return document.getElementById(id); }
 function escapeManagerReviewMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 
-let managerReviewCurrentVerdict = "none";
+let managerReviewCurrentVerdict = "approve";
 
 function setManagerReviewVerdict(v) {
   managerReviewCurrentVerdict = v;
@@ -713,6 +713,8 @@ function showManagerReviewToast(msg) {
   t.classList.add("show");
   setTimeout(function() { t.classList.remove("show"); }, 2600);
 }
+
+setManagerReviewVerdict("approve");
 
 (function initManagerReviewSimBar() {
   const segs = [
