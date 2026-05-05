@@ -377,7 +377,9 @@ def validate_project_form(form_data: dict):
 
     start_date, start_err = parse_date_value(form_data.get("planned_start_date", ""))
     end_date, end_err = parse_date_value(form_data.get("planned_end_date", ""))
-    if start_err or end_err:
+    if not start_date:
+        errors["planned_dates"] = "開始予定日を入力してください。"
+    elif start_err or end_err:
         errors["planned_dates"] = "日付の形式が正しくありません。"
     elif start_date and end_date and start_date > end_date:
         errors["planned_dates"] = "開始予定日は完了予定日以前の日付にしてください。"
@@ -849,3 +851,4 @@ def sample_hq_top():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
