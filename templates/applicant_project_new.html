@@ -342,7 +342,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
             <div class="field-error{% if form_errors.estimated_person_months %} show{% endif %}" id="mmErr">{{ form_errors.estimated_person_months|default("") }}</div>
           </div>
           <div class="field">
-            <div class="field-label">開始予定日 <span class="opt-badge">任意</span></div>
+            <div class="field-label">開始予定日 <span class="req-badge">必須</span></div>
             <input type="date" class="f-input" id="startDate" name="planned_start_date" value="{{ form_data.planned_start_date|default('') }}">
           </div>
           <div class="field">
