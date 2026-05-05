@@ -7,12 +7,16 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, url
 from flask_migrate import Migrate  # DBマイグレーション（DB構造変更の履歴管理）ツール
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user  # ログイン管理用ライブラリ
 from flask_wtf import CSRFProtect
+from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from werkzeug.security import check_password_hash
 
 from forms import LoginForm
 from models import (
+    BudgetActualLog,
     Department,
+    DepartmentYearlyBudget,
     Notification,
     Project,
     ProjectDraft,
@@ -106,6 +110,14 @@ def redirect_by_role(role: str):
 def require_applicant():
     """申請者ロールのみ通す。権限外はロール別トップへ戻す。"""
     if current_user.role != "applicant":
+        flash("この画面を表示する権限がありません。", "danger")
+        return redirect(redirect_by_role(current_user.role))
+    return None
+
+
+def require_manager():
+    """部門管理者ロールのみ許可する。"""
+    if current_user.role != "manager":
         flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
@@ -809,9 +821,422 @@ def manager_top():
 # =============================
 # ■ 部門管理者：承認審査画面
 # =============================
+def get_fiscal_year(target_date: date) -> int:
+    """Date型（業務日付）から日本の年度を返す。"""
+    return target_date.year if target_date.month >= 4 else target_date.year - 1
+
+
+def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
+    db.session.add(
+        Notification(
+            user_id=user_id,
+            project_id=project_id,
+            type=notif_type,
+            message=message,
+            is_read=False,
+            created_at=utc_now(),
+        )
+    )
+
+
+def _get_latest_submit_log(project: Project) -> ProjectStatusLog | None:
+    submit_logs = [log for log in project.project_status_logs if log.action == "submit"]
+    if not submit_logs:
+        return None
+    return max(submit_logs, key=lambda log: (log.acted_at, log.id))
+
+
+def get_manager_review_projects(department_id: int) -> list[Project]:
+    return (
+        Project.query.options(
+            joinedload(Project.applicant),
+            joinedload(Project.department),
+            joinedload(Project.project_status_logs).joinedload(ProjectStatusLog.actor),
+        )
+        .filter(
+            Project.department_id == department_id,
+            Project.status == "department_pending",
+            Project.approval_stage == "department_pending",
+        )
+        .order_by(Project.created_at.asc(), Project.id.asc())
+        .all()
+    )
+
+
+def find_next_manager_review_project(department_id: int, exclude_project_id: int | None = None) -> Project | None:
+    q = (
+        Project.query.filter(
+            Project.department_id == department_id,
+            Project.status == "department_pending",
+            Project.approval_stage == "department_pending",
+        )
+        .order_by(Project.created_at.asc(), Project.id.asc())
+    )
+    if exclude_project_id is not None:
+        q = q.filter(Project.id != exclude_project_id)
+    return q.first()
+
+
+def build_department_budget_simulation(project: Project) -> dict:
+    fiscal_year = get_fiscal_year(project.planned_start_date)
+    fiscal_start = date(fiscal_year, 4, 1)
+    fiscal_end = date(fiscal_year + 1, 3, 31)
+
+    yearly_budget = (
+        DepartmentYearlyBudget.query.filter_by(
+            department_id=project.department_id,
+            fiscal_year=fiscal_year,
+        ).first()
+    )
+    annual_budget = Decimal(yearly_budget.annual_budget_amount or 0) if yearly_budget else Decimal("0")
+
+    actual_sum = (
+        db.session.query(func.coalesce(func.sum(BudgetActualLog.amount), 0))
+        .join(Project, Project.id == BudgetActualLog.project_id)
+        .filter(
+            Project.department_id == project.department_id,
+            Project.planned_start_date >= fiscal_start,
+            Project.planned_start_date <= fiscal_end,
+            Project.status != "rejected",
+        )
+        .scalar()
+    )
+    actual_amount = Decimal(actual_sum or 0)
+    this_project_amount = Decimal(project.estimated_budget_amount or 0)
+    remaining_amount = annual_budget - actual_amount - this_project_amount
+
+    consume_rate = Decimal("0")
+    occupy_rate = Decimal("0")
+    remaining_rate = Decimal("0")
+    if annual_budget > 0:
+        consume_rate = ((actual_amount + this_project_amount) / annual_budget) * Decimal("100")
+        occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
+        remaining_rate = (remaining_amount / annual_budget) * Decimal("100")
+
+    if annual_budget <= 0 or remaining_amount < 0:
+        result_class = "danger"
+    elif consume_rate >= Decimal("80"):
+        result_class = "warn"
+    else:
+        result_class = "ok"
+
+    remaining_display_amount = remaining_amount
+    remaining_result_display = format_decimal_amount(remaining_amount)
+    if remaining_amount < 0:
+        remaining_result_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+
+    if result_class == "ok":
+        result_title = f"承認後の予算残高：{remaining_result_display}（{f'{remaining_rate.quantize(Decimal('0.1')).normalize():f}'.rstrip('0').rstrip('.')}%）"
+        result_message = "本案件を承認しても、部門年間予算には十分な残余があります。"
+    elif result_class == "warn":
+        result_title = f"承認後の予算残高：{remaining_result_display}（{f'{remaining_rate.quantize(Decimal('0.1')).normalize():f}'.rstrip('0').rstrip('.')}%）"
+        result_message = f"本案件を承認すると予算消化率が{f'{consume_rate.quantize(Decimal('0.1')).normalize():f}'.rstrip('0').rstrip('.')}%になります。年度内の追加申請に備え、残高を確認してください。"
+    else:
+        result_title = f"承認後の予算残高：{remaining_result_display}（予算超過）"
+        result_message = "本案件を承認すると部門年間予算を超過します。本部承認前に予算調整が必要です。"
+
+    consume_rate_display = f"{consume_rate.quantize(Decimal('0.1')).normalize():f}".rstrip("0").rstrip(".")
+    occupy_rate_display = f"{occupy_rate.quantize(Decimal('0.1')).normalize():f}".rstrip("0").rstrip(".")
+    remaining_rate_display = f"{remaining_rate.quantize(Decimal('0.1')).normalize():f}".rstrip("0").rstrip(".")
+    return {
+        "annual_budget_display": format_decimal_amount(annual_budget),
+        "actual_amount_display": format_decimal_amount(actual_amount),
+        "this_project_amount_display": format_decimal_amount(this_project_amount),
+        "remaining_amount_display": format_decimal_amount(remaining_display_amount),
+        "remaining_result_display": remaining_result_display,
+        "consume_rate": consume_rate_display,
+        "occupy_rate": occupy_rate_display,
+        "remaining_rate": remaining_rate_display,
+        "seg_used": float(max(Decimal("0"), min(Decimal("100"), (actual_amount / annual_budget * Decimal("100")) if annual_budget > 0 else Decimal("0")))),
+        "seg_this": float(max(Decimal("0"), min(Decimal("100"), (this_project_amount / annual_budget * Decimal("100")) if annual_budget > 0 else Decimal("0")))),
+        "seg_remaining": float(max(Decimal("0"), min(Decimal("100"), (remaining_amount / annual_budget * Decimal("100")) if annual_budget > 0 else Decimal("0")))),
+        "result_class": result_class,
+        "result_title": result_title,
+        "result_message": result_message,
+    }
+
+
+def build_manager_review_view_data(
+    project: Project,
+    queue_projects: list[Project],
+    rejection_comment: str = "",
+    force_reject_mode: bool = False,
+) -> dict:
+    submit_log = _get_latest_submit_log(project)
+    submitted_at = submit_log.acted_at if submit_log else project.created_at
+    submitted_jst = submitted_at.astimezone(ZoneInfo("Asia/Tokyo"))
+    waiting_days = (datetime.now(ZoneInfo("Asia/Tokyo")).date() - submitted_jst.date()).days
+
+    current_index = next((idx for idx, p in enumerate(queue_projects) if p.id == project.id), 0)
+    total_count = len(queue_projects)
+    prev_project_id = queue_projects[current_index - 1].id if current_index > 0 else None
+    next_project_id = queue_projects[current_index + 1].id if current_index < total_count - 1 else None
+
+    queue_slice_start = max(0, current_index - 1)
+    queue_slice_end = min(total_count, queue_slice_start + 4)
+    queue_slice_start = max(0, queue_slice_end - 4)
+    queue_slice = queue_projects[queue_slice_start:queue_slice_end]
+
+    queue_items = []
+    for idx, item in enumerate(queue_slice, start=queue_slice_start + 1):
+        item_submit_log = _get_latest_submit_log(item)
+        item_submitted = item_submit_log.acted_at if item_submit_log else item.created_at
+        item_wait_days = (datetime.now(ZoneInfo("Asia/Tokyo")).date() - item_submitted.astimezone(ZoneInfo("Asia/Tokyo")).date()).days
+        queue_items.append(
+            {
+                "project_id": item.id,
+                "index": idx,
+                "title": item.title,
+                "submitted_date": format_jst_date(item_submitted, "%m/%d"),
+                "is_current": item.id == project.id,
+                "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
+            }
+        )
+
+    budget_sim = build_department_budget_simulation(project)
+    fiscal_year = get_fiscal_year(project.planned_start_date)
+    fiscal_start = date(fiscal_year, 4, 1)
+    fiscal_end = date(fiscal_year + 1, 3, 31)
+    dept_project_amounts = (
+        db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
+        .filter(
+            Project.department_id == project.department_id,
+            Project.planned_start_date >= fiscal_start,
+            Project.planned_start_date <= fiscal_end,
+            Project.status != "rejected",
+        )
+        .all()
+    )
+    sorted_by_amount = sorted(
+        dept_project_amounts,
+        key=lambda row: Decimal(
+            row.approved_budget_amount if row.approved_budget_amount is not None else (row.estimated_budget_amount or 0)
+        ),
+        reverse=True,
+    )
+    rank_map = {row.id: idx + 1 for idx, row in enumerate(sorted_by_amount)}
+    budget_rank = rank_map.get(project.id, 1)
+    department_project_count = len(sorted_by_amount)
+
+    return {
+        "project_id": project.id,
+        "project_name": project.title,
+        "project_code": project.project_code,
+        "purpose": project.purpose,
+        "applicant_name": project.applicant.display_name if project.applicant else "—",
+        "department_name": project.department.name if project.department else "—",
+        "submitted_date": format_jst_date(submitted_at),
+        "submitted_date_ja": format_jst_date_ja(submitted_at),
+        "wait_badge_text": f"{waiting_days}日待機" if waiting_days >= 3 else "",
+        "estimated_budget_display": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+        "estimated_person_months_display": format_person_months(project.estimated_person_months),
+        "planned_period_display": f"{format_business_date(project.planned_start_date)} ～ {format_business_date(project.planned_end_date)}",
+        "queue_position": current_index + 1,
+        "queue_total_count": total_count,
+        "prev_project_id": prev_project_id,
+        "next_project_id": next_project_id,
+        "queue_items": queue_items,
+        "queue_total_label": f"審査待ち案件（{total_count}件）",
+        "budget_rank": budget_rank,
+        "department_project_count": department_project_count,
+        "budget_rank_subtext": f"{project.department.name if project.department else '—'} {department_project_count}件中（審査中も含む）",
+        "budget_simulation": budget_sim,
+        "rejection_comment": rejection_comment,
+        "initial_verdict": "reject" if force_reject_mode else "approve",
+    }
+
+
 @app.route("/manager/projects/review")
-def manager_project_review():
-    return render_template("manager_project_review.html")
+@login_required
+def manager_project_review_entry():
+    access_error = require_manager()
+    if access_error:
+        return access_error
+
+    queue_projects = get_manager_review_projects(current_user.department_id)
+    if not queue_projects:
+        return render_template(
+            "manager_project_review_empty.html",
+            unread_notifications_count=get_unread_notifications_count(),
+        )
+    return redirect(url_for("manager_project_review", project_id=queue_projects[0].id))
+
+
+@app.route("/manager/projects/<int:project_id>/review", methods=["GET", "POST"])
+@login_required
+def manager_project_review(project_id: int):
+    access_error = require_manager()
+    if access_error:
+        return access_error
+
+    project = (
+        Project.query.options(
+            joinedload(Project.applicant),
+            joinedload(Project.department),
+            joinedload(Project.project_status_logs).joinedload(ProjectStatusLog.actor),
+        )
+        .filter(Project.id == project_id)
+        .first()
+    )
+    if project is None:
+        flash("指定された案件が見つかりません。", "danger")
+        return redirect(url_for("manager_top"))
+    if project.department_id != current_user.department_id:
+        flash("この案件を審査する権限がありません。", "danger")
+        return redirect(url_for("manager_top"))
+
+    queue_projects = get_manager_review_projects(current_user.department_id)
+    is_pending_target = (
+        project.status == "department_pending"
+        and project.approval_stage == "department_pending"
+    )
+
+    if request.method == "GET":
+        if not is_pending_target:
+            flash("この案件は現在、部門承認の対象ではありません。", "danger")
+            return redirect(url_for("manager_top"))
+
+        review_data = build_manager_review_view_data(project, queue_projects)
+        return render_template(
+            "manager_project_review.html",
+            review_data=review_data,
+            unread_notifications_count=get_unread_notifications_count(),
+        )
+
+    action = (request.form.get("action") or "").strip()
+    confirmed = (request.form.get("confirmed") or "").strip()
+    rejection_comment = (request.form.get("rejection_comment") or "").strip()
+
+    if action not in {"approve", "reject"}:
+        flash("不正な操作が行われました。もう一度操作してください。", "danger")
+        return redirect(url_for("manager_project_review", project_id=project_id))
+    if confirmed != "1":
+        flash("確認操作が完了していません。もう一度操作してください。", "danger")
+        return redirect(url_for("manager_project_review", project_id=project_id))
+
+    if not is_pending_target:
+        flash("この案件はすでに審査済みです。", "warning")
+        next_project = find_next_manager_review_project(current_user.department_id, exclude_project_id=project.id)
+        if next_project:
+            return redirect(url_for("manager_project_review", project_id=next_project.id))
+        return redirect(url_for("manager_top"))
+
+    if action == "reject":
+        if not rejection_comment:
+            flash("却下理由は必須です。コメントを入力してください。", "danger")
+            review_data = build_manager_review_view_data(
+                project,
+                queue_projects,
+                rejection_comment=rejection_comment,
+                force_reject_mode=True,
+            )
+            return render_template(
+                "manager_project_review.html",
+                review_data=review_data,
+                unread_notifications_count=get_unread_notifications_count(),
+            )
+        if len(rejection_comment) > 500:
+            flash("却下理由は500文字以内で入力してください。", "danger")
+            review_data = build_manager_review_view_data(
+                project,
+                queue_projects,
+                rejection_comment=rejection_comment,
+                force_reject_mode=True,
+            )
+            return render_template(
+                "manager_project_review.html",
+                review_data=review_data,
+                unread_notifications_count=get_unread_notifications_count(),
+            )
+
+    try:
+        if action == "approve":
+            project.status = "hq_pending"
+            project.approval_stage = "hq_pending"
+            project.rejection_comment = None
+            project.final_rejected_at = None
+
+            db.session.add(
+                ProjectStatusLog(
+                    project_id=project.id,
+                    actor_id=current_user.id,
+                    from_status="department_pending",
+                    to_status="hq_pending",
+                    action="approve_department",
+                    comment=None,
+                    acted_at=utc_now(),
+                )
+            )
+
+            hq_users = User.query.filter_by(role="hq", is_active=True).all()
+            for user in hq_users:
+                if user.id == current_user.id:
+                    continue
+                create_notification(
+                    user_id=user.id,
+                    project_id=project.id,
+                    notif_type="hq_pending",
+                    message=f"部門承認済み案件「{project.title}」が本部承認待ちになりました。",
+                )
+
+            if project.applicant_id != current_user.id:
+                create_notification(
+                    user_id=project.applicant_id,
+                    project_id=project.id,
+                    notif_type="hq_pending",
+                    message=f"申請した案件「{project.title}」が部門承認を通過しました。本部承認待ちです。",
+                )
+
+            db.session.commit()
+            flash(f"「{project.title}」を承認し、本部管理者へ送付しました。", "success")
+        else:
+            project.status = "rejected"
+            project.approval_stage = "rejected"
+            project.rejection_comment = rejection_comment
+            project.final_rejected_at = utc_now()
+
+            db.session.add(
+                ProjectStatusLog(
+                    project_id=project.id,
+                    actor_id=current_user.id,
+                    from_status="department_pending",
+                    to_status="rejected",
+                    action="reject_department",
+                    comment=rejection_comment,
+                    acted_at=utc_now(),
+                )
+            )
+
+            if project.applicant_id != current_user.id:
+                create_notification(
+                    user_id=project.applicant_id,
+                    project_id=project.id,
+                    notif_type="rejected",
+                    message=f"申請した案件「{project.title}」が部門審査で却下されました。理由を確認してください。",
+                )
+
+            db.session.commit()
+            flash(f"「{project.title}」を却下し、申請者へ通知しました。", "success")
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("審査処理に失敗しました。時間をおいて再度お試しください。", "danger")
+        review_data = build_manager_review_view_data(
+            project,
+            queue_projects,
+            rejection_comment=rejection_comment if action == "reject" else "",
+            force_reject_mode=(action == "reject"),
+        )
+        return render_template(
+            "manager_project_review.html",
+            review_data=review_data,
+            unread_notifications_count=get_unread_notifications_count(),
+        )
+
+    next_project = find_next_manager_review_project(current_user.department_id, exclude_project_id=project.id)
+    if next_project:
+        return redirect(url_for("manager_project_review", project_id=next_project.id))
+    return redirect(url_for("manager_project_review_entry"))
 
 
 # =============================

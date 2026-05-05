@@ -331,24 +331,26 @@
     <div class="review-banner">
       <div class="rb-left">
         <div class="rb-info">
-          <div class="rb-proj-name">基幹システム刷新PJ</div>
+          <div class="rb-proj-name">{{ review_data.project_name }}</div>
           <div class="rb-meta">
-            <div class="rb-meta-item"><span>申請者</span><span>田中 太郎</span></div>
+            <div class="rb-meta-item"><span>申請者</span><span>{{ review_data.applicant_name }}</span></div>
             <div class="rb-meta-item rb-meta-date-item">
               <span class="rb-meta-date-text">
                 <span>申請日</span>
-                <span>2025/05/13</span>
+                <span>{{ review_data.submitted_date }}</span>
               </span>
-              <span class="rb-wait-badge">3日待機</span>
+              {% if review_data.wait_badge_text %}
+              <span class="rb-wait-badge">{{ review_data.wait_badge_text }}</span>
+              {% endif %}
             </div>
-            <div class="rb-meta-item"><span>審査期限</span><span>2025/05/16</span></div>
+            <div class="rb-meta-item"><span>案件コード</span><span>{{ review_data.project_code }}</span></div>
           </div>
         </div>
       </div>
       <div class="rb-nav">
-        <button type="button" class="rb-nav-btn" onclick="showManagerReviewToast('前の案件へ')">‹</button>
-        <div class="rb-nav-count">1 / 4 件</div>
-        <button type="button" class="rb-nav-btn" onclick="showManagerReviewToast('次の案件へ')">›</button>
+        <button type="button" class="rb-nav-btn" id="managerReviewPrevBtn" data-target-url="{{ url_for('manager_project_review', project_id=review_data.prev_project_id) if review_data.prev_project_id else '' }}">‹</button>
+        <div class="rb-nav-count">{{ review_data.queue_position }} / {{ review_data.queue_total_count }} 件</div>
+        <button type="button" class="rb-nav-btn" id="managerReviewNextBtn" data-target-url="{{ url_for('manager_project_review', project_id=review_data.next_project_id) if review_data.next_project_id else '' }}">›</button>
       </div>
     </div>
 
@@ -362,36 +364,32 @@
           <div class="rc-body">
             <div class="info-row" style="padding-top:0;">
               <div class="ir-label">案件名</div>
-              <div class="ir-value big">基幹システム刷新PJ</div>
+              <div class="ir-value big">{{ review_data.project_name }}</div>
             </div>
             <div class="info-row">
               <div class="ir-label">目的・概要</div>
-              <div class="ir-value desc">老朽化した基幹システムをクラウドネイティブ構成へ刷新し、保守コストの削減と業務効率化を図る。将来的なBI連携も視野に入れたデータ基盤整備を含む。
-
-【期待効果】
-・年間保守コスト 約30%削減（推定 ¥4.5M/年）
-・デプロイリードタイム 5日 → 0.5日</div>
+              <div class="ir-value desc">{{ review_data.purpose }}</div>
             </div>
             <div class="info-row">
               <div class="ir-label">申請者 / 担当部門</div>
               <div class="person-chip" style="margin-top:6px;">
                 <div>
-                  <div class="pc-name">田中 太郎</div>
-                  <div class="pc-dept">第一開発部</div>
+                  <div class="pc-name">{{ review_data.applicant_name }}</div>
+                  <div class="pc-dept">{{ review_data.department_name }}</div>
                 </div>
               </div>
             </div>
             <div class="info-row">
               <div class="ir-label">概算予算</div>
               <div class="budget-detail">
-                <div class="bd-row"><span class="bd-label">総額（金額）</span><span class="bd-value">¥12,000,000</span></div>
-                <div class="bd-row"><span class="bd-label">工数</span><span class="bd-value">24 人月</span></div>
-                <div class="bd-row"><span class="bd-label">実施期間</span><span class="bd-value">2025年6月〜2026年3月（10ヶ月）</span></div>
+                <div class="bd-row"><span class="bd-label">総額（金額）</span><span class="bd-value">{{ review_data.estimated_budget_display }}</span></div>
+                <div class="bd-row"><span class="bd-label">工数</span><span class="bd-value">{{ review_data.estimated_person_months_display }}</span></div>
+                <div class="bd-row"><span class="bd-label">実施期間</span><span class="bd-value">{{ review_data.planned_period_display }}</span></div>
               </div>
             </div>
             <div class="info-row">
               <div class="ir-label">申請日 / 案件番号</div>
-              <div class="ir-value">2025年5月13日 / <span style="font-family:monospace;color:var(--mpr-muted);">REQ-2025-00142</span></div>
+              <div class="ir-value">{{ review_data.submitted_date_ja }} / <span style="font-family:monospace;color:var(--mpr-muted);">{{ review_data.project_code }}</span></div>
             </div>
           </div>
         </div>
@@ -401,53 +399,53 @@
         <div class="sim-card">
           <div class="sim-head">
             <div class="sim-title">部門年間予算 シミュレーション</div>
-            <div class="sim-budget-total">年間予算：<strong>2億円</strong></div>
+            <div class="sim-budget-total">年間予算：<strong>{{ review_data.budget_simulation.annual_budget_display }}</strong></div>
           </div>
           <div class="sim-body">
             <p style="font-size:12px;color:var(--mpr-muted);margin-bottom:14px;line-height:1.6;">
-              この案件（1,200万円）を承認した場合、部門の年間予算にどう影響するかを示します。
+              この案件（{{ review_data.budget_simulation.this_project_amount_display }}）を承認した場合、部門の年間予算にどう影響するかを示します。
             </p>
             <div class="impact-row">
               <div class="impact-box">
                 <div class="ib-label">予算消化率（承認後予測）</div>
-                <div class="ib-val ibv-danger">84%</div>
-                <div class="ib-sub">+6%増加</div>
+                <div class="ib-val ibv-danger">{{ review_data.budget_simulation.consume_rate }}%</div>
+                <div class="ib-sub">承認後の予測値</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">予算残高（承認後）</div>
-                <div class="ib-val ibv-ok">3,200万円</div>
+                <div class="ib-val ibv-ok">{{ review_data.budget_simulation.remaining_amount_display }}</div>
                 <div class="ib-sub">今期残り</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">本案件の部門占有率</div>
-                <div class="ib-val ibv-warn">6%</div>
-                <div class="ib-sub">1,200万円 / 2億円</div>
+                <div class="ib-val ibv-warn">{{ review_data.budget_simulation.occupy_rate }}%</div>
+                <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">部門内 予算順位</div>
-                <div class="ib-val ibv-purple">3位</div>
-                <div class="ib-sub">第一開発部 12件中</div>
+                <div class="ib-val ibv-purple">{{ review_data.budget_rank }}位</div>
+                <div class="ib-sub">{{ review_data.budget_rank_subtext }}</div>
               </div>
             </div>
             <div class="stack-bar-wrap">
               <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mpr-muted);margin-bottom:6px;">
-                <span>0</span><span>5,000万円</span><span>1億円</span><span>1億5,000万円</span><span>2億円</span>
+                <span>0</span><span>5,000万円</span><span>1億円</span><span>1億5,000万円</span><span>{{ review_data.budget_simulation.annual_budget_display }}</span>
               </div>
               <div class="stack-bar" id="managerReviewSimBar">
-                <div class="sb-seg seg-used" id="managerReviewSeg1" style="width:0%" title="実績額 1億5,600万円"></div>
-                <div class="sb-seg seg-this" id="managerReviewSeg3" style="width:0%" title="この案件 1,200万円"></div>
-                <div class="sb-seg seg-remain" id="managerReviewSeg4" style="width:100%" title="承認後の残予算 3,200万円"></div>
+                <div class="sb-seg seg-used" id="managerReviewSeg1" style="width:0%" title="実績額 {{ review_data.budget_simulation.actual_amount_display }}"></div>
+                <div class="sb-seg seg-this" id="managerReviewSeg3" style="width:0%" title="この案件 {{ review_data.budget_simulation.this_project_amount_display }}"></div>
+                <div class="sb-seg seg-remain" id="managerReviewSeg4" style="width:100%" title="承認後の残予算 {{ review_data.budget_simulation.remaining_amount_display }}"></div>
               </div>
             </div>
             <div class="sim-legend">
-              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">1億5,600万円（78%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-warning)"></div><span class="sl-key">この案件</span><span class="sl-val">1,200万円（6%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:#e8e0eb"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">3,200万円（16%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">{{ review_data.budget_simulation.actual_amount_display }}（{{ review_data.budget_simulation.seg_used|round|int }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-warning)"></div><span class="sl-key">この案件</span><span class="sl-val">{{ review_data.budget_simulation.this_project_amount_display }}（{{ review_data.budget_simulation.seg_this|round|int }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:#e8e0eb"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">{{ review_data.budget_simulation.remaining_amount_display }}（{{ review_data.budget_simulation.seg_remaining|round|int }}%）</span></div>
             </div>
-            <div class="sim-result warn">
+            <div class="sim-result {{ review_data.budget_simulation.result_class }}">
               <div class="sr-text">
-                <strong>承認後の予算残高：3,200万円（16%）</strong>
-                <span>本案件を承認すると予算消化率が84%になります。年度内の追加申請に備え、残高を確認してください。</span>
+                <strong>{{ review_data.budget_simulation.result_title }}</strong>
+                <span>{{ review_data.budget_simulation.result_message }}</span>
               </div>
             </div>
           </div>
@@ -455,14 +453,18 @@
       </div>
 
       <div class="col-action">
+        <form id="managerReviewForm" method="POST" action="{{ url_for('manager_project_review', project_id=review_data.project_id) }}" onsubmit="return false;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="managerReviewActionInput" name="action" value="">
+          <input type="hidden" id="managerReviewConfirmedInput" name="confirmed" value="0">
         <div class="action-card">
           <div class="ac-top">
             <div class="ac-top-title">審査判定</div>
           </div>
           <div class="ac-body">
             <div class="verdict-toggle">
-              <button class="vt-btn" id="managerReviewVtApprove" onclick="setManagerReviewVerdict('approve')">承認</button>
-              <button class="vt-btn" id="managerReviewVtReject" onclick="setManagerReviewVerdict('reject')">却下</button>
+              <button type="button" class="vt-btn" id="managerReviewVtApprove" onclick="setManagerReviewVerdict('approve')">承認</button>
+              <button type="button" class="vt-btn" id="managerReviewVtReject" onclick="setManagerReviewVerdict('reject')">却下</button>
             </div>
             <div class="next-step" id="managerReviewNextStepInfo">
               <div>
@@ -477,47 +479,38 @@
               <div class="comment-hint" id="managerReviewCommentHint">
                 本部管理者への申し送りや、申請者への連絡事項を記入できます。
               </div>
-              <textarea class="f-textarea" id="commentArea" rows="5"
+              <textarea class="f-textarea" id="commentArea" name="rejection_comment" rows="5"
                 placeholder="例：計画の完成度が高く、リスク対策も明記されているため承認します。予算執行状況は月次で本部へ報告してください。"
-                oninput="updateManagerReviewCC()"></textarea>
+                oninput="updateManagerReviewCC()">{{ review_data.rejection_comment }}</textarea>
               <div class="char-counter"><span id="managerReviewCcNum">0</span> 文字</div>
               <div class="template-btns" id="managerReviewTemplateBtns" style="display:none;">
                 <div class="tmpl-label">却下理由テンプレ</div>
-                <button class="tmpl-btn" onclick="applyManagerReviewTemplate('予算')">予算根拠の不明確 — 見積書またはWBSを添付のうえ再申請を求める</button>
-                <button class="tmpl-btn" onclick="applyManagerReviewTemplate('目的')">目的・効果の具体性不足 — 定量的な目標数値の記載を求める</button>
-                <button class="tmpl-btn" onclick="applyManagerReviewTemplate('リスク')">リスク対策の記載なし — 遅延・コスト超過時の対処方針を追記するよう求める</button>
+                <button type="button" class="tmpl-btn" onclick="applyManagerReviewTemplate('予算')">予算根拠の不明確 — 金額・工数の内訳を具体化して再申請を求める</button>
+                <button type="button" class="tmpl-btn" onclick="applyManagerReviewTemplate('目的')">目的・効果の具体性不足 — 定量的な目標数値の追記を求める</button>
+                <button type="button" class="tmpl-btn" onclick="applyManagerReviewTemplate('リスク')">リスク対策の記載不足 — 遅延・コスト超過時の対応方針の追記を求める</button>
               </div>
             </div>
             <div class="verdict-btns">
-              <button class="btn-approve" id="managerReviewApproveBtn" onclick="confirmManagerReviewAction('approve')">承認して本部へ送付する</button>
-              <button class="btn-reject" id="managerReviewRejectBtn" onclick="confirmManagerReviewAction('reject')" style="display:none;">却下する</button>
+              <button type="button" class="btn-approve" id="managerReviewApproveBtn" onclick="confirmManagerReviewAction('approve')">承認して本部へ送付する</button>
+              <button type="button" class="btn-reject" id="managerReviewRejectBtn" onclick="confirmManagerReviewAction('reject')" style="display:none;">却下する</button>
             </div>
           </div>
         </div>
+        </form>
 
         <div class="queue-indicator">
-          <div class="qi-title">本日の審査キュー（4件）</div>
+          <div class="qi-title">{{ review_data.queue_total_label }}</div>
           <div class="qi-items">
-            <div class="qi-item current">
-              <div class="qi-num qn-cur">1</div>
-              <div class="qi-name">基幹システム刷新PJ</div>
-              <div class="qi-urgency">3日待機</div>
+            {% for item in review_data.queue_items %}
+            <div class="qi-item{% if item.is_current %} current{% endif %}" {% if not item.is_current %}onclick="window.location.href='{{ url_for('manager_project_review', project_id=item.project_id) }}'"{% endif %}>
+              <div class="qi-num {% if item.is_current %}qn-cur{% else %}qn-wait{% endif %}">{{ item.index }}</div>
+              <div class="qi-name">{{ item.title }}</div>
+              <div class="qi-date">{{ item.submitted_date }}</div>
+              {% if item.wait_badge_text %}
+              <span class="qi-urgency">{{ item.wait_badge_text }}</span>
+              {% endif %}
             </div>
-            <div class="qi-item" onclick="showManagerReviewToast('BI基盤整備の審査へ')">
-              <div class="qi-num qn-wait">2</div>
-              <div class="qi-name">BI基盤整備</div>
-              <div class="qi-date">5/14申請</div>
-            </div>
-            <div class="qi-item" onclick="showManagerReviewToast('モバイルアプリ開発の審査へ')">
-              <div class="qi-num qn-wait">3</div>
-              <div class="qi-name">モバイルアプリ開発</div>
-              <div class="qi-date">5/15申請</div>
-            </div>
-            <div class="qi-item" onclick="showManagerReviewToast('セキュリティ監査対応の審査へ')">
-              <div class="qi-num qn-wait">4</div>
-              <div class="qi-name">セキュリティ監査対応</div>
-              <div class="qi-date">5/16申請</div>
-            </div>
+            {% endfor %}
           </div>
         </div>
       </div>
@@ -529,7 +522,7 @@
       <div class="dlg-icon" id="managerReviewDlgIcon">承認</div>
       <div class="dlg-title" id="managerReviewDlgTitle">承認してよろしいですか？</div>
       <div class="dlg-body" id="managerReviewDlgBody">
-        <strong>「基幹システム刷新PJ」</strong>を承認し、本部管理者へ通知を送ります。
+        <strong>「{{ review_data.project_name }}」</strong>を承認し、本部管理者へ通知を送ります。
       </div>
       <div class="dlg-comment-preview" id="managerReviewDlgCommentPreview" style="display:none;"></div>
       <div class="dlg-btns">
@@ -545,7 +538,7 @@
 
 {% block content_footer %}
   {% set footer_info_text = "案件名" %}
-  {% set footer_info_value = "基幹システム刷新PJ" %}
+  {% set footer_info_value = review_data.project_name %}
   {% set footer_actions %}
     <button type="button" class="manager-review-footer-reject" onclick="confirmManagerReviewAction('reject')">却下</button>
     <button type="button" class="manager-review-footer-approve" onclick="confirmManagerReviewAction('approve')">承認</button>
@@ -558,6 +551,7 @@
 function getManagerReviewEl(id) { return document.getElementById(id); }
 function escapeManagerReviewMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 
+const reviewData = {{ review_data|tojson }};
 let managerReviewCurrentVerdict = "approve";
 
 function setManagerReviewVerdict(v) {
@@ -596,18 +590,18 @@ function setManagerReviewVerdict(v) {
     rejBtn.style.display = "flex";
     label.innerHTML = "却下理由 <span class=\"req-badge\">必須</span>";
     hint.textContent = "申請者が「作り直す」際のヒントとなる具体的な理由を記入してください。何が不足しているかを明確に伝えることで、再申請をスムーズにします。";
-    ta.placeholder = "例：概算予算の内訳（人月・費目別）が不明確です。¥12,000,000の根拠となる見積書またはWBSを添付のうえ再申請してください。また、リスク対応策の記載が欠けています。";
+    ta.placeholder = "例：概算予算の内訳（人月・費目別）が不明確です。金額と工数の根拠を目的・概要欄に具体的に追記したうえで、再申請してください。";
     ta.readOnly = false;
     tmpls.style.display = "flex";
     nextStep.className = "next-step reject-step";
-    nextStep.innerHTML = "<div><div style=\"font-weight:700;\">却下後の通知先</div><div style=\"margin-top:1px;\">申請者（田中 太郎）へ通知が届きます</div></div>";
+    nextStep.innerHTML = "<div><div style=\"font-weight:700;\">却下後の通知先</div><div style=\"margin-top:1px;\">申請者（" + escapeManagerReviewMockHtml(reviewData.applicant_name) + "）へ通知が届きます</div></div>";
   }
 }
 
 const managerReviewTemplates = {
-  "予算": "【却下理由】概算予算の内訳（人月・費目別）が不明確です。¥12,000,000の根拠となる見積書またはWBS（作業分解構成図）を添付のうえ再申請してください。",
+  "予算": "【却下理由】概算予算の内訳（人月・費目別）が不明確です。金額と工数の根拠を目的・概要欄に具体的に追記したうえで、再申請してください。",
   "目的": "【却下理由】目的・効果の記載が定性的で、定量的な目標数値が見当たりません。「年間コスト削減額」「リードタイム削減率」などの数値目標を追記のうえ再申請してください。",
-  "リスク": "【却下理由】リスク対策の記載が欠けています。プロジェクト遅延・コスト超過時の対処方針（早期警告の基準と報告ルート）を目的欄に追記のうえ再申請してください。"
+  "リスク": "【却下理由】リスク対策の記載が不足しています。プロジェクト遅延・コスト超過時の対処方針（早期警告の基準と報告ルート）を目的・概要欄に追記のうえ再申請してください。"
 };
 
 function applyManagerReviewTemplate(key) {
@@ -653,7 +647,7 @@ function confirmManagerReviewAction(type) {
   if (type === "approve") {
     icon.textContent = "承認";
     title.textContent = "承認してよろしいですか？";
-    body.innerHTML = "<strong>「基幹システム刷新PJ」</strong>を承認し、本部管理者へ通知を送ります。<br>この操作は元に戻せません。";
+    body.innerHTML = "<strong>「" + escapeManagerReviewMockHtml(reviewData.project_name) + "」</strong>を承認し、本部管理者へ通知を送ります。<br>この操作は元に戻せません。";
     if (comment) {
       preview.style.display = "block";
       preview.textContent = comment;
@@ -666,7 +660,7 @@ function confirmManagerReviewAction(type) {
   } else {
     icon.textContent = "却下";
     title.textContent = "却下してよろしいですか？";
-    body.innerHTML = "<strong>「基幹システム刷新PJ」</strong>を却下し、申請者（田中 太郎）へ返却します。<br>下記の却下理由が通知されます。";
+    body.innerHTML = "<strong>「" + escapeManagerReviewMockHtml(reviewData.project_name) + "」</strong>を却下し、申請者（" + escapeManagerReviewMockHtml(reviewData.applicant_name) + "）へ返却します。<br>下記の却下理由が通知されます。";
     preview.style.display = "block";
     preview.textContent = comment;
     okBtn.className = "dlg-ok-reject";
@@ -682,11 +676,14 @@ function closeManagerReviewDialog() {
 }
 
 function executeManagerReviewAction(type) {
-  if (type === "approve") {
-    showManagerReviewToast("承認しました。本部管理者へ通知を送信しました。");
-  } else {
-    showManagerReviewToast("却下しました。申請者（田中 太郎）へ通知を送信しました。");
-  }
+  const form = getManagerReviewEl("managerReviewForm");
+  const actionInput = getManagerReviewEl("managerReviewActionInput");
+  const confirmedInput = getManagerReviewEl("managerReviewConfirmedInput");
+  if (!form || !actionInput || !confirmedInput) return;
+  if (type !== "approve" && type !== "reject") return;
+  actionInput.value = type;
+  confirmedInput.value = "1";
+  form.submit();
 }
 
 function showManagerReviewToast(msg) {
@@ -697,13 +694,29 @@ function showManagerReviewToast(msg) {
   setTimeout(function() { t.classList.remove("show"); }, 2600);
 }
 
-setManagerReviewVerdict("approve");
+function bindManagerReviewPager(buttonId, noTargetMessage) {
+  const button = getManagerReviewEl(buttonId);
+  if (!button) return;
+  button.addEventListener("click", function() {
+    const targetUrl = button.getAttribute("data-target-url");
+    if (!targetUrl) {
+      showManagerReviewToast(noTargetMessage);
+      return;
+    }
+    window.location.href = targetUrl;
+  });
+}
+
+bindManagerReviewPager("managerReviewPrevBtn", "前の審査待ち案件はありません。");
+bindManagerReviewPager("managerReviewNextBtn", "次の審査待ち案件はありません。");
+
+setManagerReviewVerdict(reviewData.initial_verdict || "approve");
 
 (function initManagerReviewSimBar() {
   const segs = [
-    { id: "managerReviewSeg1", w: 78 },
-    { id: "managerReviewSeg3", w: 6 },
-    { id: "managerReviewSeg4", w: 16 }
+    { id: "managerReviewSeg1", w: Number(reviewData.budget_simulation.seg_used || 0) },
+    { id: "managerReviewSeg3", w: Number(reviewData.budget_simulation.seg_this || 0) },
+    { id: "managerReviewSeg4", w: Number(reviewData.budget_simulation.seg_remaining || 0) }
   ];
   requestAnimationFrame(function() {
     setTimeout(function() {
@@ -716,7 +729,7 @@ setManagerReviewVerdict("approve");
       seg4.style.width = "0%";
       setTimeout(function() {
         const seg4Update = getManagerReviewEl("managerReviewSeg4");
-        if (seg4Update) seg4Update.style.width = "16%";
+        if (seg4Update) seg4Update.style.width = String(Number(reviewData.budget_simulation.seg_remaining || 0)) + "%";
       }, 50);
     }, 300);
   });

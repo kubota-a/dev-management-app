@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% set page_role = "manager" %}
+{% set active_menu = "manager_review" %}
+{% set header_title = "承認審査" %}
+{% set header_meta = "自部門の承認待ち案件の審査を行います" %}
+{% set content_width_class = "app-content-wide" %}
+{% set content_footer_enabled = false %}
+
+{% block title %}承認審査{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-manager-project-review .content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+}
+.mock-manager-project-review .review-card {
+  background: #fff;
+  border: 1px solid var(--app-border, #e5e7eb);
+  border-radius: 12px;
+}
+.mock-manager-project-review .rc-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--app-border, #e5e7eb);
+}
+.mock-manager-project-review .rc-title { font-weight: 700; }
+.mock-manager-project-review .rc-body { padding: 18px; line-height: 1.7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mock-manager-project-review">
+  <div class="content">
+    <div class="review-card">
+      <div class="rc-head">
+        <div class="rc-title">承認審査</div>
+      </div>
+      <div class="rc-body">
+        <p>現在、審査待ちの案件はありません</p>
+        <p>新しい申請が届くと、この画面から内容確認と一次承認を行えます。</p>
+        <p style="margin-top:16px;">
+          <a href="{{ url_for('manager_top') }}" class="app-nav-link">部門管理者トップへ戻る</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
