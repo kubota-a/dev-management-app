@@ -1521,14 +1521,17 @@ def _build_hq_final_review_view_data(
     for idx, item in enumerate(queue_projects, start=1):
         item_dept_log = _get_latest_action_log(item, "approve_department")
         item_wait_days = 0
+        item_dept_approved_date_display = "--/--"
         if item_dept_log:
             item_wait_days = (today_jst - item_dept_log.acted_at.astimezone(ZoneInfo("Asia/Tokyo")).date()).days
+            item_dept_approved_date_display = format_jst_date(item_dept_log.acted_at, "%m/%d")
         queue_items.append(
             {
                 "project_id": item.id,
                 "index": idx,
                 "title": item.title,
                 "department_name": item.department.name if item.department else "—",
+                "department_approved_date_display": item_dept_approved_date_display,
                 "is_current": item.id == project.id,
                 "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
             }
@@ -1559,7 +1562,7 @@ def _build_hq_final_review_view_data(
         "prev_project_id": prev_project_id,
         "next_project_id": next_project_id,
         "queue_items": queue_items,
-        "queue_total_label": f"本日の最終承認キュー（{total_count}件）",
+        "queue_total_label": f"審査待ち案件（{total_count}件）",
         "budget_simulation": budget_sim,
         "rejection_comment": rejection_comment,
         "initial_verdict": "reject" if force_reject_mode else "approve",

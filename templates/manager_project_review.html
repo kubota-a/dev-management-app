@@ -265,7 +265,14 @@
 }
 .mock-manager-project-review .qi-num.qn-cur { background: var(--mpr-header); color: #fff; }
 .mock-manager-project-review .qi-num.qn-wait { background: var(--mpr-border); color: var(--mpr-muted); font-size: 10px; }
-.mock-manager-project-review .qi-name { flex: 1; color: var(--mpr-text); }
+.mock-manager-project-review .qi-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--mpr-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .mock-manager-project-review .qi-date { font-size: 11px; color: var(--mpr-muted); }
 .mock-manager-project-review .qi-urgency { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--mpr-danger-bg); color: var(--mpr-danger); border: 1px solid var(--mpr-danger-mid); }
 

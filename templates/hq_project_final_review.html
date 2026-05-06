@@ -264,7 +264,8 @@
 .mock-hq-final-review .qc-num { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; }
 .mock-hq-final-review .qn-cur { background: var(--hfr-header); color: #fff; }
 .mock-hq-final-review .qn-wait { background: var(--hfr-border); color: var(--hfr-muted); }
-.mock-hq-final-review .qc-name { flex: 1; color: var(--hfr-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mock-hq-final-review .qc-name { flex: 1; min-width: 0; color: var(--hfr-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mock-hq-final-review .qc-date { font-size: 11px; color: var(--hfr-muted); white-space: nowrap; flex-shrink: 0; }
 .mock-hq-final-review .qc-urgency { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: var(--hfr-danger-bg); color: var(--hfr-danger); border: 1px solid var(--hfr-danger-mid); white-space: nowrap; }
 .mock-hq-final-review .qc-dept { font-size: 11px; color: var(--hfr-muted); }
 
@@ -323,7 +324,6 @@
   .mock-hq-final-review .three-col { grid-template-columns: 1fr; overflow-x: hidden; }
   .mock-hq-final-review .col-c { grid-column: auto; display: flex; flex-direction: column; }
   .mock-hq-final-review .review-banner { flex-wrap: wrap; gap: 10px; }
-  .mock-hq-final-review .rb-nav { display: none; }
   .mock-hq-final-review .impact-row { grid-template-columns: 1fr 1fr; }
   .mock-hq-final-review .sim-head { flex-direction: column; align-items: flex-start; gap: 4px; }
   .mock-hq-final-review .bd-row,
@@ -515,10 +515,9 @@
             <div class="qc-item{% if queue_item.is_current %} current{% endif %}"{% if not queue_item.is_current %} onclick="location.href='{{ url_for('hq_project_final_review', project_id=queue_item.project_id) }}'"{% endif %}>
               <div class="qc-num {% if queue_item.is_current %}qn-cur{% else %}qn-wait{% endif %}">{{ queue_item.index }}</div>
               <div class="qc-name">{{ queue_item.title }}</div>
+              <div class="qc-date">{{ queue_item.department_approved_date_display }}</div>
               {% if queue_item.wait_badge_text %}
               <div class="qc-urgency">{{ queue_item.wait_badge_text }}</div>
-              {% else %}
-              <div class="qc-dept">{{ queue_item.department_name }}</div>
               {% endif %}
             </div>
             {% endfor %}
