@@ -114,6 +114,33 @@
 .mock-hq-final-review .bd-label { color: var(--hfr-muted); }
 .mock-hq-final-review .bd-value { font-weight: 700; color: var(--hfr-header); }
 
+.mock-hq-final-review .basic-info-card .ir-value.big {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--hfr-header);
+  line-height: 1.3;
+}
+.mock-hq-final-review .basic-info-card .ir-value.desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.85;
+  white-space: pre-line;
+}
+.mock-hq-final-review .basic-info-card .bd-row {
+  font-size: 12px;
+  padding: 2px 0;
+}
+.mock-hq-final-review .basic-info-card .bd-row + .bd-row {
+  margin-top: 5px;
+  padding-top: 5px;
+}
+.mock-hq-final-review .basic-info-plain-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hfr-header);
+  line-height: 1.8;
+}
+
 .mock-hq-final-review .sim-card { background: var(--hfr-card); border: 1.5px solid var(--hfr-blue-mid); border-radius: var(--hfr-radius); box-shadow: var(--hfr-shadow-card); overflow: hidden; }
 .mock-hq-final-review .sim-head { background: var(--hfr-blue-light); padding: 12px 16px; border-bottom: 1px solid var(--hfr-blue-mid); display: flex; align-items: center; justify-content: space-between; }
 .mock-hq-final-review .sim-title { font-size: 13px; font-weight: 800; color: var(--hfr-header); display: flex; align-items: center; gap: 6px; }
@@ -295,7 +322,7 @@
         <div class="rb-info">
           <div class="rb-proj">基幹システム刷新PJ</div>
           <div class="rb-meta">
-            <div class="rb-meta-item"><span>申請者</span><span>田中 太郎（第一開発部）</span></div>
+            <div class="rb-meta-item"><span>申請者</span><span>田中 太郎（業務改革推進部）</span></div>
             <div class="rb-meta-item rb-meta-date-item">
               <span class="rb-meta-date-text">
                 <span>申請日</span>
@@ -316,7 +343,7 @@
 
     <div class="three-col">
       <div class="col-a">
-        <div class="r-card">
+        <div class="r-card basic-info-card">
           <div class="rc-head">
             <div class="rc-title">申請内容（基本情報）</div>
             <div class="rc-badge-ro">読み取り専用</div>
@@ -325,6 +352,9 @@
             <div class="info-row">
               <div class="ir-label">案件名</div>
               <div class="ir-value big">基幹システム刷新PJ</div>
+              <div style="margin-top:5px;">
+                <span class="badge badge-dept-reform">業務改革推進部</span>
+              </div>
             </div>
             <div class="info-row">
               <div class="ir-label">目的・概要</div>
@@ -335,13 +365,8 @@
 ・デプロイリードタイム 5日 → 0.5日</div>
             </div>
             <div class="info-row">
-              <div class="ir-label">申請者 / 担当部門</div>
-              <div class="person-chip" style="margin-top:6px;">
-                <div>
-                  <div class="pc-name">田中 太郎</div>
-                  <div class="pc-dept">第一開発部</div>
-                </div>
-              </div>
+              <div class="ir-label">申請者</div>
+              <div class="basic-info-plain-value">田中 太郎</div>
             </div>
             <div class="info-row">
               <div class="ir-label">概算予算</div>
@@ -423,7 +448,6 @@
         <div class="verdict-card">
           <div class="vc-head">
             <div class="vc-title">最終判定・予算確定</div>
-            <div class="vc-sub">承認と同時に予算確定 — 再計算は不要となります</div>
           </div>
           <div class="vc-body">
             <div class="verdict-toggle">
@@ -435,9 +459,8 @@
               <div class="bcb-check-wrap" onclick="toggleHqFinalReviewConfirmCheck()">
                 <div class="bcb-checkbox" id="confirmCheck"></div>
                 <div class="bcb-text">
-                  承認後、本予算（<strong>¥12,000,000</strong>）は<span class="bcb-highlight">確定</span>されます。<br>
-                  開発管理フェーズへ移行し、<span class="bcb-highlight">再計算は不要</span>となります。<br>
-                  内容に間違いがないことを確認しました。
+                  承認後、本予算（<strong>¥12,000,000</strong>）は<span class="bcb-highlight">確定</span>されます。
+                  内容に間違いがないことを確認してください。
                 </div>
               </div>
             </div>
@@ -447,7 +470,7 @@
             </div>
             <div class="comment-hint" id="commentHint">申請者・部門管理者への申し送りや、承認条件を記入できます。</div>
             <textarea class="f-textarea" id="commentArea" rows="4" readonly
-              placeholder="例：計画・予算とも妥当と判断し承認します。月次進捗報告を確実に実施し、予算超過が見込まれる場合は事前に報告すること。"></textarea>
+              placeholder="例：本Pocでは未実装ですが、今後の拡張予定として残しておきます。"></textarea>
 
             <div class="tmpl-group" id="tmplGroup" style="display:none;">
               <div class="tmpl-lbl">却下理由テンプレ</div>
@@ -461,7 +484,7 @@
                 最終承認（予算確定）
               </button>
               <button class="btn-reject" id="rejectBtn" onclick="confirmHqFinalReviewVerdict('reject')" style="display:none;">
-                却下（要修正）として申請者へ返却
+                却下する
               </button>
             </div>
           </div>
@@ -568,7 +591,7 @@ function setHqFinalReviewVerdict(v) {
     rBtn.style.display = "none";
     cLabel.innerHTML = "最終決裁コメント（申し送り） <span class=\"not-implemented-badge\">未実装</span>";
     cHint.textContent = "開発フェーズへの申し送りや承認条件を記入できます。";
-    ta.placeholder = "例：計画・予算とも妥当と判断し承認します。月次進捗報告を確実に実施し、予算超過が見込まれる場合は事前に報告すること。";
+    ta.placeholder = "本Pocでは未実装ですが、今後の拡張予定として残しておきます。";
     ta.value = "";
     ta.readOnly = true;
     ta.classList.remove("req-empty");
@@ -646,7 +669,7 @@ function confirmHqFinalReviewVerdict(type) {
     title.textContent = "最終承認（予算確定）しますか？";
     body.innerHTML = "<strong>「基幹システム刷新PJ」</strong>を最終承認します。<br>承認と同時に予算（¥12,000,000）が確定し、開発管理フェーズへ移行します。";
     hl.style.display = "block";
-    hl.textContent = "予算確定：¥12,000,000 — 再計算不要";
+    hl.textContent = "予算確定：¥12,000,000";
     if (comment) {
       cp.style.display = "block";
       cp.textContent = comment;
@@ -664,7 +687,7 @@ function confirmHqFinalReviewVerdict(type) {
     cp.style.display = "block";
     cp.textContent = comment;
     ok.className = "dlg-ok-reject";
-    ok.textContent = "却下して返却する";
+    ok.textContent = "却下する";
     ok.onclick = function() { closeHqFinalReviewDialog(); showHqFinalReviewToast("却下しました。申請者へ通知を送信しました。"); };
   }
   dlg.classList.add("open");
