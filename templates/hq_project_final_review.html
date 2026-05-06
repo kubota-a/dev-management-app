@@ -290,7 +290,6 @@
 .mock-hq-final-review .toast { position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--hfr-text); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
 .mock-hq-final-review .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-.hq-final-review-footer-project { margin-right: 10px; color: #4a7291; font-size: 13px; }
 .hq-final-review-footer-reject {
   height: 36px; padding: 0 12px; border-radius: 8px; border: 2px solid #fecaca; background: #fff0f0;
   color: #dc3545; font-size: 12px; font-weight: 700; cursor: pointer;
@@ -491,7 +490,7 @@
         </div>
 
         <div class="queue-card">
-          <div class="qc-title">本日の最終承認キュー（3件）</div>
+          <div class="qc-title">審査待ち案件（3件）</div>
           <div class="qc-items">
             <div class="qc-item current">
               <div class="qc-num qn-cur">1</div>
@@ -536,7 +535,6 @@
   {% set footer_info_text = "案件名" %}
   {% set footer_info_value = "基幹システム刷新PJ" %}
   {% set footer_actions %}
-    <span class="hq-final-review-footer-project">案件名：基幹システム刷新PJ</span>
     <button type="button" class="hq-final-review-footer-reject" onclick="confirmHqFinalReviewVerdict('reject')">却下</button>
     <button type="button" class="hq-final-review-footer-approve" onclick="confirmHqFinalReviewVerdict('approve')">最終承認（予算確定）</button>
   {% endset %}
