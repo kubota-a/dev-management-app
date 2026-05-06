@@ -326,8 +326,28 @@
   .mock-manager-project-review .col-action { position: static; }
 }
 @media (max-width: 820px) {
+  .mock-manager-project-review,
+  .mock-manager-project-review .content,
+  .mock-manager-project-review .review-layout,
+  .mock-manager-project-review .col-content,
+  .mock-manager-project-review .col-simulation,
+  .mock-manager-project-review .col-action,
+  .mock-manager-project-review .review-card,
+  .mock-manager-project-review .sim-card,
+  .mock-manager-project-review .action-card,
+  .mock-manager-project-review .queue-indicator {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
   .mock-manager-project-review .content { padding: 16px 12px 136px; }
+  .mock-manager-project-review .review-layout { overflow-x: hidden; }
   .mock-manager-project-review .review-banner { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 16px; }
+  .mock-manager-project-review .bd-row,
+  .mock-manager-project-review .sl-item,
+  .mock-manager-project-review .qi-item { min-width: 0; }
+  .mock-manager-project-review .sl-item { flex-wrap: wrap; }
 }
 </style>
 {% endblock %}
