@@ -947,10 +947,11 @@ def build_department_budget_simulation(project: Project) -> dict:
     else:
         occupy_rate_class = "ibv-ok"
 
-    remaining_display_amount = remaining_amount
-    remaining_result_display = format_decimal_amount(remaining_amount)
+    remaining_amount_display = format_decimal_amount(remaining_amount)
+    remaining_result_display = remaining_amount_display
     if remaining_amount < 0:
-        remaining_result_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+        remaining_amount_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+        remaining_result_display = remaining_amount_display
 
     consume_rate_display = format_percent_value(consume_rate)
     occupy_rate_display = format_percent_value(occupy_rate)
@@ -982,7 +983,7 @@ def build_department_budget_simulation(project: Project) -> dict:
         "annual_budget_display": format_decimal_amount(annual_budget),
         "actual_amount_display": format_decimal_amount(actual_amount),
         "this_project_amount_display": format_decimal_amount(this_project_amount),
-        "remaining_amount_display": format_decimal_amount(remaining_display_amount),
+        "remaining_amount_display": remaining_amount_display,
         "remaining_result_display": remaining_result_display,
         "consume_rate": consume_rate_display,
         "occupy_rate": occupy_rate_display,
