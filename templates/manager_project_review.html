@@ -265,7 +265,14 @@
 }
 .mock-manager-project-review .qi-num.qn-cur { background: var(--mpr-header); color: #fff; }
 .mock-manager-project-review .qi-num.qn-wait { background: var(--mpr-border); color: var(--mpr-muted); font-size: 10px; }
-.mock-manager-project-review .qi-name { flex: 1; color: var(--mpr-text); }
+.mock-manager-project-review .qi-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--mpr-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .mock-manager-project-review .qi-date { font-size: 11px; color: var(--mpr-muted); }
 .mock-manager-project-review .qi-urgency { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--mpr-danger-bg); color: var(--mpr-danger); border: 1px solid var(--mpr-danger-mid); }
 
@@ -319,8 +326,28 @@
   .mock-manager-project-review .col-action { position: static; }
 }
 @media (max-width: 820px) {
+  .mock-manager-project-review,
+  .mock-manager-project-review .content,
+  .mock-manager-project-review .review-layout,
+  .mock-manager-project-review .col-content,
+  .mock-manager-project-review .col-simulation,
+  .mock-manager-project-review .col-action,
+  .mock-manager-project-review .review-card,
+  .mock-manager-project-review .sim-card,
+  .mock-manager-project-review .action-card,
+  .mock-manager-project-review .queue-indicator {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
   .mock-manager-project-review .content { padding: 16px 12px 136px; }
+  .mock-manager-project-review .review-layout { overflow-x: hidden; }
   .mock-manager-project-review .review-banner { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 16px; }
+  .mock-manager-project-review .bd-row,
+  .mock-manager-project-review .sl-item,
+  .mock-manager-project-review .qi-item { min-width: 0; }
+  .mock-manager-project-review .sl-item { flex-wrap: wrap; }
 }
 </style>
 {% endblock %}
@@ -483,7 +510,7 @@
                 本部管理者への申し送りや、申請者への連絡事項を記入できます。
               </div>
               <textarea class="f-textarea" id="commentArea" name="rejection_comment" rows="5"
-                placeholder="例：計画の完成度が高く、リスク対策も明記されているため承認します。予算執行状況は月次で本部へ報告してください。"
+                placeholder="本PoCでは未実装ですが、今後の拡張予定として残しておきます。"
                 oninput="updateManagerReviewCC()">{{ review_data.rejection_comment }}</textarea>
               <div class="char-counter"><span id="managerReviewCcNum">0</span> 文字</div>
               <div class="template-btns" id="managerReviewTemplateBtns" style="display:none;">
@@ -579,7 +606,7 @@ function setManagerReviewVerdict(v) {
     rejBtn.style.display = "none";
     label.innerHTML = "審査コメント（本部への申し送り） <span class=\"not-implemented-badge\">未実装</span>";
     hint.textContent = "本部管理者への申し送りや、申請者への激励を記入できます。";
-    ta.placeholder = "例：計画の完成度が高く、リスク対策も明記されているため承認します。予算執行状況は月次で本部へ報告してください。";
+    ta.placeholder = "本PoCでは未実装ですが、今後の拡張予定として残しておきます。";
     ta.value = "";
     ta.readOnly = true;
     ta.classList.remove("required-empty");

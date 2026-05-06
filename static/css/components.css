@@ -674,6 +674,24 @@
     color: var(--color-status-label-adjusting-text);
 }
 
+.badge-dept-system {
+    background-color: #e7f0f7;
+    color: #24506f;
+    border-color: #bdd3e3;
+}
+
+.badge-dept-infra {
+    background-color: #f0eaf4;
+    color: #60456f;
+    border-color: #d5c4df;
+}
+
+.badge-dept-reform {
+    background-color: #f8efe3;
+    color: #81562b;
+    border-color: #e6c9a8;
+}
+
 .progress-meter-stack {
     display: grid;
     gap: var(--space-md);
