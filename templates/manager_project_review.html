@@ -408,17 +408,17 @@
             <div class="impact-row">
               <div class="impact-box">
                 <div class="ib-label">予算消化率（承認後予測）</div>
-                <div class="ib-val ibv-danger">{{ review_data.budget_simulation.consume_rate }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate }}%</div>
                 <div class="ib-sub">承認後の予測値</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">予算残高（承認後）</div>
-                <div class="ib-val ibv-ok">{{ review_data.budget_simulation.remaining_amount_display }}</div>
+                <div class="ib-val {{ review_data.budget_simulation.remaining_amount_class }}">{{ review_data.budget_simulation.remaining_amount_display }}</div>
                 <div class="ib-sub">今期残り</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">本案件の部門占有率</div>
-                <div class="ib-val ibv-warn">{{ review_data.budget_simulation.occupy_rate }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate }}%</div>
                 <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
               </div>
               <div class="impact-box">
@@ -429,7 +429,9 @@
             </div>
             <div class="stack-bar-wrap">
               <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mpr-muted);margin-bottom:6px;">
-                <span>0</span><span>5,000万円</span><span>1億円</span><span>1億5,000万円</span><span>{{ review_data.budget_simulation.annual_budget_display }}</span>
+                {% for label in review_data.budget_simulation.axis_labels %}
+                <span>{{ label }}</span>
+                {% endfor %}
               </div>
               <div class="stack-bar" id="managerReviewSimBar">
                 <div class="sb-seg seg-used" id="managerReviewSeg1" style="width:0%" title="実績額 {{ review_data.budget_simulation.actual_amount_display }}"></div>

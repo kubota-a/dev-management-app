@@ -177,6 +177,17 @@ def format_person_months(value: Decimal | None) -> str:
     return f"{text} 人月"
 
 
+def format_percent_value(value: Decimal | None) -> str:
+    """割合を小数第1位まで表示し、不要な .0 だけを取り除く。"""
+    if value is None:
+        return "0"
+    rounded = value.quantize(Decimal("0.1"))
+    text = format(rounded, "f")
+    if text.endswith(".0"):
+        text = text[:-2]
+    return text
+
+
 def get_latest_rejection_log(project: Project) -> ProjectStatusLog | None:
     """案件の最新却下ログを返す。"""
     reject_logs = [
@@ -920,24 +931,53 @@ def build_department_budget_simulation(project: Project) -> dict:
     else:
         result_class = "ok"
 
+    consume_rate_class = "ibv-ok"
+    remaining_amount_class = "ibv-ok"
+    if result_class == "danger":
+        consume_rate_class = "ibv-danger"
+        remaining_amount_class = "ibv-danger"
+    elif result_class == "warn":
+        consume_rate_class = "ibv-warn"
+        remaining_amount_class = "ibv-warn"
+
+    if occupy_rate >= Decimal("30"):
+        occupy_rate_class = "ibv-danger"
+    elif occupy_rate >= Decimal("20"):
+        occupy_rate_class = "ibv-warn"
+    else:
+        occupy_rate_class = "ibv-ok"
+
     remaining_display_amount = remaining_amount
     remaining_result_display = format_decimal_amount(remaining_amount)
     if remaining_amount < 0:
         remaining_result_display = f"-{format_decimal_amount(abs(remaining_amount))}"
 
+    consume_rate_display = format_percent_value(consume_rate)
+    occupy_rate_display = format_percent_value(occupy_rate)
+    remaining_rate_display = format_percent_value(remaining_rate)
+
     if result_class == "ok":
-        result_title = f"承認後の予算残高：{remaining_result_display}（{f'{remaining_rate.quantize(Decimal('0.1')).normalize():f}'.rstrip('0').rstrip('.')}%）"
+        result_title = f"承認後の予算残高：{remaining_result_display}（{remaining_rate_display}%）"
         result_message = "本案件を承認しても、部門年間予算には十分な残余があります。"
     elif result_class == "warn":
-        result_title = f"承認後の予算残高：{remaining_result_display}（{f'{remaining_rate.quantize(Decimal('0.1')).normalize():f}'.rstrip('0').rstrip('.')}%）"
-        result_message = f"本案件を承認すると予算消化率が{f'{consume_rate.quantize(Decimal('0.1')).normalize():f}'.rstrip('0').rstrip('.')}%になります。年度内の追加申請に備え、残高を確認してください。"
+        result_title = f"承認後の予算残高：{remaining_result_display}（{remaining_rate_display}%）"
+        result_message = f"本案件を承認すると予算消化率が{consume_rate_display}%になります。年度内の追加申請に備え、残高を確認してください。"
     else:
         result_title = f"承認後の予算残高：{remaining_result_display}（予算超過）"
         result_message = "本案件を承認すると部門年間予算を超過します。本部承認前に予算調整が必要です。"
 
-    consume_rate_display = f"{consume_rate.quantize(Decimal('0.1')).normalize():f}".rstrip("0").rstrip(".")
-    occupy_rate_display = f"{occupy_rate.quantize(Decimal('0.1')).normalize():f}".rstrip("0").rstrip(".")
-    remaining_rate_display = f"{remaining_rate.quantize(Decimal('0.1')).normalize():f}".rstrip("0").rstrip(".")
+    if annual_budget > 0:
+        axis_labels = []
+        for pct in [0, 25, 50, 75, 100]:
+            if pct == 0:
+                axis_labels.append("0")
+                continue
+            amount = (annual_budget * Decimal(pct)) / Decimal("100")
+            man_yen = int(amount / Decimal("10000"))
+            axis_labels.append(f"{pct}%（{man_yen:,}万円）")
+    else:
+        axis_labels = ["0", "25%", "50%", "75%", "100%"]
+
     return {
         "annual_budget_display": format_decimal_amount(annual_budget),
         "actual_amount_display": format_decimal_amount(actual_amount),
@@ -953,6 +993,10 @@ def build_department_budget_simulation(project: Project) -> dict:
         "result_class": result_class,
         "result_title": result_title,
         "result_message": result_message,
+        "consume_rate_class": consume_rate_class,
+        "remaining_amount_class": remaining_amount_class,
+        "occupy_rate_class": occupy_rate_class,
+        "axis_labels": axis_labels,
     }
 
 
