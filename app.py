@@ -1,4 +1,4 @@
-import os
+﻿import os
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
@@ -1291,6 +1291,14 @@ def manager_project_review(project_id: int):
 @login_required
 def hq_top():
     return render_template("hq_top.html", demo_role="hq")
+
+
+# =============================
+# ■ 本部管理者：最終承認画面
+# =============================
+@app.route("/hq/projects/final-review")
+def hq_project_final_review():
+    return render_template("hq_project_final_review.html")
 
 
 # UI見本の通常ページ確認用ルート
