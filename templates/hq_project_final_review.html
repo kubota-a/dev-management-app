@@ -488,7 +488,7 @@
             </div>
             <div class="comment-hint" id="commentHint">申請者・部門管理者への申し送りや、承認条件を記入できます。</div>
             <textarea class="f-textarea" id="commentArea" rows="4" readonly
-              placeholder="例：計画・予算とも妥当と判断し承認します。月次進捗報告を確実に実施し、予算超過が見込まれる場合は事前に報告すること。">{{ review_data.rejection_comment }}</textarea>
+              placeholder="本PoCでは未実装ですが、今後の拡張予定として残しておきます">{{ review_data.rejection_comment }}</textarea>
 
             <div class="tmpl-group" id="tmplGroup" style="display:none;">
               <div class="tmpl-lbl">却下理由テンプレ</div>
@@ -610,7 +610,7 @@ function setHqFinalReviewVerdict(v) {
     rBtn.style.display = "none";
     cLabel.innerHTML = "最終決裁コメント（申し送り） <span class=\"not-implemented-badge\">未実装</span>";
     cHint.textContent = "開発フェーズへの申し送りや承認条件を記入できます。";
-    ta.placeholder = "例：計画・予算とも妥当と判断し承認します。月次進捗報告を確実に実施し、予算超過が見込まれる場合は事前に報告すること。";
+    ta.placeholder = "本PoCでは未実装ですが、今後の拡張予定として残しておきます";
     ta.value = "";
     ta.readOnly = true;
     ta.classList.remove("req-empty");
@@ -708,7 +708,7 @@ function confirmHqFinalReviewVerdict(type) {
   } else {
     icon.textContent = "却下";
     title.textContent = "却下してよろしいですか？";
-    body.innerHTML = "<strong>「{{ review_data.project_name }}」</strong>を却下し、申請者（{{ review_data.applicant_name }}）へ返却します。";
+    body.innerHTML = "<strong>「{{ review_data.project_name }}」</strong>を却下し、申請者（{{ review_data.applicant_name }}）へ通知します。";
     hl.style.display = "none";
     cp.style.display = "block";
     cp.textContent = comment;

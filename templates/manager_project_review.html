@@ -510,7 +510,7 @@
                 本部管理者への申し送りや、申請者への連絡事項を記入できます。
               </div>
               <textarea class="f-textarea" id="commentArea" name="rejection_comment" rows="5"
-                placeholder="本Pocでは未実装ですが、今後の拡張予定として残しておきます。"
+                placeholder="本PoCでは未実装ですが、今後の拡張予定として残しておきます。"
                 oninput="updateManagerReviewCC()">{{ review_data.rejection_comment }}</textarea>
               <div class="char-counter"><span id="managerReviewCcNum">0</span> 文字</div>
               <div class="template-btns" id="managerReviewTemplateBtns" style="display:none;">
@@ -606,7 +606,7 @@ function setManagerReviewVerdict(v) {
     rejBtn.style.display = "none";
     label.innerHTML = "審査コメント（本部への申し送り） <span class=\"not-implemented-badge\">未実装</span>";
     hint.textContent = "本部管理者への申し送りや、申請者への激励を記入できます。";
-    ta.placeholder = "本Pocでは未実装ですが、今後の拡張予定として残しておきます。";
+    ta.placeholder = "本PoCでは未実装ですが、今後の拡張予定として残しておきます。";
     ta.value = "";
     ta.readOnly = true;
     ta.classList.remove("required-empty");
