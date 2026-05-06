@@ -316,27 +316,30 @@
 {% block content %}
 <div class="mock-hq-final-review">
   <div class="content">
+    {% include "partials/_flash.html" %}
     <div class="review-banner">
       <div class="rb-left">
         <div class="rb-info">
-          <div class="rb-proj">基幹システム刷新PJ</div>
+          <div class="rb-proj">{{ review_data.project_name }}</div>
           <div class="rb-meta">
-            <div class="rb-meta-item"><span>申請者</span><span>田中 太郎（業務改革推進部）</span></div>
+            <div class="rb-meta-item"><span>申請者</span><span>{{ review_data.applicant_name }}（{{ review_data.department_name }}）</span></div>
             <div class="rb-meta-item rb-meta-date-item">
               <span class="rb-meta-date-text">
                 <span>申請日</span>
-                <span>2025/05/13</span>
+                <span>{{ review_data.submitted_date_display }}</span>
               </span>
-              <span class="rb-wait-badge">3日待機</span>
             </div>
-            <div class="rb-meta-item"><span>部門承認日</span><span>2025/05/15（山田 部長）</span></div>
+            <div class="rb-meta-item rb-meta-date-item">
+              <span class="rb-meta-date-text"><span>部門承認日</span><span>{{ review_data.dept_approved_display }}</span></span>
+              {% if review_data.wait_badge_text %}<span class="rb-wait-badge">{{ review_data.wait_badge_text }}</span>{% endif %}
+            </div>
           </div>
         </div>
       </div>
       <div class="rb-nav">
-        <button class="rb-nav-btn" onclick="showHqFinalReviewToast('前の案件へ')">←</button>
-        <span class="rb-nav-count">1 / 3</span>
-        <button class="rb-nav-btn" onclick="showHqFinalReviewToast('次の案件へ')">→</button>
+        <button class="rb-nav-btn" onclick="{% if review_data.prev_project_id %}location.href='{{ url_for('hq_project_final_review', project_id=review_data.prev_project_id) }}'{% else %}showHqFinalReviewToast('前の審査待ち案件はありません。'){% endif %}">←</button>
+        <span class="rb-nav-count">{{ review_data.queue_position }} / {{ review_data.queue_total_count }}</span>
+        <button class="rb-nav-btn" onclick="{% if review_data.next_project_id %}location.href='{{ url_for('hq_project_final_review', project_id=review_data.next_project_id) }}'{% else %}showHqFinalReviewToast('次の審査待ち案件はありません。'){% endif %}">→</button>
       </div>
     </div>
 
@@ -350,34 +353,30 @@
           <div class="rc-body">
             <div class="info-row">
               <div class="ir-label">案件名</div>
-              <div class="ir-value big">基幹システム刷新PJ</div>
+              <div class="ir-value big">{{ review_data.project_name }}</div>
               <div style="margin-top:5px;">
-                <span class="badge badge-dept-reform">業務改革推進部</span>
+                <span class="{{ review_data.department_badge_class }}">{{ review_data.department_name }}</span>
               </div>
             </div>
             <div class="info-row">
               <div class="ir-label">目的・概要</div>
-              <div class="ir-value desc">老朽化した基幹システムをクラウドネイティブ構成へ刷新し、保守コストの削減と業務効率化を図る。将来的なBI連携も視野に入れたデータ基盤整備を含む。
-
-【期待効果】
-・年間保守コスト 約30%削減（推定 450万円/年）
-・デプロイリードタイム 5日 → 0.5日</div>
+              <div class="ir-value desc">{{ review_data.purpose }}</div>
             </div>
             <div class="info-row">
               <div class="ir-label">申請者</div>
-              <div class="basic-info-plain-value">田中 太郎</div>
+              <div class="basic-info-plain-value">{{ review_data.applicant_name }}</div>
             </div>
             <div class="info-row">
               <div class="ir-label">概算予算</div>
               <div class="budget-detail">
-                <div class="bd-row"><span class="bd-label">総額（金額）</span><span class="bd-value">¥12,000,000</span></div>
-                <div class="bd-row"><span class="bd-label">工数</span><span class="bd-value">24 人月</span></div>
-                <div class="bd-row"><span class="bd-label">実施期間</span><span class="bd-value">2025年6月〜2026年3月（10ヶ月）</span></div>
+                <div class="bd-row"><span class="bd-label">総額（金額）</span><span class="bd-value">{{ review_data.estimated_budget_display }}</span></div>
+                <div class="bd-row"><span class="bd-label">工数</span><span class="bd-value">{{ review_data.estimated_person_months_display }}</span></div>
+                <div class="bd-row"><span class="bd-label">実施期間</span><span class="bd-value">{{ review_data.planned_period_display }}</span></div>
               </div>
             </div>
             <div class="info-row">
               <div class="ir-label">申請日 / 案件番号</div>
-              <div class="ir-value">2025年5月13日 / <span style="font-family:monospace;color:var(--hfr-muted);">REQ-2025-00142</span></div>
+              <div class="ir-value">{{ review_data.submitted_date_ja }} / <span style="font-family:monospace;color:var(--hfr-muted);">{{ review_data.project_code }}</span></div>
             </div>
           </div>
         </div>
@@ -387,56 +386,56 @@
         <div class="sim-card">
           <div class="sim-head">
             <div class="sim-title">全社予算インパクト シミュレーション</div>
-            <div class="sim-total">全社年間予算：<strong>5億円</strong></div>
+            <div class="sim-total">全社年間予算：<strong>{{ review_data.budget_simulation.annual_budget_display }}</strong></div>
           </div>
           <div class="sim-body">
             <p style="font-size:12px;color:var(--hfr-muted);margin-bottom:14px;line-height:1.6;">
-              本案件（1,200万円）を最終承認した場合、全社年間予算にどう影響するかを示します。
+              本案件（{{ review_data.budget_simulation.this_project_amount_display }}）を最終承認した場合、全社年間予算にどう影響するかを示します。
             </p>
             <div class="impact-row">
               <div class="impact-box">
                 <div class="ib-label">予算消化率（承認後予測）</div>
-                <div class="ib-val ibv-warn">76.4%</div>
-                <div class="ib-sub">+2.4%増加</div>
+                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate_display }}%</div>
+                <div class="ib-sub">承認後予測</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">予算残高（承認後）</div>
-                <div class="ib-val ibv-ok">1億1,800万円</div>
+                <div class="ib-val {{ review_data.budget_simulation.remaining_amount_class }}">{{ review_data.budget_simulation.remaining_amount_display }}</div>
                 <div class="ib-sub">今期残り</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">本案件の全社占有率</div>
-                <div class="ib-val ibv-blue">2.4%</div>
-                <div class="ib-sub">1,200万円 / 5億円</div>
+                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate_display }}%</div>
+                <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
               </div>
               <div class="impact-box">
                 <div class="ib-label">全社内 予算順位</div>
-                <div class="ib-val ibv-blue">3位</div>
-                <div class="ib-sub">全社 12件中</div>
+                <div class="ib-val ibv-blue">{{ review_data.budget_simulation.budget_rank }}位</div>
+                <div class="ib-sub">全社 {{ review_data.budget_simulation.project_count }}件中</div>
               </div>
             </div>
 
             <div class="stack-bar-wrap">
               <div class="sb-scale">
-                <span>0</span><span>1億2,500万円</span><span>2億5,000万円</span><span>3億7,500万円</span><span>5億円</span>
+                {% for axis_label in review_data.budget_simulation.axis_labels %}<span>{{ axis_label }}</span>{% endfor %}
               </div>
               <div class="stack-bar" id="hqFinalReviewSimBar">
-                <div class="seg seg-used" id="hqFinalReviewSeg1" style="width:0%" title="実績額 3億7,000万円"></div>
-                <div class="seg seg-this" id="hqFinalReviewSeg3" style="width:0%" title="本案件 1,200万円"></div>
-                <div class="seg seg-remain" id="hqFinalReviewSeg4" style="width:100%" title="承認後の残予算 1億1,800万円"></div>
+                <div class="seg seg-used" id="hqFinalReviewSeg1" style="width:0%" title="実績額 {{ review_data.budget_simulation.actual_amount_display }}"></div>
+                <div class="seg seg-this" id="hqFinalReviewSeg3" style="width:0%" title="本案件 {{ review_data.budget_simulation.this_project_amount_display }}"></div>
+                <div class="seg seg-remain" id="hqFinalReviewSeg4" style="width:100%" title="承認後の残予算 {{ review_data.budget_simulation.remaining_amount_display }}"></div>
               </div>
             </div>
 
             <div class="stack-legend">
-              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">3億7,000万円（74%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-warning)"></div><span class="sl-key">本案件</span><span class="sl-val">1,200万円（2.4%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:#dce8f0"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">1億1,800万円（23.6%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">{{ review_data.budget_simulation.actual_amount_display }}（{{ review_data.budget_simulation.actual_rate_display }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-warning)"></div><span class="sl-key">本案件</span><span class="sl-val">{{ review_data.budget_simulation.this_project_amount_display }}（{{ review_data.budget_simulation.occupy_rate_display }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:#dce8f0"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">{{ review_data.budget_simulation.remaining_amount_display }}（{{ review_data.budget_simulation.remaining_rate_display }}%）</span></div>
             </div>
 
-            <div class="sim-result sr-warn">
+            <div class="sim-result sr-{{ review_data.budget_simulation.result_class }}">
               <div class="sr-text">
-                <strong>承認後の予算消化率：76.4%（警告域80%まで余裕あり）</strong>
-                <span>年度内の追加申請に備え、全社予算の残高を確認してください。</span>
+                <strong>{{ review_data.budget_simulation.result_title }}</strong>
+                <span>{{ review_data.budget_simulation.result_message }}</span>
               </div>
             </div>
           </div>
@@ -458,7 +457,7 @@
               <div class="bcb-check-wrap" onclick="toggleHqFinalReviewConfirmCheck()">
                 <div class="bcb-checkbox" id="confirmCheck"></div>
                 <div class="bcb-text">
-                  承認後、本予算（<strong>¥12,000,000</strong>）は<span class="bcb-highlight">確定</span>されます。
+                  承認後、本予算（<strong>{{ review_data.estimated_budget_display }}</strong>）は<span class="bcb-highlight">確定</span>されます。
                   内容に間違いがないことを確認してください。
                 </div>
               </div>
@@ -469,11 +468,11 @@
             </div>
             <div class="comment-hint" id="commentHint">申請者・部門管理者への申し送りや、承認条件を記入できます。</div>
             <textarea class="f-textarea" id="commentArea" rows="4" readonly
-              placeholder="例：本Pocでは未実装ですが、今後の拡張予定として残しておきます。"></textarea>
+              placeholder="例：計画・予算とも妥当と判断し承認します。月次進捗報告を確実に実施し、予算超過が見込まれる場合は事前に報告すること。">{{ review_data.rejection_comment }}</textarea>
 
             <div class="tmpl-group" id="tmplGroup" style="display:none;">
               <div class="tmpl-lbl">却下理由テンプレ</div>
-              <button class="tmpl-btn" onclick="applyHqFinalReviewTmpl('budget')">予算根拠の不明確 — 詳細見積書の添付を求める</button>
+              <button class="tmpl-btn" onclick="applyHqFinalReviewTmpl('budget')">金額・工数の内訳が不明確 — 算出根拠の具体化を求める</button>
               <button class="tmpl-btn" onclick="applyHqFinalReviewTmpl('scope')">スコープが不明確 — 対象範囲と除外事項の明記を求める</button>
               <button class="tmpl-btn" onclick="applyHqFinalReviewTmpl('risk')">リスク対策の記載なし — 遅延・超過時の対応方針の追記を求める</button>
             </div>
@@ -490,28 +489,31 @@
         </div>
 
         <div class="queue-card">
-          <div class="qc-title">審査待ち案件（3件）</div>
+          <div class="qc-title">{{ review_data.queue_total_label }}</div>
           <div class="qc-items">
-            <div class="qc-item current">
-              <div class="qc-num qn-cur">1</div>
-              <div class="qc-name">基幹システム刷新PJ</div>
-              <div class="qc-urgency">3日待機</div>
+            {% for queue_item in review_data.queue_items %}
+            <div class="qc-item{% if queue_item.is_current %} current{% endif %}"{% if not queue_item.is_current %} onclick="location.href='{{ url_for('hq_project_final_review', project_id=queue_item.project_id) }}'"{% endif %}>
+              <div class="qc-num {% if queue_item.is_current %}qn-cur{% else %}qn-wait{% endif %}">{{ queue_item.index }}</div>
+              <div class="qc-name">{{ queue_item.title }}</div>
+              {% if queue_item.wait_badge_text %}
+              <div class="qc-urgency">{{ queue_item.wait_badge_text }}</div>
+              {% else %}
+              <div class="qc-dept">{{ queue_item.department_name }}</div>
+              {% endif %}
             </div>
-            <div class="qc-item" onclick="showHqFinalReviewToast('BI基盤整備の審査へ')">
-              <div class="qc-num qn-wait">2</div>
-              <div class="qc-name">BI基盤整備</div>
-              <div class="qc-dept">第二開発部</div>
-            </div>
-            <div class="qc-item" onclick="showHqFinalReviewToast('モバイルアプリ開発の審査へ')">
-              <div class="qc-num qn-wait">3</div>
-              <div class="qc-name">モバイルアプリ開発</div>
-              <div class="qc-dept">第一開発部</div>
-            </div>
+            {% endfor %}
           </div>
         </div>
       </div>
     </div>
   </div>
+  <form id="hqFinalReviewActionForm" action="{{ url_for('hq_project_final_review', project_id=review_data.project_id) }}" method="post" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" id="hqFinalReviewFormAction" value="">
+    <input type="hidden" name="confirmed" id="hqFinalReviewFormConfirmed" value="">
+    <input type="hidden" name="budget_confirmed" id="hqFinalReviewFormBudgetConfirmed" value="">
+    <input type="hidden" name="rejection_comment" id="hqFinalReviewFormRejectionComment" value="">
+  </form>
 
   <div class="dialog-overlay" id="hqFinalReviewDialogOverlay">
     <div class="dialog-box">
@@ -533,7 +535,7 @@
 
 {% block content_footer %}
   {% set footer_info_text = "案件名" %}
-  {% set footer_info_value = "基幹システム刷新PJ" %}
+  {% set footer_info_value = review_data.project_name %}
   {% set footer_actions %}
     <button type="button" class="hq-final-review-footer-reject" onclick="confirmHqFinalReviewVerdict('reject')">却下</button>
     <button type="button" class="hq-final-review-footer-approve" onclick="confirmHqFinalReviewVerdict('approve')">最終承認（予算確定）</button>
@@ -552,7 +554,7 @@ let isHqFinalReviewConfirmed = false;
 (function initHqFinalReviewSimBar() {
   requestAnimationFrame(function() {
     setTimeout(function() {
-      [["hqFinalReviewSeg1", 74], ["hqFinalReviewSeg3", 2.4], ["hqFinalReviewSeg4", 23.6]].forEach(function(segment) {
+      [["hqFinalReviewSeg1", {{ review_data.budget_simulation.seg_used }}], ["hqFinalReviewSeg3", {{ review_data.budget_simulation.seg_this }}], ["hqFinalReviewSeg4", {{ review_data.budget_simulation.seg_remaining }}]].forEach(function(segment) {
         const el = getHqFinalReviewEl(segment[0]);
         if (el) el.style.width = segment[1] + "%";
       });
@@ -561,7 +563,7 @@ let isHqFinalReviewConfirmed = false;
       seg4.style.width = "0%";
       setTimeout(function() {
         const seg4Update = getHqFinalReviewEl("hqFinalReviewSeg4");
-        if (seg4Update) seg4Update.style.width = "23.6%";
+        if (seg4Update) seg4Update.style.width = "{{ review_data.budget_simulation.seg_remaining }}%";
       }, 80);
     }, 280);
   });
@@ -589,7 +591,7 @@ function setHqFinalReviewVerdict(v) {
     rBtn.style.display = "none";
     cLabel.innerHTML = "最終決裁コメント（申し送り） <span class=\"not-implemented-badge\">未実装</span>";
     cHint.textContent = "開発フェーズへの申し送りや承認条件を記入できます。";
-    ta.placeholder = "本Pocでは未実装ですが、今後の拡張予定として残しておきます。";
+    ta.placeholder = "例：計画・予算とも妥当と判断し承認します。月次進捗報告を確実に実施し、予算超過が見込まれる場合は事前に報告すること。";
     ta.value = "";
     ta.readOnly = true;
     ta.classList.remove("req-empty");
@@ -602,14 +604,14 @@ function setHqFinalReviewVerdict(v) {
     rBtn.style.display = "flex";
     cLabel.innerHTML = "却下理由<span class=\"req-badge\">必須</span>";
     cHint.textContent = "申請者が「作り直し」できるよう、具体的な修正指示を記入してください。";
-    ta.placeholder = "例：概算予算の内訳が不明確です。見積書またはWBSを添付のうえ再申請してください。";
+    ta.placeholder = "例：概算予算の内訳が不明確です。算出根拠を明記のうえ再申請してください。";
     ta.readOnly = false;
     tmpl.style.display = "flex";
     bcb.style.display = "none";
   }
 }
 
-setHqFinalReviewVerdict("approve");
+setHqFinalReviewVerdict("{{ review_data.initial_verdict }}");
 
 function toggleHqFinalReviewConfirmCheck() {
   isHqFinalReviewConfirmed = !isHqFinalReviewConfirmed;
@@ -627,7 +629,7 @@ function updateHqFinalReviewApproveBtn() {
 }
 
 const hqFinalReviewTemplates = {
-  budget: "【却下理由】概算予算の内訳（人月・費目別）が不明確です。¥12,000,000の根拠となる見積書またはWBSを添付のうえ再申請してください。",
+  budget: "【却下理由】金額・工数の内訳と算出根拠を具体化して再申請してください。",
   scope: "【却下理由】プロジェクトのスコープ（対象範囲・除外事項）が明確ではありません。対象システムの境界を明記のうえ再申請してください。",
   risk: "【却下理由】リスク対応策の記載が不十分です。プロジェクト遅延・コスト超過時の対処方針を目的欄に追記のうえ再申請してください。"
 };
@@ -645,6 +647,13 @@ function confirmHqFinalReviewVerdict(type) {
   if (!commentArea) return;
   const comment = commentArea.value.trim();
 
+  if (type === "reject" && currentHqFinalReviewVerdict !== "reject") {
+    setHqFinalReviewVerdict("reject");
+  }
+  if (type === "approve" && !isHqFinalReviewConfirmed) {
+    showHqFinalReviewToast("予算確定チェックを入れてください");
+    return;
+  }
   if (type === "reject" && !comment) {
     commentArea.classList.add("req-empty");
     commentArea.focus();
@@ -665,9 +674,9 @@ function confirmHqFinalReviewVerdict(type) {
   if (type === "approve") {
     icon.textContent = "最終承認";
     title.textContent = "最終承認（予算確定）しますか？";
-    body.innerHTML = "<strong>「基幹システム刷新PJ」</strong>を最終承認します。<br>承認と同時に予算（¥12,000,000）が確定し、開発管理フェーズへ移行します。";
+    body.innerHTML = "<strong>「{{ review_data.project_name }}」</strong>を最終承認します。<br>承認と同時に予算（{{ review_data.estimated_budget_display }}）が確定し、開発管理フェーズへ移行します。";
     hl.style.display = "block";
-    hl.textContent = "予算確定：¥12,000,000";
+    hl.textContent = "予算確定：{{ review_data.estimated_budget_display }}";
     if (comment) {
       cp.style.display = "block";
       cp.textContent = comment;
@@ -676,19 +685,35 @@ function confirmHqFinalReviewVerdict(type) {
     }
     ok.className = "dlg-ok-approve";
     ok.textContent = "最終承認・予算確定する";
-    ok.onclick = function() { closeHqFinalReviewDialog(); showHqFinalReviewToast("最終承認しました。開発管理フェーズへ移行しました。"); };
+    ok.onclick = function() { submitHqFinalReview("approve"); };
   } else {
     icon.textContent = "却下";
     title.textContent = "却下してよろしいですか？";
-    body.innerHTML = "<strong>「基幹システム刷新PJ」</strong>を却下し、申請者（田中 太郎）へ返却します。";
+    body.innerHTML = "<strong>「{{ review_data.project_name }}」</strong>を却下し、申請者（{{ review_data.applicant_name }}）へ返却します。";
     hl.style.display = "none";
     cp.style.display = "block";
     cp.textContent = comment;
     ok.className = "dlg-ok-reject";
     ok.textContent = "却下する";
-    ok.onclick = function() { closeHqFinalReviewDialog(); showHqFinalReviewToast("却下しました。申請者へ通知を送信しました。"); };
+    ok.onclick = function() { submitHqFinalReview("reject"); };
   }
   dlg.classList.add("open");
+}
+
+function submitHqFinalReview(actionType) {
+  const form = getHqFinalReviewEl("hqFinalReviewActionForm");
+  const actionEl = getHqFinalReviewEl("hqFinalReviewFormAction");
+  const confirmedEl = getHqFinalReviewEl("hqFinalReviewFormConfirmed");
+  const budgetEl = getHqFinalReviewEl("hqFinalReviewFormBudgetConfirmed");
+  const rejectionEl = getHqFinalReviewEl("hqFinalReviewFormRejectionComment");
+  const commentArea = getHqFinalReviewEl("commentArea");
+  if (!form || !actionEl || !confirmedEl || !budgetEl || !rejectionEl || !commentArea) return;
+
+  actionEl.value = actionType;
+  confirmedEl.value = "1";
+  budgetEl.value = actionType === "approve" ? "1" : "";
+  rejectionEl.value = actionType === "reject" ? commentArea.value.trim() : "";
+  form.submit();
 }
 
 function closeHqFinalReviewDialog() {
