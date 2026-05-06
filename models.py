@@ -120,7 +120,7 @@ class Project(db.Model):
     status = db.Column(db.String(30), nullable=False, index=True)
     approval_stage = db.Column(db.String(30), nullable=False, index=True)
     rejection_comment = db.Column(db.Text, nullable=True)
-    planned_start_date = db.Column(db.Date, nullable=True)
+    planned_start_date = db.Column(db.Date, nullable=False)
     planned_end_date = db.Column(db.Date, nullable=True)
     monthly_report_comment = db.Column(db.Text, nullable=True)
     final_rejected_at = db.Column(db.DateTime(timezone=True), nullable=True)

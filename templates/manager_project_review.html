@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+
+{% set page_role = "manager" %}
+{% set active_menu = "manager_review" %}
+{% set header_title = "承認審査" %}
+{% set header_meta = "自部門の承認待ち案件の審査を行います" %}
+{% set content_footer_enabled = true %}
+{% set content_width_class = "app-content-wide" %}
+
+{% block title %}承認審査{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-manager-project-review {
+  --mpr-sidebar: #6b4c6e;
+  --mpr-sidebar-dark: #5a3d5d;
+  --mpr-header: #3d2040;
+  --mpr-header-dark: #2e1830;
+  --mpr-purple-light: #f3eef4;
+  --mpr-purple-mid: #c9aecf;
+  --mpr-purple-soft: #e8dcea;
+  --mpr-bg: #f4f1f5;
+  --mpr-card: #ffffff;
+  --mpr-border: #e0d4e3;
+  --mpr-text: #1e1624;
+  --mpr-muted: #7a6480;
+  --mpr-radius: 12px;
+  --mpr-shadow: 0 2px 12px rgba(61,32,64,.09);
+  --mpr-shadow-card: 0 4px 20px rgba(61,32,64,.10);
+  --mpr-danger: #dc3545;
+  --mpr-danger-bg: #fff0f0;
+  --mpr-danger-mid: #fecaca;
+  --mpr-danger-dark: #9b1c2a;
+  --mpr-warning: #d97706;
+  --mpr-warning-bg: #fff8ec;
+  --mpr-success: #0d9469;
+  --mpr-success-bg: #edfaf4;
+  --mpr-success-mid: #a7f3d0;
+  --mpr-info: #2563eb;
+  --mpr-info-bg: #eff6ff;
+  font-family: var(--font-family-base);
+  color: var(--mpr-text);
+}
+
+.mock-manager-project-review .content {
+  padding: 24px 28px 84px;
+  flex: 1;
+}
+
+.mock-manager-project-review .review-banner {
+  background: #503653;
+  border-radius: var(--mpr-radius);
+  padding: 18px 24px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(61,32,64,.22);
+}
+.mock-manager-project-review .rb-left { display: flex; align-items: center; gap: 16px; }
+.mock-manager-project-review .rb-proj-name { font-size: 20px; font-weight: 900; color: #fff; line-height: 1.3; }
+.mock-manager-project-review .rb-meta { font-size: 12px; color: rgba(255,255,255,.68); margin-top: 4px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.mock-manager-project-review .rb-meta-item { display: flex; align-items: center; gap: 6px; }
+.mock-manager-project-review .rb-meta-date-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.mock-manager-project-review .rb-meta-date-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mock-manager-project-review .rb-wait-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--mpr-danger-bg);
+  color: var(--mpr-danger);
+  border: 1px solid var(--mpr-danger-mid);
+  white-space: nowrap;
+}
+.mock-manager-project-review .rb-nav { display: flex; align-items: center; gap: 10px; }
+.mock-manager-project-review .rb-nav-btn {
+  width: 34px; height: 34px; background: rgba(255,255,255,.15); border-radius: 8px; border: 1px solid rgba(255,255,255,.25);
+  color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; font-family: var(--font-family-base);
+}
+.mock-manager-project-review .rb-nav-btn:hover { background: rgba(255,255,255,.28); }
+.mock-manager-project-review .rb-nav-count { font-size: 12px; color: rgba(255,255,255,.75); }
+
+.mock-manager-project-review .review-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+.mock-manager-project-review .col-content { display: flex; flex-direction: column; gap: 18px; }
+.mock-manager-project-review .col-simulation { display: flex; flex-direction: column; gap: 18px; }
+.mock-manager-project-review .col-action { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 16px; }
+
+.mock-manager-project-review .review-card {
+  background: var(--mpr-card); border: 1px solid var(--mpr-border); border-radius: var(--mpr-radius); box-shadow: var(--mpr-shadow); overflow: hidden;
+}
+.mock-manager-project-review .rc-head {
+  padding: 13px 20px; border-bottom: 1px solid var(--mpr-border); display: flex; align-items: center; justify-content: space-between;
+}
+.mock-manager-project-review .rc-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.mock-manager-project-review .rc-readonly {
+  font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 8px; background: var(--mpr-bg); color: var(--mpr-muted); border: 1px solid var(--mpr-border);
+}
+.mock-manager-project-review .rc-body { padding: 20px; }
+
+.mock-manager-project-review .info-row { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid #faf7fb; }
+.mock-manager-project-review .info-row:first-child { padding-top: 0; }
+.mock-manager-project-review .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+.mock-manager-project-review .ir-label { font-size: 11px; font-weight: 700; color: var(--mpr-muted); letter-spacing: .07em; text-transform: uppercase; }
+.mock-manager-project-review .ir-value { font-size: 14px; font-weight: 600; color: var(--mpr-text); line-height: 1.8; }
+.mock-manager-project-review .ir-value.big { font-size: 22px; font-weight: 900; color: var(--mpr-header); }
+.mock-manager-project-review .ir-value.desc { font-size: 13px; font-weight: 400; line-height: 1.9; white-space: pre-line; }
+
+.mock-manager-project-review .person-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--mpr-purple-light); border: 1px solid var(--mpr-purple-mid); padding: 5px 12px; border-radius: 20px; }
+.mock-manager-project-review .pc-name { font-size: 13px; font-weight: 600; color: var(--mpr-header); }
+.mock-manager-project-review .pc-dept { font-size: 11px; color: var(--mpr-muted); }
+
+.mock-manager-project-review .budget-detail { background: var(--mpr-purple-light); border: 1px solid var(--mpr-purple-mid); border-radius: 10px; padding: 14px 16px; margin-top: 4px; }
+.mock-manager-project-review .bd-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 3px 0; }
+.mock-manager-project-review .bd-row + .bd-row { border-top: 1px dashed var(--mpr-purple-mid); margin-top: 6px; padding-top: 6px; }
+.mock-manager-project-review .bd-label { color: var(--mpr-muted); }
+.mock-manager-project-review .bd-value { font-weight: 700; color: var(--mpr-header); }
+
+.mock-manager-project-review .sim-card { background: var(--mpr-card); border: 1.5px solid var(--mpr-purple-mid); border-radius: var(--mpr-radius); box-shadow: var(--mpr-shadow); overflow: hidden; }
+.mock-manager-project-review .sim-head {
+  padding: 12px 18px; background: var(--mpr-purple-light); border-bottom: 1px solid var(--mpr-purple-mid);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mock-manager-project-review .sim-title { font-size: 13px; font-weight: 800; color: var(--mpr-header); display: flex; align-items: center; gap: 7px; }
+.mock-manager-project-review .sim-budget-total { font-size: 12px; color: var(--mpr-muted); }
+.mock-manager-project-review .sim-budget-total strong { color: var(--mpr-text); }
+.mock-manager-project-review .sim-body { padding: 18px 20px; }
+.mock-manager-project-review .impact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.mock-manager-project-review .impact-box { background: var(--mpr-bg); border: 1px solid var(--mpr-border); border-radius: 9px; padding: 11px 13px; }
+.mock-manager-project-review .ib-label { font-size: 11px; color: var(--mpr-muted); font-weight: 600; margin-bottom: 4px; }
+.mock-manager-project-review .ib-val { font-size: 18px; font-weight: 900; }
+.mock-manager-project-review .ib-sub { font-size: 10px; color: var(--mpr-muted); margin-top: 3px; }
+.mock-manager-project-review .ibv-purple { color: var(--mpr-sidebar); }
+.mock-manager-project-review .ibv-warn { color: var(--mpr-warning); }
+.mock-manager-project-review .ibv-ok { color: var(--mpr-success); }
+.mock-manager-project-review .ibv-danger { color: var(--mpr-danger); }
+
+.mock-manager-project-review .stack-bar-wrap { margin-bottom: 14px; }
+.mock-manager-project-review .stack-bar {
+  display: flex; height: 28px; border-radius: 8px; overflow: hidden; border: 1px solid var(--mpr-border);
+}
+.mock-manager-project-review .sb-seg {
+  height: 100%; transition: width 1s cubic-bezier(.4,0,.2,1); display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; min-width: 0;
+}
+.mock-manager-project-review .sb-seg.seg-used { background: var(--mpr-sidebar); }
+.mock-manager-project-review .sb-seg.seg-this { background: var(--mpr-warning); position: relative; }
+.mock-manager-project-review .sb-seg.seg-this::after {
+  content: '← この案件'; position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: 700; color: var(--mpr-warning); white-space: nowrap; background: var(--mpr-warning-bg);
+  padding: 2px 7px; border-radius: 6px; border: 1px solid #fed7aa;
+}
+.mock-manager-project-review .sb-seg.seg-remain { background: #e8e0eb; color: var(--mpr-muted); }
+.mock-manager-project-review .sb-seg.seg-over { background: var(--mpr-danger); }
+
+.mock-manager-project-review .sim-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.mock-manager-project-review .sl-item { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+.mock-manager-project-review .sl-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.mock-manager-project-review .sl-key { color: var(--mpr-muted); }
+.mock-manager-project-review .sl-val { font-weight: 700; color: var(--mpr-text); }
+
+.mock-manager-project-review .sim-result {
+  margin-top: 14px; padding: 11px 14px; border-radius: 9px; display: flex; align-items: center; gap: 9px; font-size: 13px;
+}
+.mock-manager-project-review .sim-result.ok { background: var(--mpr-success-bg); border: 1px solid var(--mpr-success-mid); }
+.mock-manager-project-review .sim-result.warn { background: var(--mpr-warning-bg); border: 1px solid #fed7aa; }
+.mock-manager-project-review .sim-result.danger { background: var(--mpr-danger-bg); border: 1px solid var(--mpr-danger-mid); }
+.mock-manager-project-review .sr-text { line-height: 1.6; }
+.mock-manager-project-review .sr-text strong { display: block; font-weight: 700; font-size: 14px; margin-bottom: 1px; }
+.mock-manager-project-review .sr-text span { font-size: 12px; color: var(--mpr-muted); }
+
+
+.mock-manager-project-review .action-card {
+  background: var(--mpr-card); border: 1px solid var(--mpr-border); border-radius: var(--mpr-radius); box-shadow: var(--mpr-shadow-card); overflow: hidden;
+}
+.mock-manager-project-review .ac-top { background: #503653; padding: 14px 18px; border-bottom: 1px solid var(--mpr-border); }
+.mock-manager-project-review .ac-top-title { font-size: 14px; font-weight: 800; color: #fff; }
+.mock-manager-project-review .ac-body { padding: 18px; }
+
+.mock-manager-project-review .verdict-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+.mock-manager-project-review .vt-btn {
+  flex: 1; padding: 9px 0; border-radius: 9px; border: 2px solid var(--mpr-border); font-size: 13px; font-weight: 700;
+  cursor: pointer; text-align: center; background: #fff; color: var(--mpr-muted); font-family: var(--font-family-base); transition: all .18s;
+}
+.mock-manager-project-review .vt-btn:hover { border-color: var(--mpr-purple-mid); color: var(--mpr-sidebar); }
+.mock-manager-project-review .vt-btn.active-approve { background: var(--mpr-success-bg); border-color: var(--mpr-success); color: var(--mpr-success); }
+.mock-manager-project-review .vt-btn.active-reject { background: var(--mpr-danger-bg); border-color: var(--mpr-danger); color: var(--mpr-danger); }
+
+.mock-manager-project-review .comment-section { margin-bottom: 16px; }
+.mock-manager-project-review .comment-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--mpr-text); margin-bottom: 7px; }
+.mock-manager-project-review .req-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: #fef2f2; color: var(--mpr-danger); border: 1px solid var(--mpr-danger-mid); }
+.mock-manager-project-review .opt-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--mpr-bg); color: var(--mpr-muted); border: 1px solid var(--mpr-border); }
+.mock-manager-project-review .not-implemented-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--mpr-danger-bg);
+  color: var(--mpr-danger);
+  border: 1px solid var(--mpr-danger-mid);
+}
+.mock-manager-project-review .comment-hint { font-size: 11px; color: var(--mpr-muted); margin-bottom: 8px; line-height: 1.6; }
+
+.mock-manager-project-review .f-textarea {
+  width: 100%; min-height: 110px; border: 1.5px solid var(--mpr-border); border-radius: 9px; padding: 11px 13px;
+  font-size: 13px; font-family: var(--font-family-base); color: var(--mpr-text); line-height: 1.75; background: #fff; resize: vertical;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.mock-manager-project-review .f-textarea:focus { border-color: var(--mpr-sidebar); box-shadow: 0 0 0 3px rgba(107,76,110,.12); }
+.mock-manager-project-review .f-textarea.required-empty { border-color: var(--mpr-danger); }
+.mock-manager-project-review .char-counter { text-align: right; font-size: 11px; color: var(--mpr-muted); margin-top: 4px; }
+
+.mock-manager-project-review .template-btns { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.mock-manager-project-review .tmpl-label { font-size: 11px; font-weight: 700; color: var(--mpr-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 2px; }
+.mock-manager-project-review .tmpl-btn {
+  padding: 7px 12px; border: 1.5px solid var(--mpr-border); border-radius: 8px; background: var(--mpr-bg); font-size: 12px;
+  color: var(--mpr-text); font-weight: 600; cursor: pointer; font-family: var(--font-family-base); text-align: left; line-height: 1.5; transition: all .15s;
+}
+.mock-manager-project-review .tmpl-btn:hover { background: var(--mpr-purple-light); border-color: var(--mpr-purple-mid); color: var(--mpr-header); }
+
+.mock-manager-project-review .next-step {
+  display: flex; align-items: center; gap: 9px; padding: 10px 13px; background: var(--mpr-info-bg); border: 1px solid #bfdbfe;
+  border-radius: 9px; margin-bottom: 16px; font-size: 12px; color: var(--mpr-info);
+}
+.mock-manager-project-review .next-step.reject-step { background: var(--mpr-danger-bg); border-color: var(--mpr-danger-mid); color: var(--mpr-danger); }
+
+.mock-manager-project-review .verdict-btns { display: flex; flex-direction: column; gap: 10px; }
+.mock-manager-project-review .btn-approve {
+  width: 100%; padding: 13px 0; border-radius: 10px; background: var(--mpr-success); color: #fff; border: none; font-size: 15px;
+  font-weight: 800; cursor: pointer; font-family: var(--font-family-base); box-shadow: 0 3px 14px rgba(13,148,105,.35);
+  transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.mock-manager-project-review .btn-approve:hover { background: #065f46; transform: translateY(-1px); box-shadow: 0 5px 18px rgba(13,148,105,.42); }
+.mock-manager-project-review .btn-reject {
+  width: 100%; padding: 11px 0; border-radius: 10px; background: var(--mpr-danger-bg); color: var(--mpr-danger); border: 2px solid var(--mpr-danger-mid);
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.mock-manager-project-review .btn-reject:hover { background: var(--mpr-danger); color: #fff; border-color: var(--mpr-danger); }
+
+.mock-manager-project-review .queue-indicator { background: var(--mpr-purple-light); border: 1px solid var(--mpr-border); border-radius: var(--mpr-radius); padding: 12px 16px; }
+.mock-manager-project-review .qi-title { font-size: 12px; font-weight: 700; color: var(--mpr-muted); margin-bottom: 8px; }
+.mock-manager-project-review .qi-items { display: flex; flex-direction: column; gap: 5px; }
+.mock-manager-project-review .qi-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; font-size: 12px; cursor: pointer; transition: background .15s; }
+.mock-manager-project-review .qi-item.current { background: var(--mpr-purple-soft); font-weight: 700; }
+.mock-manager-project-review .qi-item:hover:not(.current) { background: #ede6ef; }
+.mock-manager-project-review .qi-num {
+  width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; flex-shrink: 0;
+}
+.mock-manager-project-review .qi-num.qn-cur { background: var(--mpr-header); color: #fff; }
+.mock-manager-project-review .qi-num.qn-wait { background: var(--mpr-border); color: var(--mpr-muted); font-size: 10px; }
+.mock-manager-project-review .qi-name { flex: 1; color: var(--mpr-text); }
+.mock-manager-project-review .qi-date { font-size: 11px; color: var(--mpr-muted); }
+.mock-manager-project-review .qi-urgency { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--mpr-danger-bg); color: var(--mpr-danger); border: 1px solid var(--mpr-danger-mid); }
+
+
+.mock-manager-project-review .dialog-overlay {
+  position: fixed; inset: 0; background: rgba(30,22,36,.45); z-index: 500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px);
+}
+.mock-manager-project-review .dialog-overlay.open { display: flex; }
+.mock-manager-project-review .dialog-box {
+  background: #fff; border-radius: 16px; padding: 24px 26px; max-width: 460px; width: 92%; box-shadow: 0 20px 60px rgba(30,22,36,.25);
+}
+.mock-manager-project-review .dlg-icon { font-size: 22px; margin-bottom: 8px; }
+.mock-manager-project-review .dlg-title { font-size: 18px; font-weight: 900; margin-bottom: 8px; }
+.mock-manager-project-review .dlg-body { font-size: 13px; line-height: 1.8; color: var(--mpr-muted); }
+.mock-manager-project-review .dlg-comment-preview {
+  margin-top: 10px; background: var(--mpr-bg); border: 1px solid var(--mpr-border); border-radius: 10px; padding: 10px 12px; font-size: 12px;
+  line-height: 1.7; color: var(--mpr-text); white-space: pre-wrap;
+}
+.mock-manager-project-review .dlg-btns { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+.mock-manager-project-review .dlg-cancel {
+  padding: 8px 14px; border: 1px solid var(--mpr-border); background: #fff; color: var(--mpr-muted);
+  border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.mock-manager-project-review .dlg-ok-approve {
+  padding: 8px 14px; border: 1px solid #0a7c57; background: var(--mpr-success); color: #fff;
+  border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.mock-manager-project-review .dlg-ok-reject {
+  padding: 8px 14px; border: 1px solid #ba2736; background: var(--mpr-danger); color: #fff;
+  border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+
+.mock-manager-project-review .toast {
+  position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--mpr-text);
+  color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s;
+  pointer-events: none; z-index: 600; white-space: nowrap;
+}
+.mock-manager-project-review .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.manager-review-footer-reject {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 2px solid #fecaca; background: #fff0f0; color: #dc3545;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.manager-review-footer-approve {
+  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #0a7c57; background: #0d9469; color: #fff;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .mock-manager-project-review .review-layout { grid-template-columns: 1fr; }
+  .mock-manager-project-review .col-action { position: static; }
+}
+@media (max-width: 820px) {
+  .mock-manager-project-review .content { padding: 16px 12px 136px; }
+  .mock-manager-project-review .review-banner { flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px 16px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mock-manager-project-review">
+  <div class="content">
+    {% include "partials/_flash.html" %}
+    <div class="review-banner">
+      <div class="rb-left">
+        <div class="rb-info">
+          <div class="rb-proj-name">{{ review_data.project_name }}</div>
+          <div class="rb-meta">
+            <div class="rb-meta-item"><span>申請者</span><span>{{ review_data.applicant_name }}</span></div>
+            <div class="rb-meta-item rb-meta-date-item">
+              <span class="rb-meta-date-text">
+                <span>申請日</span>
+                <span>{{ review_data.submitted_date }}</span>
+              </span>
+              {% if review_data.wait_badge_text %}
+              <span class="rb-wait-badge">{{ review_data.wait_badge_text }}</span>
+              {% endif %}
+            </div>
+            <div class="rb-meta-item"><span>案件コード</span><span>{{ review_data.project_code }}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="rb-nav">
+        <button type="button" class="rb-nav-btn" id="managerReviewPrevBtn" data-target-url="{{ url_for('manager_project_review', project_id=review_data.prev_project_id) if review_data.prev_project_id else '' }}">‹</button>
+        <div class="rb-nav-count">{{ review_data.queue_position }} / {{ review_data.queue_total_count }} 件</div>
+        <button type="button" class="rb-nav-btn" id="managerReviewNextBtn" data-target-url="{{ url_for('manager_project_review', project_id=review_data.next_project_id) if review_data.next_project_id else '' }}">›</button>
+      </div>
+    </div>
+
+    <div class="review-layout">
+      <div class="col-content">
+        <div class="review-card">
+          <div class="rc-head">
+            <div class="rc-title">申請内容（基本情報）</div>
+            <div class="rc-readonly">読み取り専用</div>
+          </div>
+          <div class="rc-body">
+            <div class="info-row" style="padding-top:0;">
+              <div class="ir-label">案件名</div>
+              <div class="ir-value big">{{ review_data.project_name }}</div>
+            </div>
+            <div class="info-row">
+              <div class="ir-label">目的・概要</div>
+              <div class="ir-value desc">{{ review_data.purpose }}</div>
+            </div>
+            <div class="info-row">
+              <div class="ir-label">申請者 / 担当部門</div>
+              <div class="person-chip" style="margin-top:6px;">
+                <div>
+                  <div class="pc-name">{{ review_data.applicant_name }}</div>
+                  <div class="pc-dept">{{ review_data.department_name }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="ir-label">概算予算</div>
+              <div class="budget-detail">
+                <div class="bd-row"><span class="bd-label">総額（金額）</span><span class="bd-value">{{ review_data.estimated_budget_display }}</span></div>
+                <div class="bd-row"><span class="bd-label">工数</span><span class="bd-value">{{ review_data.estimated_person_months_display }}</span></div>
+                <div class="bd-row"><span class="bd-label">実施期間</span><span class="bd-value">{{ review_data.planned_period_display }}</span></div>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="ir-label">申請日 / 案件番号</div>
+              <div class="ir-value">{{ review_data.submitted_date_ja }} / <span style="font-family:monospace;color:var(--mpr-muted);">{{ review_data.project_code }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-simulation">
+        <div class="sim-card">
+          <div class="sim-head">
+            <div class="sim-title">部門年間予算 シミュレーション</div>
+            <div class="sim-budget-total">年間予算：<strong>{{ review_data.budget_simulation.annual_budget_display }}</strong></div>
+          </div>
+          <div class="sim-body">
+            <p style="font-size:12px;color:var(--mpr-muted);margin-bottom:14px;line-height:1.6;">
+              この案件（{{ review_data.budget_simulation.this_project_amount_display }}）を承認した場合、部門の年間予算にどう影響するかを示します。
+            </p>
+            <div class="impact-row">
+              <div class="impact-box">
+                <div class="ib-label">予算消化率（承認後予測）</div>
+                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate }}%</div>
+                <div class="ib-sub">承認後の予測値</div>
+              </div>
+              <div class="impact-box">
+                <div class="ib-label">予算残高（承認後）</div>
+                <div class="ib-val {{ review_data.budget_simulation.remaining_amount_class }}">{{ review_data.budget_simulation.remaining_amount_display }}</div>
+                <div class="ib-sub">今期残り</div>
+              </div>
+              <div class="impact-box">
+                <div class="ib-label">本案件の部門占有率</div>
+                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate }}%</div>
+                <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
+              </div>
+              <div class="impact-box">
+                <div class="ib-label">部門内 予算順位</div>
+                <div class="ib-val ibv-purple">{{ review_data.budget_rank }}位</div>
+                <div class="ib-sub">{{ review_data.budget_rank_subtext }}</div>
+              </div>
+            </div>
+            <div class="stack-bar-wrap">
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mpr-muted);margin-bottom:6px;">
+                {% for label in review_data.budget_simulation.axis_labels %}
+                <span>{{ label }}</span>
+                {% endfor %}
+              </div>
+              <div class="stack-bar" id="managerReviewSimBar">
+                <div class="sb-seg seg-used" id="managerReviewSeg1" style="width:0%" title="実績額 {{ review_data.budget_simulation.actual_amount_display }}"></div>
+                <div class="sb-seg seg-this" id="managerReviewSeg3" style="width:0%" title="この案件 {{ review_data.budget_simulation.this_project_amount_display }}"></div>
+                <div class="sb-seg seg-remain" id="managerReviewSeg4" style="width:100%" title="承認後の残予算 {{ review_data.budget_simulation.remaining_amount_display }}"></div>
+              </div>
+            </div>
+            <div class="sim-legend">
+              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">{{ review_data.budget_simulation.actual_amount_display }}（{{ review_data.budget_simulation.seg_used|round|int }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--mpr-warning)"></div><span class="sl-key">この案件</span><span class="sl-val">{{ review_data.budget_simulation.this_project_amount_display }}（{{ review_data.budget_simulation.seg_this|round|int }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:#e8e0eb"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">{{ review_data.budget_simulation.remaining_amount_display }}（{{ review_data.budget_simulation.seg_remaining|round|int }}%）</span></div>
+            </div>
+            <div class="sim-result {{ review_data.budget_simulation.result_class }}">
+              <div class="sr-text">
+                <strong>{{ review_data.budget_simulation.result_title }}</strong>
+                <span>{{ review_data.budget_simulation.result_message }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-action">
+        <form id="managerReviewForm" method="POST" action="{{ url_for('manager_project_review', project_id=review_data.project_id) }}" onsubmit="return false;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="managerReviewActionInput" name="action" value="">
+          <input type="hidden" id="managerReviewConfirmedInput" name="confirmed" value="0">
+        <div class="action-card">
+          <div class="ac-top">
+            <div class="ac-top-title">審査判定</div>
+          </div>
+          <div class="ac-body">
+            <div class="verdict-toggle">
+              <button type="button" class="vt-btn" id="managerReviewVtApprove" onclick="setManagerReviewVerdict('approve')">承認</button>
+              <button type="button" class="vt-btn" id="managerReviewVtReject" onclick="setManagerReviewVerdict('reject')">却下</button>
+            </div>
+            <div class="next-step" id="managerReviewNextStepInfo">
+              <div>
+                <div style="font-weight:700;">承認後の送付先</div>
+                <div style="margin-top:1px;">本部管理者へ通知が届きます</div>
+              </div>
+            </div>
+            <div class="comment-section">
+              <div class="comment-label" id="managerReviewCommentLabel">
+                審査コメント <span class="opt-badge">任意</span>
+              </div>
+              <div class="comment-hint" id="managerReviewCommentHint">
+                本部管理者への申し送りや、申請者への連絡事項を記入できます。
+              </div>
+              <textarea class="f-textarea" id="commentArea" name="rejection_comment" rows="5"
+                placeholder="例：計画の完成度が高く、リスク対策も明記されているため承認します。予算執行状況は月次で本部へ報告してください。"
+                oninput="updateManagerReviewCC()">{{ review_data.rejection_comment }}</textarea>
+              <div class="char-counter"><span id="managerReviewCcNum">0</span> 文字</div>
+              <div class="template-btns" id="managerReviewTemplateBtns" style="display:none;">
+                <div class="tmpl-label">却下理由テンプレ</div>
+                <button type="button" class="tmpl-btn" onclick="applyManagerReviewTemplate('予算')">予算根拠の不明確 — 金額・工数の内訳を具体化して再申請を求める</button>
+                <button type="button" class="tmpl-btn" onclick="applyManagerReviewTemplate('目的')">目的・効果の具体性不足 — 定量的な目標数値の追記を求める</button>
+                <button type="button" class="tmpl-btn" onclick="applyManagerReviewTemplate('リスク')">リスク対策の記載不足 — 遅延・コスト超過時の対応方針の追記を求める</button>
+              </div>
+            </div>
+            <div class="verdict-btns">
+              <button type="button" class="btn-approve" id="managerReviewApproveBtn" onclick="confirmManagerReviewAction('approve')">承認して本部へ送付する</button>
+              <button type="button" class="btn-reject" id="managerReviewRejectBtn" onclick="confirmManagerReviewAction('reject')" style="display:none;">却下する</button>
+            </div>
+          </div>
+        </div>
+        </form>
+
+        <div class="queue-indicator">
+          <div class="qi-title">{{ review_data.queue_total_label }}</div>
+          <div class="qi-items">
+            {% for item in review_data.queue_items %}
+            <div class="qi-item{% if item.is_current %} current{% endif %}" {% if not item.is_current %}onclick="window.location.href='{{ url_for('manager_project_review', project_id=item.project_id) }}'"{% endif %}>
+              <div class="qi-num {% if item.is_current %}qn-cur{% else %}qn-wait{% endif %}">{{ item.index }}</div>
+              <div class="qi-name">{{ item.title }}</div>
+              <div class="qi-date">{{ item.submitted_date }}</div>
+              {% if item.wait_badge_text %}
+              <span class="qi-urgency">{{ item.wait_badge_text }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="managerReviewDialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-icon" id="managerReviewDlgIcon">承認</div>
+      <div class="dlg-title" id="managerReviewDlgTitle">承認してよろしいですか？</div>
+      <div class="dlg-body" id="managerReviewDlgBody">
+        <strong>「{{ review_data.project_name }}」</strong>を承認し、本部管理者へ通知を送ります。
+      </div>
+      <div class="dlg-comment-preview" id="managerReviewDlgCommentPreview" style="display:none;"></div>
+      <div class="dlg-btns">
+        <button class="dlg-cancel" onclick="closeManagerReviewDialog()">キャンセル</button>
+        <button class="dlg-ok-approve" id="managerReviewDlgOkBtn" onclick="">実行する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="managerReviewToast"></div>
+</div>
+{% endblock %}
+
+{% block content_footer %}
+  {% set footer_info_text = "案件名" %}
+  {% set footer_info_value = review_data.project_name %}
+  {% set footer_actions %}
+    <button type="button" class="manager-review-footer-reject" onclick="confirmManagerReviewAction('reject')">却下</button>
+    <button type="button" class="manager-review-footer-approve" onclick="confirmManagerReviewAction('approve')">承認</button>
+  {% endset %}
+  {% include "partials/_content_footer.html" %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+function getManagerReviewEl(id) { return document.getElementById(id); }
+function escapeManagerReviewMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+
+const reviewData = {{ review_data|tojson }};
+let managerReviewCurrentVerdict = "approve";
+
+function setManagerReviewVerdict(v) {
+  managerReviewCurrentVerdict = v;
+  const va = getManagerReviewEl("managerReviewVtApprove");
+  const vr = getManagerReviewEl("managerReviewVtReject");
+  const appBtn = getManagerReviewEl("managerReviewApproveBtn");
+  const rejBtn = getManagerReviewEl("managerReviewRejectBtn");
+  const label = getManagerReviewEl("managerReviewCommentLabel");
+  const hint = getManagerReviewEl("managerReviewCommentHint");
+  const tmpls = getManagerReviewEl("managerReviewTemplateBtns");
+  const nextStep = getManagerReviewEl("managerReviewNextStepInfo");
+  const ta = getManagerReviewEl("commentArea");
+  if (!va || !vr || !appBtn || !rejBtn || !label || !hint || !tmpls || !nextStep || !ta) return;
+
+  va.className = "vt-btn";
+  vr.className = "vt-btn";
+
+  if (v === "approve") {
+    va.classList.add("active-approve");
+    appBtn.style.display = "flex";
+    rejBtn.style.display = "none";
+    label.innerHTML = "審査コメント（本部への申し送り） <span class=\"not-implemented-badge\">未実装</span>";
+    hint.textContent = "本部管理者への申し送りや、申請者への激励を記入できます。";
+    ta.placeholder = "例：計画の完成度が高く、リスク対策も明記されているため承認します。予算執行状況は月次で本部へ報告してください。";
+    ta.value = "";
+    ta.readOnly = true;
+    ta.classList.remove("required-empty");
+    updateManagerReviewCC();
+    tmpls.style.display = "none";
+    nextStep.className = "next-step";
+    nextStep.innerHTML = "<div><div style=\"font-weight:700;\">承認後の送付先</div><div style=\"margin-top:1px;\">本部管理者へ通知が届きます</div></div>";
+  } else {
+    vr.classList.add("active-reject");
+    appBtn.style.display = "none";
+    rejBtn.style.display = "flex";
+    label.innerHTML = "却下理由 <span class=\"req-badge\">必須</span>";
+    hint.textContent = "申請者が「作り直す」際のヒントとなる具体的な理由を記入してください。何が不足しているかを明確に伝えることで、再申請をスムーズにします。";
+    ta.placeholder = "例：概算予算の内訳（人月・費目別）が不明確です。金額と工数の根拠を目的・概要欄に具体的に追記したうえで、再申請してください。";
+    ta.readOnly = false;
+    tmpls.style.display = "flex";
+    nextStep.className = "next-step reject-step";
+    nextStep.innerHTML = "<div><div style=\"font-weight:700;\">却下後の通知先</div><div style=\"margin-top:1px;\">申請者（" + escapeManagerReviewMockHtml(reviewData.applicant_name) + "）へ通知が届きます</div></div>";
+  }
+}
+
+const managerReviewTemplates = {
+  "予算": "【却下理由】概算予算の内訳（人月・費目別）が不明確です。金額と工数の根拠を目的・概要欄に具体的に追記したうえで、再申請してください。",
+  "目的": "【却下理由】目的・効果の記載が定性的で、定量的な目標数値が見当たりません。「年間コスト削減額」「リードタイム削減率」などの数値目標を追記のうえ再申請してください。",
+  "リスク": "【却下理由】リスク対策の記載が不足しています。プロジェクト遅延・コスト超過時の対処方針（早期警告の基準と報告ルート）を目的・概要欄に追記のうえ再申請してください。"
+};
+
+function applyManagerReviewTemplate(key) {
+  const ta = getManagerReviewEl("commentArea");
+  if (!ta || !managerReviewTemplates[key]) return;
+  ta.value = managerReviewTemplates[key] + (ta.value ? "\n\n" + ta.value : "");
+  ta.focus();
+  updateManagerReviewCC();
+  showManagerReviewToast("テンプレートを挿入しました");
+}
+
+function updateManagerReviewCC() {
+  const commentArea = getManagerReviewEl("commentArea");
+  const ccNum = getManagerReviewEl("managerReviewCcNum");
+  if (!commentArea || !ccNum) return;
+  ccNum.textContent = String(commentArea.value.length);
+}
+
+function confirmManagerReviewAction(type) {
+  const commentArea = getManagerReviewEl("commentArea");
+  if (!commentArea) return;
+  const comment = commentArea.value.trim();
+  if (type === "reject" && !comment) {
+    setManagerReviewVerdict("reject");
+    const rejectCommentArea = getManagerReviewEl("commentArea");
+    if (rejectCommentArea) {
+      rejectCommentArea.classList.add("required-empty");
+      rejectCommentArea.focus();
+    }
+    showManagerReviewToast("却下理由は必須です。コメントを入力してください。");
+    return;
+  }
+  commentArea.classList.remove("required-empty");
+
+  const dlg = getManagerReviewEl("managerReviewDialogOverlay");
+  const icon = getManagerReviewEl("managerReviewDlgIcon");
+  const title = getManagerReviewEl("managerReviewDlgTitle");
+  const body = getManagerReviewEl("managerReviewDlgBody");
+  const preview = getManagerReviewEl("managerReviewDlgCommentPreview");
+  const okBtn = getManagerReviewEl("managerReviewDlgOkBtn");
+  if (!dlg || !icon || !title || !body || !preview || !okBtn) return;
+
+  if (type === "approve") {
+    icon.textContent = "承認";
+    title.textContent = "承認してよろしいですか？";
+    body.innerHTML = "<strong>「" + escapeManagerReviewMockHtml(reviewData.project_name) + "」</strong>を承認し、本部管理者へ通知を送ります。<br>この操作は元に戻せません。";
+    if (comment) {
+      preview.style.display = "block";
+      preview.textContent = comment;
+    } else {
+      preview.style.display = "none";
+    }
+    okBtn.className = "dlg-ok-approve";
+    okBtn.textContent = "承認して送付する";
+    okBtn.onclick = function() { closeManagerReviewDialog(); executeManagerReviewAction("approve"); };
+  } else {
+    icon.textContent = "却下";
+    title.textContent = "却下してよろしいですか？";
+    body.innerHTML = "<strong>「" + escapeManagerReviewMockHtml(reviewData.project_name) + "」</strong>を却下し、申請者（" + escapeManagerReviewMockHtml(reviewData.applicant_name) + "）へ返却します。<br>下記の却下理由が通知されます。";
+    preview.style.display = "block";
+    preview.textContent = comment;
+    okBtn.className = "dlg-ok-reject";
+    okBtn.textContent = "却下する";
+    okBtn.onclick = function() { closeManagerReviewDialog(); executeManagerReviewAction("reject"); };
+  }
+  dlg.classList.add("open");
+}
+
+function closeManagerReviewDialog() {
+  const overlay = getManagerReviewEl("managerReviewDialogOverlay");
+  if (overlay) overlay.classList.remove("open");
+}
+
+function executeManagerReviewAction(type) {
+  const form = getManagerReviewEl("managerReviewForm");
+  const actionInput = getManagerReviewEl("managerReviewActionInput");
+  const confirmedInput = getManagerReviewEl("managerReviewConfirmedInput");
+  if (!form || !actionInput || !confirmedInput) return;
+  if (type !== "approve" && type !== "reject") return;
+  actionInput.value = type;
+  confirmedInput.value = "1";
+  form.submit();
+}
+
+function showManagerReviewToast(msg) {
+  const t = getManagerReviewEl("managerReviewToast");
+  if (!t) return;
+  t.textContent = escapeManagerReviewMockHtml(msg);
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2600);
+}
+
+function bindManagerReviewPager(buttonId, noTargetMessage) {
+  const button = getManagerReviewEl(buttonId);
+  if (!button) return;
+  button.addEventListener("click", function() {
+    const targetUrl = button.getAttribute("data-target-url");
+    if (!targetUrl) {
+      showManagerReviewToast(noTargetMessage);
+      return;
+    }
+    window.location.href = targetUrl;
+  });
+}
+
+bindManagerReviewPager("managerReviewPrevBtn", "前の審査待ち案件はありません。");
+bindManagerReviewPager("managerReviewNextBtn", "次の審査待ち案件はありません。");
+
+setManagerReviewVerdict(reviewData.initial_verdict || "approve");
+
+(function initManagerReviewSimBar() {
+  const segs = [
+    { id: "managerReviewSeg1", w: Number(reviewData.budget_simulation.seg_used || 0) },
+    { id: "managerReviewSeg3", w: Number(reviewData.budget_simulation.seg_this || 0) },
+    { id: "managerReviewSeg4", w: Number(reviewData.budget_simulation.seg_remaining || 0) }
+  ];
+  requestAnimationFrame(function() {
+    setTimeout(function() {
+      segs.forEach(function(s) {
+        const el = getManagerReviewEl(s.id);
+        if (el) el.style.width = s.w + "%";
+      });
+      const seg4 = getManagerReviewEl("managerReviewSeg4");
+      if (!seg4) return;
+      seg4.style.width = "0%";
+      setTimeout(function() {
+        const seg4Update = getManagerReviewEl("managerReviewSeg4");
+        if (seg4Update) seg4Update.style.width = String(Number(reviewData.budget_simulation.seg_remaining || 0)) + "%";
+      }, 50);
+    }, 300);
+  });
+})();
+</script>
+{% endblock %}
