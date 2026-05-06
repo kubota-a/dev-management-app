@@ -304,11 +304,31 @@
   .mock-hq-final-review .col-c { position: static; grid-column: span 2; display: flex; flex-direction: column; gap: 16px; }
 }
 @media (max-width: 820px) {
+  .mock-hq-final-review,
+  .mock-hq-final-review .content,
+  .mock-hq-final-review .three-col,
+  .mock-hq-final-review .col-a,
+  .mock-hq-final-review .col-b,
+  .mock-hq-final-review .col-c,
+  .mock-hq-final-review .r-card,
+  .mock-hq-final-review .sim-card,
+  .mock-hq-final-review .verdict-card,
+  .mock-hq-final-review .queue-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
   .mock-hq-final-review .content { padding: 14px 12px 110px; }
-  .mock-hq-final-review .three-col { grid-template-columns: 1fr; }
+  .mock-hq-final-review .three-col { grid-template-columns: 1fr; overflow-x: hidden; }
   .mock-hq-final-review .col-c { grid-column: auto; display: flex; flex-direction: column; }
   .mock-hq-final-review .review-banner { flex-wrap: wrap; gap: 10px; }
   .mock-hq-final-review .rb-nav { display: none; }
+  .mock-hq-final-review .impact-row { grid-template-columns: 1fr; }
+  .mock-hq-final-review .sim-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .mock-hq-final-review .bd-row,
+  .mock-hq-final-review .sl-item { min-width: 0; }
+  .mock-hq-final-review .sl-item { flex-wrap: wrap; }
 }
 </style>
 {% endblock %}
