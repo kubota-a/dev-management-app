@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
@@ -834,6 +834,14 @@ def applicant_project_status(project_id):
         switcher_count=len(switcher_options),
         unread_notifications_count=get_unread_notifications_count(),
     )
+
+
+# =============================
+# ■ 申請者：案件進捗管理画面
+# =============================
+@app.route("/applicant/projects/progress")
+def applicant_project_progress():
+    return render_template("applicant_project_progress.html")
 
 
 # =============================
