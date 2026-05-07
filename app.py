@@ -1,5 +1,6 @@
 import os
-from datetime import date, datetime
+import re
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv  # .envファイルを読み込むライブラリ
@@ -21,6 +22,7 @@ from models import (
     Project,
     ProjectDraft,
     ProjectStatusLog,
+    Task,
     User,
     db,
     jst_today,
@@ -840,8 +842,345 @@ def applicant_project_status(project_id):
 # ■ 申請者：案件進捗管理画面
 # =============================
 @app.route("/applicant/projects/progress")
+@login_required
 def applicant_project_progress():
-    return render_template("applicant_project_progress.html")
+    access_error = require_applicant()
+    if access_error:
+        return access_error
+
+    latest_project = (
+        Project.query.filter(
+            Project.applicant_id == current_user.id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .order_by(Project.updated_at.desc(), Project.id.desc())
+        .first()
+    )
+    if latest_project is None:
+        return render_template(
+            "applicant_project_progress_empty.html",
+            unread_notifications_count=get_unread_notifications_count(),
+        )
+    return redirect(url_for("applicant_project_progress_detail", project_id=latest_project.id))
+
+
+def get_applicant_progress_projects(user_id: int) -> list[Project]:
+    """申請者本人の開発中案件一覧を表示順で取得する。"""
+    return (
+        Project.query.options(joinedload(Project.department))
+        .filter(
+            Project.applicant_id == user_id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .order_by(Project.planned_end_date.is_(None), Project.planned_end_date.asc(), Project.id.asc())
+        .all()
+    )
+
+
+def normalize_task_status_by_progress(progress_rate: int) -> str:
+    """進捗率を正としてステータスを補正する。"""
+    if progress_rate <= 0:
+        return "not_started"
+    if progress_rate >= 100:
+        return "done"
+    return "in_progress"
+
+
+def is_all_tasks_done(tasks: list[Task]) -> bool:
+    """全タスクが完了しているかを判定する。"""
+    if not tasks:
+        return False
+    return all(task.status == "done" for task in tasks)
+
+
+def should_notify_all_tasks_done(before_all_done: bool, after_all_done: bool, project: Project) -> bool:
+    """全タスク完了通知が必要なケースかを判定する。"""
+    return (
+        (not before_all_done)
+        and after_all_done
+        and project.status == "in_progress"
+        and len(project.tasks) > 0
+    )
+
+
+def build_applicant_progress_task_data(task: Task, idx: int, today: date, tomorrow: date) -> dict:
+    """タスクカード表示用データを作る。"""
+    due_display = "期限：未設定"
+    due_class = ""
+    overdue_flag = False
+    if task.due_date:
+        if task.status != "done" and task.due_date < today:
+            overdue_days = (today - task.due_date).days
+            due_display = f"期限：{format_business_date(task.due_date)}（{overdue_days}日超過）"
+            due_class = "overdue-date"
+            overdue_flag = True
+        elif task.due_date == today:
+            due_display = f"期限：{format_business_date(task.due_date)}（今日）"
+            due_class = "today-date"
+        elif task.due_date == tomorrow:
+            due_display = f"期限：{format_business_date(task.due_date)}（明日）"
+            due_class = "today-date"
+        else:
+            due_display = f"期限：{format_business_date(task.due_date)}"
+
+    status_to_js = {"not_started": "notstarted", "in_progress": "progress", "done": "done"}
+    status_to_btn = {"not_started": "active-notstarted", "in_progress": "active-progress", "done": "active-done"}
+
+    card_classes = []
+    if overdue_flag:
+        card_classes.append("overdue")
+    elif task.status == "in_progress":
+        card_classes.append("in-progress")
+    elif task.status == "done":
+        card_classes.append("done-task")
+
+    pct_color = "var(--app-prog-header)"
+    if task.status == "done":
+        pct_color = "var(--app-prog-success)"
+    elif task.status == "not_started":
+        pct_color = "var(--app-prog-muted)"
+    slider_color = "var(--app-prog-header)"
+    if task.status == "done":
+        slider_color = "var(--app-prog-success)"
+    elif task.status == "not_started":
+        slider_color = "#cbd5e1"
+
+    return {
+        "idx": idx,
+        "task_id": task.id,
+        "title": task.title,
+        "assignee_name": task.assignee_name,
+        "due_display": due_display,
+        "due_class": due_class,
+        "start_display": f"開始：{format_business_date(task.start_date)}" if task.start_date else "開始：未設定",
+        "progress_rate": int(task.progress_rate),
+        "status": task.status,
+        "status_js": status_to_js.get(task.status, "notstarted"),
+        "active_btn_class": status_to_btn.get(task.status, "active-notstarted"),
+        "card_class": " ".join(card_classes),
+        "overdue_flag": overdue_flag,
+        "pct_color": pct_color,
+        "slider_color": slider_color,
+    }
+
+
+def build_applicant_progress_view_data(project: Project, progress_projects: list[Project]) -> dict:
+    """案件進捗管理画面の表示用データを作る。"""
+    today = jst_today()
+    tomorrow = today + timedelta(days=1)
+    base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
+    base_budget = Decimal(base_budget or 0)
+    current_actual = sum((Decimal(log.amount or 0) for log in project.budget_actual_logs), Decimal("0"))
+
+    sorted_tasks = sorted(
+        project.tasks,
+        key=lambda t: (
+            t.status == "done",
+            t.due_date is None,
+            t.due_date or date.max,
+            t.id,
+        ),
+    )
+    done_count = sum(1 for t in sorted_tasks if t.status == "done")
+    total_count = len(sorted_tasks)
+    avg_progress = round(sum((int(t.progress_rate) for t in sorted_tasks), 0) / total_count) if total_count else 0
+
+    budget_pct = 0
+    if base_budget > 0:
+        budget_pct = int(round((current_actual / base_budget) * Decimal("100")))
+
+    current_index = next((idx for idx, p in enumerate(progress_projects) if p.id == project.id), -1)
+    prev_project_id = progress_projects[current_index - 1].id if current_index > 0 else None
+    next_project_id = progress_projects[current_index + 1].id if 0 <= current_index < len(progress_projects) - 1 else None
+
+    return {
+        "project": project,
+        "project_name": project.title,
+        "project_code": project.project_code,
+        "department_name": project.department.name if project.department else "未設定",
+        "planned_period_display": f"{format_business_date(project.planned_start_date)} ～ {format_business_date(project.planned_end_date)}",
+        "overall_progress_pct": avg_progress,
+        "done_count": done_count,
+        "task_count": total_count,
+        "budget_amount_display": format_decimal_amount(base_budget),
+        "current_actual_display": format_decimal_amount(current_actual),
+        "budget_pct": budget_pct,
+        "budget_gauge_class": "gf-over" if budget_pct >= 100 else "gf-warn" if budget_pct >= 80 else "gf-ok",
+        "budget_pct_color": "var(--app-prog-danger)" if budget_pct >= 100 else "var(--app-prog-warning)" if budget_pct >= 80 else "var(--app-prog-success)",
+        "tasks": [build_applicant_progress_task_data(task, idx, today, tomorrow) for idx, task in enumerate(sorted_tasks)],
+        "monthly_report_comment": project.monthly_report_comment or "",
+        "report_month_label": f"{today.year}年{today.month}月",
+        "current_position": current_index + 1 if current_index >= 0 else 0,
+        "total_projects": len(progress_projects),
+        "prev_project_id": prev_project_id,
+        "next_project_id": next_project_id,
+        "footer_project_name": project.title,
+        "base_budget_amount": int(base_budget),
+        "current_actual_amount": int(current_actual),
+    }
+
+
+def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[str], dict]:
+    """案件進捗管理画面のPOST値を検証する。"""
+    errors: list[str] = []
+    payload: dict = {
+        "budget_actual_amount": None,
+        "monthly_report_comment": (form_data.get("monthly_report_comment") or "").strip(),
+        "task_updates": {},
+    }
+
+    if (form_data.get("confirmed") or "").strip() != "1":
+        errors.append("確認モーダルで「更新する」を押してから実行してください。")
+        return errors, payload
+
+    if len(payload["monthly_report_comment"]) > 500:
+        errors.append("月次進捗報告は500文字以内で入力してください。")
+        return errors, payload
+
+    budget_raw = (form_data.get("budget_actual_amount") or "").strip()
+    if budget_raw:
+        if not re.fullmatch(r"[0-9]+", budget_raw):
+            errors.append("予算実績額は半角数字で入力してください。")
+            return errors, payload
+        budget_value = int(budget_raw)
+        if budget_value < 1 or budget_value > 999_999_999:
+            errors.append("予算実績額は1〜999,999,999円の範囲で入力してください。")
+            return errors, payload
+        payload["budget_actual_amount"] = budget_value
+
+    project_task_ids = {task.id for task in project.tasks}
+    posted_task_ids: list[int] = []
+    for raw_task_id in form_data.getlist("task_ids"):
+        if not str(raw_task_id).isdigit():
+            errors.append("タスク情報の送信内容が不正です。")
+            return errors, payload
+        posted_task_ids.append(int(raw_task_id))
+
+    if len(posted_task_ids) != len(project_task_ids) or set(posted_task_ids) != project_task_ids:
+        errors.append("タスク情報の送信内容が不正です。")
+        return errors, payload
+
+    allowed_statuses = {"not_started", "in_progress", "done"}
+    for task_id in posted_task_ids:
+        status_raw = (form_data.get(f"task_status_{task_id}") or "").strip()
+        progress_raw = (form_data.get(f"task_progress_{task_id}") or "").strip()
+        if status_raw not in allowed_statuses:
+            errors.append("タスクステータスの指定が不正です。")
+            return errors, payload
+        if not re.fullmatch(r"-?[0-9]+", progress_raw):
+            errors.append("タスク進捗率は整数で入力してください。")
+            return errors, payload
+        progress_rate = int(progress_raw)
+        if progress_rate < 0 or progress_rate > 100:
+            errors.append("タスク進捗率は0〜100の範囲で入力してください。")
+            return errors, payload
+        normalized_status = normalize_task_status_by_progress(progress_rate)
+        payload["task_updates"][task_id] = {"status": normalized_status, "progress_rate": progress_rate}
+
+    return errors, payload
+
+
+@app.route("/applicant/projects/<int:project_id>/progress", methods=["GET", "POST"])
+@login_required
+def applicant_project_progress_detail(project_id):
+    access_error = require_applicant()
+    if access_error:
+        return access_error
+
+    progress_projects = get_applicant_progress_projects(current_user.id)
+    project = (
+        Project.query.options(
+            joinedload(Project.department),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+        )
+        .filter(
+            Project.id == project_id,
+            Project.applicant_id == current_user.id,
+        )
+        .first()
+    )
+
+    if project is None:
+        flash("対象の案件が見つかりません。", "danger")
+        return redirect(url_for("applicant_top"))
+    if project.status != "in_progress" or project.approval_stage != "approved":
+        flash("この画面で更新できる開発中案件ではありません。", "danger")
+        return redirect(url_for("applicant_top"))
+
+    if request.method == "POST":
+        errors, payload = validate_applicant_progress_form(request.form, project)
+        if errors:
+            flash(errors[0], "danger")
+            return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
+
+        before_all_done = is_all_tasks_done(project.tasks)
+        changed = False
+
+        if payload["budget_actual_amount"] is not None:
+            changed = True
+            db.session.add(
+                BudgetActualLog(
+                    project_id=project.id,
+                    amount=Decimal(payload["budget_actual_amount"]),
+                    memo="申請者の進捗管理画面から登録",
+                    recorded_on=jst_today(),
+                )
+            )
+
+        if (project.monthly_report_comment or "") != payload["monthly_report_comment"]:
+            changed = True
+            project.monthly_report_comment = payload["monthly_report_comment"]
+
+        task_map = {task.id: task for task in project.tasks}
+        for task_id, update_data in payload["task_updates"].items():
+            task = task_map.get(task_id)
+            if task is None:
+                flash("タスク情報の送信内容が不正です。", "danger")
+                return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
+            if task.status != update_data["status"] or int(task.progress_rate) != int(update_data["progress_rate"]):
+                changed = True
+                task.status = update_data["status"]
+                task.progress_rate = int(update_data["progress_rate"])
+
+        if not changed:
+            flash("更新する変更はありません。", "warning")
+            return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
+
+        try:
+            after_all_done = is_all_tasks_done(project.tasks)
+            if should_notify_all_tasks_done(before_all_done, after_all_done, project):
+                managers = User.query.filter(
+                    User.role == "manager",
+                    User.department_id == project.department_id,
+                    User.is_active.is_(True),
+                ).all()
+                for manager in managers:
+                    db.session.add(
+                        Notification(
+                            user_id=manager.id,
+                            project_id=project.id,
+                            type="completed",
+                            message=f"「{project.title}」の全タスクが完了しました。案件完了の確認を行ってください。",
+                            is_read=False,
+                            created_at=utc_now(),
+                        )
+                    )
+            db.session.commit()
+            flash("進捗情報を更新しました。", "success")
+        except SQLAlchemyError:
+            db.session.rollback()
+            flash("進捗情報の更新に失敗しました。時間をおいてもう一度お試しください。", "danger")
+        return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
+
+    view_data = build_applicant_progress_view_data(project, progress_projects)
+    return render_template(
+        "applicant_project_progress.html",
+        view_data=view_data,
+        unread_notifications_count=get_unread_notifications_count(),
+    )
 
 
 # =============================

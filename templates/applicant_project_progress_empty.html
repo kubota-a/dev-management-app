@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% set page_role = "applicant" %}
+{% set active_menu = "applicant_progress" %}
+{% set header_title = "案件の進捗管理" %}
+{% set header_meta = "開発進行中案件の進捗や予算実績の更新を行います" %}
+{% set content_width_class = "app-content-wide" %}
+{% set content_footer_enabled = false %}
+
+{% block title %}案件の進捗管理{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-applicant-project-progress-empty .content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+}
+.mock-applicant-project-progress-empty .review-card {
+  background: #fff;
+  border: 1px solid var(--app-border, #e5e7eb);
+  border-radius: 12px;
+}
+.mock-applicant-project-progress-empty .rc-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--app-border, #e5e7eb);
+}
+.mock-applicant-project-progress-empty .rc-title { font-weight: 700; }
+.mock-applicant-project-progress-empty .rc-body { padding: 18px; line-height: 1.7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mock-applicant-project-progress-empty">
+  <div class="content">
+    {% include "partials/_flash.html" %}
+    <div class="review-card">
+      <div class="rc-head">
+        <div class="rc-title">案件の進捗管理</div>
+      </div>
+      <div class="rc-body">
+        <p>現在、進捗管理できる開発中案件はありません</p>
+        <p>案件が本部承認されると、この画面からタスク進捗や予算実績を更新できます。</p>
+        <p style="margin-top:16px;">
+          <a href="{{ url_for('applicant_top') }}" class="app-nav-link">申請者トップへ戻る</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
