@@ -69,6 +69,7 @@
 .mock-applicant-project-progress .money-input-wrap:focus-within { border-color: var(--app-prog-header); }
 .mock-applicant-project-progress .money-prefix { padding: 0 12px; font-size: 16px; font-weight: 700; color: var(--app-prog-muted); background: var(--app-prog-bg); border-right: 1px solid var(--app-prog-border); height: 44px; display: flex; align-items: center; }
 .mock-applicant-project-progress .money-input { flex: 1; border: none; outline: none; padding: 0 12px; font-size: 16px; font-weight: 700; font-family: var(--font-family-base); color: var(--app-prog-text); height: 44px; }
+.mock-applicant-project-progress .money-input::placeholder { color: var(--app-prog-muted); opacity: .65; }
 .mock-applicant-project-progress .input-apply-btn { padding: 0 18px; height: 44px; background: #fff; color: var(--app-prog-header); border: 1.5px solid var(--app-prog-header); border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
 .mock-applicant-project-progress .input-apply-btn:hover { background: var(--app-prog-teal-light); }
 .mock-applicant-project-progress .preview-box { background: var(--app-prog-teal-light); border: 1px solid var(--app-prog-teal-mid); border-radius: 10px; padding: 12px 14px; }
@@ -191,6 +192,8 @@
 .mock-applicant-project-progress .dlg-cancel, .mock-applicant-project-progress .dlg-ok { flex: 1; padding: 10px 0; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
 .mock-applicant-project-progress .dlg-cancel { border: 1.5px solid var(--app-prog-border); background: #fff; color: var(--app-prog-text); }
 .mock-applicant-project-progress .dlg-ok { background: var(--app-prog-warning); color: #fff; border: none; }
+.mock-applicant-project-progress .dlg-ok.is-normal-update { background: #1a7585; }
+.mock-applicant-project-progress .dlg-ok.is-normal-update:hover { background: #155f6d; }
 .mock-applicant-project-progress .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--app-prog-text); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
 .mock-applicant-project-progress .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .applicant-progress-footer-info { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
@@ -287,9 +290,8 @@
           </div>
           <div class="accordion-body open">
             <button class="quote-btn" onclick="quoteApplicantProgressLastReport()">前回の報告を引用</button>
-            <textarea class="monthly-textarea" id="reportText" placeholder="今月の進捗・課題・来月の予定などを入力してください。" oninput="updateApplicantProgressCharCount(this, true)">・移行計画の最終確認が完了し、ステージング環境での動作検証を開始した。
-・DBスキーマの変換ツールは開発完了、レビュー待ち。</textarea>
-            <div class="char-count" id="applicantProgressCharCount">126 文字</div>
+            <textarea class="monthly-textarea" id="reportText" placeholder="今月の進捗・課題・来月の予定などを入力してください。" oninput="updateApplicantProgressCharCount(this, true)"></textarea>
+            <div class="char-count" id="applicantProgressCharCount">0 文字</div>
           </div>
         </div>
       </div>
@@ -331,7 +333,7 @@
       <div class="dlg-body" id="applicantProgressDlgBody">追加入力後の予算消費率が <strong id="applicantProgressDlgPct">—</strong> になります。<br>このまま更新・報告してよろしいですか？</div>
       <div class="dlg-btns">
         <button class="dlg-cancel" onclick="closeApplicantProgressDialog()">見直す</button>
-        <button class="dlg-ok" onclick="confirmApplicantProgressSubmit()">このまま報告する</button>
+        <button class="dlg-ok" id="applicantProgressDlgOkBtn" onclick="confirmApplicantProgressSubmit()">このまま報告する</button>
       </div>
     </div>
   </div>
@@ -455,9 +457,9 @@ function setApplicantProgressStatus(btn,type,idx){
 function recalcApplicantProgressOverall(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");if(!sliders.length)return;let sum=0;sliders.forEach(function(s){sum+=parseInt(s.value,10)||0;});const avg=Math.round(sum/sliders.length);const pct=getApplicantProgressEl("applicantProgressOverallPct");const gauge=getApplicantProgressEl("applicantProgressOverallGauge");if(pct)pct.textContent=avg+"%";if(gauge)gauge.style.width=avg+"%";}
 function toggleApplicantProgressAccordion(head){if(!head)return;const body=head.nextElementSibling;const arrow=head.querySelector(".accordion-arrow");if(!body)return;const isOpen=body.classList.toggle("open");if(arrow)arrow.classList.toggle("open",isOpen);}
 function initApplicantProgressResponsiveAccordions(){const isOneColumn=window.matchMedia("(max-width: 900px)").matches;if(!isOneColumn)return;document.querySelectorAll(".mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card").forEach(function(card){const body=card.querySelector(".accordion-body");const arrow=card.querySelector(".accordion-arrow");if(body)body.classList.remove("open");if(arrow)arrow.classList.remove("open");});}
-function quoteApplicantProgressLastReport(){const ta=getApplicantProgressEl("reportText");if(!ta)return;const prev="【前回（4月）引用】\n・ネットワーク設計完了、移行計画書ドラフト作成中。\n\n";ta.value=prev+ta.value;ta.focus();updateApplicantProgressCharCount(ta);showApplicantProgressToast("前回の報告を引用しました");}
+function quoteApplicantProgressLastReport(){const ta=getApplicantProgressEl("reportText");if(!ta)return;const prev="【前回（4月）引用】\n・ネットワーク設計完了、移行計画書ドラフト作成中。\n\n";ta.value=prev+ta.value;ta.focus();updateApplicantProgressCharCount(ta,true);showApplicantProgressToast("前回の報告を引用しました");}
 function updateApplicantProgressCharCount(ta,markUnsaved){const c=getApplicantProgressEl("applicantProgressCharCount");if(!ta||!c)return;c.textContent=ta.value.length+" 文字";if(markUnsaved){markApplicantProgressUnsaved("report");}}
-function submitApplicantProgressReport(){const pct=Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);if(pct>=80){const dlgPct=getApplicantProgressEl("applicantProgressDlgPct");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(dlgPct)dlgPct.textContent=pct+"%";if(dlgBody){dlgBody.innerHTML=(pct>=100?'現在の予算消費率が <strong style="color:var(--app-prog-danger)">'+escapeApplicantProgressMockHtml(pct)+'%（超過）</strong> です。<br>このまま更新・報告してよろしいですか？':'追加後の予算消費率が <strong style="color:var(--app-prog-warning)">'+escapeApplicantProgressMockHtml(pct)+'%（注意域）</strong> になります。<br>このまま更新・報告してよろしいですか？');}if(overlay)overlay.classList.add("open");}else{confirmApplicantProgressSubmit();}}
+function submitApplicantProgressReport(){const pct=Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);const dlgPct=getApplicantProgressEl("applicantProgressDlgPct");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay)return;if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="このまま報告する";}if(pct>=80){if(dlgPct)dlgPct.textContent=pct+"%";if(dlgBody){dlgBody.innerHTML=(pct>=100?'現在の予算消費率が <strong style="color:var(--app-prog-danger)">'+escapeApplicantProgressMockHtml(pct)+'%（超過）</strong> です。<br>このまま更新・報告してよろしいですか？':'追加後の予算消費率が <strong style="color:var(--app-prog-warning)">'+escapeApplicantProgressMockHtml(pct)+'%（注意域）</strong> になります。<br>このまま更新・報告してよろしいですか？');}}else{if(dlgBody){dlgBody.textContent="変更を更新してよろしいですか？";}if(okBtn){okBtn.textContent="更新する";okBtn.classList.add("is-normal-update");}}overlay.classList.add("open");}
 function closeApplicantProgressDialog(){const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(overlay)overlay.classList.remove("open");}
 function confirmApplicantProgressSubmit(){closeApplicantProgressDialog();clearApplicantProgressUnsaved();}
 function showApplicantProgressToast(msg){const t=getApplicantProgressEl("applicantProgressToast");if(!t)return;t.textContent=escapeApplicantProgressMockHtml(msg);t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
