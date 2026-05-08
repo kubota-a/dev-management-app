@@ -956,6 +956,8 @@ def build_applicant_progress_task_data(task: Task, idx: int, today: date, tomorr
         "due_display": due_display,
         "due_class": due_class,
         "start_display": f"開始：{format_business_date(task.start_date)}" if task.start_date else "開始：未設定",
+        "start_date_value": task.start_date.isoformat() if task.start_date else "",
+        "due_date_value": task.due_date.isoformat() if task.due_date else "",
         "progress_rate": int(task.progress_rate),
         "status": task.status,
         "status_js": status_to_js.get(task.status, "notstarted"),

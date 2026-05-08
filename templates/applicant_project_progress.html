@@ -194,6 +194,28 @@
 .mock-applicant-project-progress .dlg-ok { background: var(--app-prog-warning); color: #fff; border: none; }
 .mock-applicant-project-progress .dlg-ok.is-normal-update { background: #1a7585; }
 .mock-applicant-project-progress .dlg-ok.is-normal-update:hover { background: #155f6d; }
+.mock-applicant-project-progress .task-modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(28, 43, 48, 0.45); z-index: 500; padding: 16px; }
+.mock-applicant-project-progress .task-modal-overlay.open { display: flex; }
+.mock-applicant-project-progress .task-modal-box { width: min(480px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border: 1px solid var(--app-prog-border); border-radius: 16px; box-shadow: 0 12px 36px rgba(28, 43, 48, 0.14); padding: 20px 20px 16px; position: relative; }
+.mock-applicant-project-progress .task-modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--app-prog-border); background: #fff; color: var(--app-prog-muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.mock-applicant-project-progress .task-modal-title { margin: 4px 40px 8px 0; font-size: 20px; font-weight: 900; color: var(--app-prog-header); line-height: 1.3; }
+.mock-applicant-project-progress .task-modal-desc { margin: 0 0 16px; font-size: 13px; color: var(--app-prog-muted); line-height: 1.8; }
+.mock-applicant-project-progress .task-modal-field { margin-bottom: 14px; }
+.mock-applicant-project-progress .task-modal-field-label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; font-weight: 700; margin-bottom: 7px; }
+.mock-applicant-project-progress .req-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: #fef2f2; color: var(--app-prog-danger); border: 1px solid #f1b6bc; }
+.mock-applicant-project-progress .opt-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--app-prog-bg); color: var(--app-prog-muted); border: 1px solid var(--app-prog-border); }
+.mock-applicant-project-progress .field-hint { margin: -2px 0 7px; font-size: 11px; line-height: 1.6; color: var(--app-prog-muted); }
+.mock-applicant-project-progress .f-input { width: 100%; height: 42px; border: 1.5px solid var(--app-prog-border); border-radius: 9px; background: #fff; padding: 0 12px; outline: none; font-size: 14px; color: var(--app-prog-text); }
+.mock-applicant-project-progress .f-input:focus { border-color: var(--app-prog-header); box-shadow: 0 0 0 3px rgba(26, 117, 133, 0.12); }
+.mock-applicant-project-progress .f-input.error { border-color: var(--app-prog-danger); box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1); }
+.mock-applicant-project-progress .field-error { display: none; margin-top: 6px; font-size: 11px; color: var(--app-prog-danger); }
+.mock-applicant-project-progress .field-error.show { display: block; }
+.mock-applicant-project-progress .task-modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; }
+.mock-applicant-project-progress .task-modal-btn { min-width: 108px; height: 40px; border-radius: 9px; border: 1.5px solid transparent; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .task-modal-btn.cancel { border-color: var(--app-prog-border); background: #fff; color: var(--app-prog-text); }
+.mock-applicant-project-progress .task-modal-btn.submit { background: var(--app-prog-header); color: #fff; }
+.mock-applicant-project-progress .task-modal-btn.submit:disabled { background: #9ca3af; cursor: not-allowed; border-color: #9ca3af; }
+.mock-applicant-project-progress .task-modal-btn.submit:disabled:hover { background: #9ca3af; }
 .mock-applicant-project-progress .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--app-prog-text); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
 .mock-applicant-project-progress .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .applicant-progress-footer-info { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
@@ -315,13 +337,13 @@
             <div class="sec-title">タスク進捗更新</div>
             <div style="display:flex;gap:10px;align-items:center;">
               <span style="font-size:12px;color:var(--app-prog-muted);">完了 <strong style="color:var(--app-prog-success)" id="applicantProgressListDoneCount">{{ view_data.done_count }}</strong> / <span id="applicantProgressListTaskCount">{{ view_data.task_count }}</span>件</span>
-              <button type="button" style="padding:5px 12px;border:1.5px solid var(--app-prog-border);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--app-prog-header);cursor:pointer;font-family:var(--font-family-base);">＋ タスク追加</button>
+              <button type="button" style="padding:5px 12px;border:1.5px solid var(--app-prog-border);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--app-prog-header);cursor:pointer;font-family:var(--font-family-base);" onclick="openApplicantTaskModal('add')">＋ タスク追加</button>
             </div>
           </div>
           <div class="task-list" id="applicantProgressTaskList">
             {% if view_data.tasks %}
               {% for task in view_data.tasks %}
-                <div class="task-card {{ task.card_class }}" id="applicantProgressTaskCard{{ task.idx }}" data-overdue="{{ 'true' if task.overdue_flag else 'false' }}">
+                <div class="task-card {{ task.card_class }}" id="applicantProgressTaskCard{{ task.idx }}" data-overdue="{{ 'true' if task.overdue_flag else 'false' }}" data-task-id="{{ task.id }}" data-task-title="{{ task.title }}" data-task-assignee="{{ task.assignee_name }}" data-task-start-date="{{ task.start_date_value }}" data-task-due-date="{{ task.due_date_value }}">
                   <div class="task-head">
                     <div class="task-main">
                       <div class="task-name">
@@ -336,7 +358,7 @@
                         <div class="task-assignee">{{ task.assignee_name }}</div>
                       </div>
                     </div>
-                    <button type="button" class="task-edit-btn" aria-label="タスクを編集">✎</button>
+                    <button type="button" class="task-edit-btn" aria-label="タスクを編集" onclick="openApplicantTaskModal('edit', {{ task.id }}, {{ task.idx }})">✎</button>
                   </div>
                   <div class="task-body">
                     <input type="hidden" name="task_ids" value="{{ task.id }}">
@@ -386,6 +408,52 @@
       </div>
     </div>
   </div>
+  <div class="task-modal-overlay" id="applicantTaskModalOverlay" aria-hidden="true">
+    <section class="task-modal-box" role="dialog" aria-modal="true" aria-labelledby="applicantTaskModalTitle">
+      <button type="button" class="task-modal-close" id="applicantTaskModalClose" aria-label="モーダルを閉じる">×</button>
+      <h2 class="task-modal-title" id="applicantTaskModalTitle">タスクを追加</h2>
+      <p class="task-modal-desc" id="applicantTaskModalDescription">新しい作業タスクの基本情報を入力してください。</p>
+      <div id="applicantTaskModalForm" novalidate>
+        <input type="hidden" id="applicantTaskModalTaskId" value="">
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalTaskName">
+            タスク名 <span class="req-badge">必須</span>
+          </label>
+          <p class="field-hint">作業内容がひと目で分かる名称にしてください。</p>
+          <input type="text" class="f-input" id="applicantTaskModalTaskName" maxlength="200" placeholder="例：ステージング環境 動作検証">
+          <p class="field-error" id="applicantTaskModalTaskNameError">タスク名を入力してください。</p>
+        </div>
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalAssignee">
+            担当者名 <span class="req-badge">必須</span>
+          </label>
+          <p class="field-hint">担当するメンバー名を入力してください。</p>
+          <input type="text" class="f-input" id="applicantTaskModalAssignee" maxlength="100" placeholder="例：田中 太郎">
+          <p class="field-error" id="applicantTaskModalAssigneeError">担当者名を入力してください。</p>
+        </div>
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalStartDate">
+            開始日 <span class="opt-badge">任意</span>
+          </label>
+          <p class="field-hint">未定の場合は空欄のままで構いません。</p>
+          <input type="date" class="f-input" id="applicantTaskModalStartDate">
+          <p class="field-error" id="applicantTaskModalStartDateError">開始日は期限日以前の日付にしてください。</p>
+        </div>
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalDueDate">
+            期限日 <span class="req-badge">必須</span>
+          </label>
+          <p class="field-hint">期限を過ぎた未完了タスクは遅延タスクとして表示されます。</p>
+          <input type="date" class="f-input" id="applicantTaskModalDueDate">
+          <p class="field-error" id="applicantTaskModalDueDateError">期限日を入力してください。</p>
+        </div>
+        <div class="task-modal-actions">
+          <button type="button" class="task-modal-btn cancel" id="applicantTaskModalCancel">キャンセル</button>
+          <button type="button" class="task-modal-btn submit" id="applicantTaskModalSubmit">追加する</button>
+        </div>
+      </div>
+    </section>
+  </div>
   <div class="dialog-overlay" id="applicantProgressDialogOverlay">
     <div class="dialog-box">
       <div class="dlg-title" id="applicantProgressDlgTitle">変更内容の確認</div>
@@ -420,6 +488,7 @@ let applicantProgressCurrentActual = {{ view_data.current_actual_amount }};
 let applicantProgressPendingBudgetActualAmount = 0;
 const applicantProgressUnsavedState = { budget: false, report: false, task: false };
 let applicantProgressInitialState = null;
+const applicantTaskModalState = { mode: "add", taskId: null, taskIdx: null };
 function getApplicantProgressEl(id){return document.getElementById(id);}
 function escapeApplicantProgressMockHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function hasApplicantProgressUnsavedChanges(){return Object.keys(applicantProgressUnsavedState).some(function(key){return applicantProgressUnsavedState[key];});}
@@ -653,6 +722,132 @@ function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges(
 function closeApplicantProgressDialog(){const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(overlay)overlay.classList.remove("open");}
 function confirmApplicantProgressSubmit(){const form=getApplicantProgressEl("applicantProgressForm");const confirmed=getApplicantProgressEl("applicantProgressConfirmed");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");const updateBtn=getApplicantProgressEl("applicantProgressFooterUpdateBtn");const resetBtn=getApplicantProgressEl("applicantProgressFooterResetBtn");if(!form||!confirmed){showApplicantProgressToast("送信準備に失敗しました。画面を再読み込みしてください。");return;}confirmed.value="1";if(okBtn){okBtn.disabled=true;okBtn.textContent="送信中...";}if(updateBtn){updateBtn.disabled=true;}if(resetBtn){resetBtn.disabled=true;}form.submit();}
 function showApplicantProgressToast(msg){const t=getApplicantProgressEl("applicantProgressToast");if(!t)return;t.textContent=escapeApplicantProgressMockHtml(msg);t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
-(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();const loginSuccessToast={{ login_success_toast|tojson }};if(loginSuccessToast){showApplicantProgressToast(loginSuccessToast);}})();
+function getApplicantTaskModalEls(){
+  return {
+    overlay:getApplicantProgressEl("applicantTaskModalOverlay"),
+    box:document.querySelector(".mock-applicant-project-progress .task-modal-box"),
+    close:getApplicantProgressEl("applicantTaskModalClose"),
+    cancel:getApplicantProgressEl("applicantTaskModalCancel"),
+    title:getApplicantProgressEl("applicantTaskModalTitle"),
+    description:getApplicantProgressEl("applicantTaskModalDescription"),
+    submit:getApplicantProgressEl("applicantTaskModalSubmit"),
+    taskId:getApplicantProgressEl("applicantTaskModalTaskId"),
+    taskName:getApplicantProgressEl("applicantTaskModalTaskName"),
+    assignee:getApplicantProgressEl("applicantTaskModalAssignee"),
+    startDate:getApplicantProgressEl("applicantTaskModalStartDate"),
+    dueDate:getApplicantProgressEl("applicantTaskModalDueDate"),
+    taskNameError:getApplicantProgressEl("applicantTaskModalTaskNameError"),
+    assigneeError:getApplicantProgressEl("applicantTaskModalAssigneeError"),
+    startDateError:getApplicantProgressEl("applicantTaskModalStartDateError"),
+    dueDateError:getApplicantProgressEl("applicantTaskModalDueDateError")
+  };
+}
+function setApplicantTaskModalMode(mode,taskId,taskIdx){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  applicantTaskModalState.mode=mode==="edit"?"edit":"add";
+  applicantTaskModalState.taskId=taskId||null;
+  applicantTaskModalState.taskIdx=Number.isInteger(Number(taskIdx))?Number(taskIdx):null;
+  if(applicantTaskModalState.mode==="edit"){
+    const taskCard=applicantTaskModalState.taskIdx!==null?getApplicantProgressEl("applicantProgressTaskCard"+applicantTaskModalState.taskIdx):null;
+    const taskTitle=taskCard?(taskCard.dataset.taskTitle||""):"";
+    const assigneeName=taskCard?(taskCard.dataset.taskAssignee||""):"";
+    const startDateValue=taskCard?(taskCard.dataset.taskStartDate||""):"";
+    const dueDateValue=taskCard?(taskCard.dataset.taskDueDate||""):"";
+    if(els.title){els.title.textContent="タスクを編集";}
+    if(els.description){els.description.textContent="タスクの基本情報を修正できます。進捗率とステータスはカード上で更新してください。";}
+    if(els.submit){els.submit.textContent="保存する";}
+    if(els.taskId){els.taskId.value=taskId?String(taskId):"";}
+    if(els.taskName){els.taskName.value=taskTitle;}
+    if(els.assignee){els.assignee.value=assigneeName;}
+    if(els.startDate){els.startDate.value=startDateValue;}
+    if(els.dueDate){els.dueDate.value=dueDateValue;}
+  }else{
+    if(els.title){els.title.textContent="タスクを追加";}
+    if(els.description){els.description.textContent="新しい作業タスクの基本情報を入力してください。";}
+    if(els.submit){els.submit.textContent="追加する";}
+    if(els.taskId){els.taskId.value="";}
+    if(els.taskName){els.taskName.value="";}
+    if(els.assignee){els.assignee.value="";}
+    if(els.startDate){els.startDate.value="";}
+    if(els.dueDate){els.dueDate.value="";}
+  }
+  clearApplicantTaskModalErrors();
+  updateApplicantTaskModalSubmitDisabledState();
+}
+function openApplicantTaskModal(mode,taskId,taskIdx){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  setApplicantTaskModalMode(mode,taskId,taskIdx);
+  els.overlay.classList.add("open");
+  els.overlay.setAttribute("aria-hidden","false");
+  setTimeout(function(){if(els.taskName){els.taskName.focus();}},0);
+}
+function closeApplicantTaskModal(){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  els.overlay.classList.remove("open");
+  els.overlay.setAttribute("aria-hidden","true");
+  clearApplicantTaskModalErrors();
+  updateApplicantTaskModalSubmitDisabledState();
+}
+function clearApplicantTaskModalErrors(){
+  const els=getApplicantTaskModalEls();
+  [els.taskName,els.assignee,els.startDate,els.dueDate].forEach(function(inputEl){if(inputEl){inputEl.classList.remove("error");}});
+  [els.taskNameError,els.assigneeError,els.startDateError,els.dueDateError].forEach(function(errorEl){if(errorEl){errorEl.classList.remove("show");}});
+}
+function updateApplicantTaskModalSubmitDisabledState(){
+  const els=getApplicantTaskModalEls();
+  if(!els.submit)return;
+  const taskName=els.taskName?els.taskName.value.trim():"";
+  const assignee=els.assignee?els.assignee.value.trim():"";
+  const startDate=els.startDate?els.startDate.value:"";
+  const dueDate=els.dueDate?els.dueDate.value:"";
+  const isDateOrderValid=!startDate||(dueDate&&startDate<=dueDate);
+  const canSubmit=Boolean(taskName&&assignee&&dueDate&&isDateOrderValid);
+  els.submit.disabled=!canSubmit;
+}
+function showApplicantTaskModalError(inputEl,errorEl,message){
+  if(inputEl){inputEl.classList.add("error");}
+  if(errorEl){errorEl.textContent=message;errorEl.classList.add("show");}
+}
+function validateApplicantTaskModal(){
+  const els=getApplicantTaskModalEls();
+  clearApplicantTaskModalErrors();
+  const taskName=els.taskName?els.taskName.value.trim():"";
+  const assignee=els.assignee?els.assignee.value.trim():"";
+  const startDate=els.startDate?els.startDate.value:"";
+  const dueDate=els.dueDate?els.dueDate.value:"";
+  let firstErrorInput=null;
+  let hasError=false;
+  if(!taskName){showApplicantTaskModalError(els.taskName,els.taskNameError,"タスク名を入力してください。");firstErrorInput=firstErrorInput||els.taskName;hasError=true;}
+  if(!assignee){showApplicantTaskModalError(els.assignee,els.assigneeError,"担当者名を入力してください。");firstErrorInput=firstErrorInput||els.assignee;hasError=true;}
+  if(!dueDate){showApplicantTaskModalError(els.dueDate,els.dueDateError,"期限日を入力してください。");firstErrorInput=firstErrorInput||els.dueDate;hasError=true;}
+  if(startDate&&dueDate&&startDate>dueDate){showApplicantTaskModalError(els.startDate,els.startDateError,"開始日は期限日以前の日付にしてください。");firstErrorInput=firstErrorInput||els.startDate;hasError=true;}
+  if(firstErrorInput){firstErrorInput.focus();}
+  return !hasError;
+}
+function handleApplicantTaskModalSubmit(){
+  if(!validateApplicantTaskModal()){updateApplicantTaskModalSubmitDisabledState();return;}
+  if(applicantTaskModalState.mode==="edit"){showApplicantProgressToast("タスク編集機能は次の実装で保存処理を接続します。");}
+  else{showApplicantProgressToast("タスク追加機能は次の実装で保存処理を接続します。");}
+  closeApplicantTaskModal();
+}
+function initApplicantTaskModal(){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  if(els.close){els.close.addEventListener("click",closeApplicantTaskModal);}
+  if(els.cancel){els.cancel.addEventListener("click",closeApplicantTaskModal);}
+  if(els.overlay){els.overlay.addEventListener("click",function(event){if(event.target===els.overlay){closeApplicantTaskModal();}});}
+  if(els.box){els.box.addEventListener("click",function(event){event.stopPropagation();});}
+  if(els.submit){els.submit.addEventListener("click",handleApplicantTaskModalSubmit);}
+  [els.taskName,els.assignee,els.startDate,els.dueDate].forEach(function(inputEl){
+    if(!inputEl)return;
+    inputEl.addEventListener("input",updateApplicantTaskModalSubmitDisabledState);
+    inputEl.addEventListener("change",updateApplicantTaskModalSubmitDisabledState);
+  });
+  updateApplicantTaskModalSubmitDisabledState();
+}
+(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();initApplicantTaskModal();const loginSuccessToast={{ login_success_toast|tojson }};if(loginSuccessToast){showApplicantProgressToast(loginSuccessToast);}})();
 </script>
 {% endblock %}
