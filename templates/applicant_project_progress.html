@@ -220,7 +220,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="mock-applicant-project-progress">
+<form
+  method="post"
+  action="{{ url_for('applicant_project_progress_detail', project_id=view_data.project_id) }}"
+  id="applicantProgressForm"
+  class="mock-applicant-project-progress"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="confirmed" id="applicantProgressConfirmed" value="0">
   <div class="applicant-progress-content">
     <div class="summary-card">
       <div class="summary-top">
@@ -271,7 +278,7 @@
             </div>
             <label class="input-label">今回追加する実績額</label>
             <div class="input-row">
-              <div class="money-input-wrap"><div class="money-prefix">¥</div><input type="number" class="money-input" id="addAmount" placeholder="例：500000" inputmode="numeric" oninput="updateApplicantProgressBudgetPreview()"></div>
+              <div class="money-input-wrap"><div class="money-prefix">¥</div><input type="number" class="money-input" id="addAmount" name="budget_actual_amount" placeholder="例：500000" inputmode="numeric" oninput="updateApplicantProgressBudgetPreview()"></div>
               <button type="button" class="input-apply-btn" onclick="applyApplicantProgressBudget()">反映</button>
             </div>
             <div class="preview-box">
@@ -293,7 +300,7 @@
           </div>
           <div class="accordion-body open">
             <button type="button" class="quote-btn" onclick="quoteApplicantProgressLastReport()">前回の報告を引用</button>
-            <textarea class="monthly-textarea" id="reportText" placeholder="今月の進捗・課題・来月の予定などを入力してください。" oninput="updateApplicantProgressCharCount(this, true)">{{ view_data.monthly_report_comment }}</textarea>
+            <textarea class="monthly-textarea" id="reportText" name="monthly_report_comment" placeholder="今月の進捗・課題・来月の予定などを入力してください。" oninput="updateApplicantProgressCharCount(this, true)">{{ view_data.monthly_report_comment }}</textarea>
             <div class="char-count" id="applicantProgressCharCount">{{ view_data.monthly_report_comment|length }} 文字</div>
           </div>
         </div>
@@ -329,6 +336,8 @@
                     <button type="button" class="task-edit-btn" aria-label="タスクを編集">✎</button>
                   </div>
                   <div class="task-body">
+                    <input type="hidden" name="task_ids" value="{{ task.id }}">
+                    <input type="hidden" name="task_status_{{ task.id }}" id="taskStatus{{ task.idx }}" value="{{ task.status }}">
                     <div class="status-toggle">
                       <button type="button" class="st-btn {{ 'active-notstarted' if task.status == 'not_started' else '' }}" onclick="setApplicantProgressStatus(this,'notstarted',{{ task.idx }})">未着手</button>
                       <button type="button" class="st-btn {{ 'active-progress' if task.status == 'in_progress' else '' }}" onclick="setApplicantProgressStatus(this,'progress',{{ task.idx }})">進行中</button>
@@ -340,7 +349,7 @@
                         <div class="progress-pct" id="pct{{ task.idx }}" style="color:{{ task.pct_color }}">{{ task.progress_rate }}%</div>
                       </div>
                       <div class="slider-wrap">
-                        <input type="range" class="pct-slider" min="0" max="100" step="5" value="{{ task.progress_rate }}" oninput="updateApplicantProgressSlider(this,'pct{{ task.idx }}')" style="background: linear-gradient(to right, {{ task.slider_color }} {{ task.progress_rate }}%, #e6eff1 {{ task.progress_rate }}%)">
+                        <input type="range" class="pct-slider" name="task_progress_{{ task.id }}" min="0" max="100" step="5" value="{{ task.progress_rate }}" oninput="updateApplicantProgressSlider(this,'pct{{ task.idx }}')" style="background: linear-gradient(to right, {{ task.slider_color }} {{ task.progress_rate }}%, #e6eff1 {{ task.progress_rate }}%)">
                       </div>
                       <div class="quick-btns">
                         <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},25)">25%</button>
@@ -385,7 +394,7 @@
     </div>
   </div>
   <div class="toast" id="applicantProgressToast"></div>
-</div>
+</form>
 {% endblock %}
 
 {% block content_footer %}
@@ -529,6 +538,12 @@ function getApplicantProgressSliderColor(type,value){
   if(type==="notstarted"||Number(value)===0){return "#cbd5e1";}
   return "var(--app-prog-header)";
 }
+function getApplicantProgressDbStatus(type){
+  if(type==="notstarted"){return "not_started";}
+  if(type==="progress"){return "in_progress";}
+  if(type==="done"){return "done";}
+  return "in_progress";
+}
 function updateApplicantProgressSliderBackground(slider,value,type){
   if(!slider)return;
   const color=getApplicantProgressSliderColor(type,value);
@@ -537,11 +552,15 @@ function updateApplicantProgressSliderBackground(slider,value,type){
 function syncApplicantProgressTaskState(idx,type,value){
   const card=getApplicantProgressEl("applicantProgressTaskCard"+idx);
   if(!card)return;
+  const statusInput=getApplicantProgressEl("taskStatus"+idx);
   const slider=card.querySelector("input[type=range]");
   const pctEl=getApplicantProgressEl("pct"+idx);
   const btns=card.querySelectorAll(".st-btn");
   const v=Math.max(0,Math.min(100,Number(value)||0));
   const isOriginallyOverdue=card.dataset.overdue==="true";
+  if(statusInput){
+    statusInput.value=getApplicantProgressDbStatus(type);
+  }
   if(slider){
     slider.value=v;
     updateApplicantProgressSliderBackground(slider,v,type);

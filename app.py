@@ -948,6 +948,7 @@ def build_applicant_progress_task_data(task: Task, idx: int, today: date, tomorr
         slider_color = "#cbd5e1"
 
     return {
+        "id": task.id,
         "idx": idx,
         "task_id": task.id,
         "title": task.title,
@@ -997,6 +998,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
 
     return {
         "project": project,
+        "project_id": project.id,
         "project_name": project.title,
         "project_code": project.project_code,
         "department_name": project.department.name if project.department else "未設定",
