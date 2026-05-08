@@ -1,0 +1,972 @@
+{% extends "base.html" %}
+
+{% set page_role = "applicant" %}
+{% set active_menu = "applicant_progress" %}
+{% set header_title = "案件の進捗管理" %}
+{% set header_meta = "開発中案件の進捗や予算実績の更新・タスクの管理を行います" %}
+{% set content_footer_enabled = true %}
+{% set content_width_class = "app-content-wide" %}
+
+{% block title %}案件の進捗管理{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-applicant-project-progress {
+  --app-prog-sidebar: #2899a8;
+  --app-prog-header: #1a7585;
+  --app-prog-header-dark: #155f6d;
+  --app-prog-teal-light: #e0f5f8;
+  --app-prog-teal-mid: #a8dfe6;
+  --app-prog-bg: #f2f6f8;
+  --app-prog-card: #ffffff;
+  --app-prog-border: #d8e8ec;
+  --app-prog-text: #1c2b30;
+  --app-prog-muted: #6b8c94;
+  --app-prog-danger: #dc3545;
+  --app-prog-warning: #d97706;
+  --app-prog-success: #0d9469;
+  --app-prog-success-bg: #edfaf4;
+  --app-prog-radius: 12px;
+  --app-prog-shadow: 0 2px 12px rgba(26, 117, 133, .10);
+  --app-prog-shadow-card: 0 4px 20px rgba(26, 117, 133, .09);
+  font-family: var(--font-family-base);
+  color: var(--app-prog-text);
+}
+.mock-applicant-project-progress .applicant-progress-content { padding: 24px 28px 120px; }
+.mock-applicant-project-progress .summary-card, .mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card, .mock-applicant-project-progress .task-card {
+  background: var(--app-prog-card); border: 1px solid var(--app-prog-border); border-radius: var(--app-prog-radius);
+}
+.mock-applicant-project-progress .summary-card { box-shadow: var(--app-prog-shadow-card); overflow: hidden; margin-bottom: 22px; }
+.mock-applicant-project-progress .summary-top { background: #228796; padding: 20px 24px; display: flex; justify-content: space-between; gap: 16px; }
+.mock-applicant-project-progress .summary-proj-name { font-size: 20px; font-weight: 900; color: #fff; line-height: 1.3; }
+.mock-applicant-project-progress .summary-proj-meta { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 4px; }
+.mock-applicant-project-progress .summary-kpi-row { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--app-prog-border); }
+.mock-applicant-project-progress .summary-kpi { padding: 18px 24px; border-right: 1px solid var(--app-prog-border); }
+.mock-applicant-project-progress .summary-kpi:last-child { border-right: none; }
+.mock-applicant-project-progress .kpi-label { font-size: 11px; color: var(--app-prog-muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.mock-applicant-project-progress .kpi-big { font-size: 32px; font-weight: 900; line-height: 1; }
+.mock-applicant-project-progress .kpi-sub { font-size: 12px; color: var(--app-prog-muted); margin-top: 6px; }
+.mock-applicant-project-progress .kpi-gauge-track { width: 100%; height: 12px; background: #e6eff1; border-radius: 6px; overflow: hidden; margin-top: 10px; }
+.mock-applicant-project-progress .kpi-gauge-fill { height: 100%; border-radius: 6px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+.mock-applicant-project-progress .gf-progress { background: #68bcc7; }
+.mock-applicant-project-progress .gf-ok { background: #20b786; }
+.mock-applicant-project-progress .gf-warn { background: #f7ae18; }
+.mock-applicant-project-progress .gf-over { background: #ea5757; }
+.mock-applicant-project-progress .kpi-gauge-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--app-prog-muted); margin-top: 4px; }
+.mock-applicant-project-progress .two-col-layout { display: grid; grid-template-columns: 360px 1fr; gap: 22px; align-items: start; }
+.mock-applicant-project-progress .col-left, .mock-applicant-project-progress .col-right { display: flex; flex-direction: column; gap: 20px; }
+.mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card, .mock-applicant-project-progress .task-card { box-shadow: var(--app-prog-shadow); overflow: hidden; }
+.mock-applicant-project-progress .card-head { padding: 14px 18px; border-bottom: 1px solid var(--app-prog-border); display: flex; justify-content: space-between; }
+.mock-applicant-project-progress .card-title { font-size: 14px; font-weight: 700; }
+.mock-applicant-project-progress .card-body { padding: 18px; }
+.mock-applicant-project-progress .budget-current-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.mock-applicant-project-progress .bc-item { background: var(--app-prog-bg); border-radius: 10px; padding: 12px 14px; }
+.mock-applicant-project-progress .bc-label { font-size: 11px; color: var(--app-prog-muted); margin-bottom: 4px; font-weight: 600; }
+.mock-applicant-project-progress .bc-value { font-size: 18px; font-weight: 800; }
+.mock-applicant-project-progress .input-label { font-size: 12px; font-weight: 700; margin-bottom: 6px; display: block; }
+.mock-applicant-project-progress .input-row { display: flex; gap: 10px; margin-bottom: 14px; }
+.mock-applicant-project-progress .money-input-wrap { flex: 1; display: flex; align-items: center; border: 1.5px solid var(--app-prog-border); border-radius: 9px; background: #fff; overflow: hidden; }
+.mock-applicant-project-progress .money-input-wrap:focus-within { border-color: var(--app-prog-header); }
+.mock-applicant-project-progress .money-prefix { padding: 0 12px; font-size: 16px; font-weight: 700; color: var(--app-prog-muted); background: var(--app-prog-bg); border-right: 1px solid var(--app-prog-border); height: 44px; display: flex; align-items: center; }
+.mock-applicant-project-progress .money-input { flex: 1; border: none; outline: none; padding: 0 12px; font-size: 16px; font-weight: 700; font-family: var(--font-family-base); color: var(--app-prog-text); height: 44px; }
+.mock-applicant-project-progress .money-input::placeholder { color: var(--app-prog-muted); opacity: .65; }
+.mock-applicant-project-progress .input-apply-btn { padding: 0 18px; height: 44px; background: #fff; color: var(--app-prog-header); border: 1.5px solid var(--app-prog-header); border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .input-apply-btn:hover { background: var(--app-prog-teal-light); }
+.mock-applicant-project-progress .preview-box { background: var(--app-prog-teal-light); border: 1px solid var(--app-prog-teal-mid); border-radius: 10px; padding: 12px 14px; }
+.mock-applicant-project-progress .preview-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.mock-applicant-project-progress .preview-row + .preview-row { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--app-prog-teal-mid); }
+.mock-applicant-project-progress .preview-key { color: var(--app-prog-muted); }
+.mock-applicant-project-progress .preview-val { font-weight: 700; }
+.mock-applicant-project-progress .preview-gauge-wrap { margin-top: 10px; }
+.mock-applicant-project-progress .preview-gauge-track { width: 100%; height: 8px; background: rgba(26,117,133,.15); border-radius: 4px; overflow: hidden; }
+.mock-applicant-project-progress .preview-gauge-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.mock-applicant-project-progress .accordion-head { padding: 14px 18px; display: flex; justify-content: space-between; cursor: pointer; user-select: none; }
+.mock-applicant-project-progress .accordion-head:hover { background: var(--app-prog-teal-light); }
+.mock-applicant-project-progress .accordion-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.mock-applicant-project-progress .accordion-title-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mock-applicant-project-progress .budget-unsaved-note { display: none; font-size: 11px; font-weight: 700; color: var(--app-prog-danger); line-height: 1.4; }
+.mock-applicant-project-progress .budget-input-card.is-unsaved .budget-unsaved-note { display: block; }
+.mock-applicant-project-progress .accordion-arrow { font-size: 12px; color: var(--app-prog-muted); transition: transform .25s; }
+.mock-applicant-project-progress .accordion-arrow.open { transform: rotate(180deg); }
+.mock-applicant-project-progress .accordion-body { border-top: 1px solid var(--app-prog-border); padding: 18px; display: none; }
+.mock-applicant-project-progress .accordion-body.open { display: block; }
+.mock-applicant-project-progress .quote-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--app-prog-border); font-size: 12px; font-weight: 600; cursor: pointer; background: var(--app-prog-bg); color: var(--app-prog-header); font-family: var(--font-family-base); margin-bottom: 10px; }
+.mock-applicant-project-progress .monthly-textarea { width: 100%; min-height: 100px; border: 1.5px solid var(--app-prog-border); border-radius: 10px; padding: 12px; font-size: 13px; font-family: var(--font-family-base); resize: vertical; outline: none; line-height: 1.7; }
+.mock-applicant-project-progress .monthly-textarea:focus { border-color: var(--app-prog-header); }
+.mock-applicant-project-progress .char-count { font-size: 11px; color: var(--app-prog-muted); margin-top: 4px; text-align: right; }
+.mock-applicant-project-progress .sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.mock-applicant-project-progress .sec-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.mock-applicant-project-progress .unsaved-dot { display: none; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+.mock-applicant-project-progress .is-unsaved .unsaved-dot { display: inline-block; }
+.mock-applicant-project-progress .task-list { display: flex; flex-direction: column; gap: 12px; }
+.mock-applicant-project-progress .task-card.is-unsaved { background: #FFFBEB; }
+.mock-applicant-project-progress .task-card.is-unsaved .task-edit-btn { background: #fff; }
+.mock-applicant-project-progress .budget-input-card.is-unsaved .accordion-body,
+.mock-applicant-project-progress .monthly-card.is-unsaved .accordion-body { background: #FFFBEB; }
+.mock-applicant-project-progress .task-card:hover { box-shadow: var(--app-prog-shadow-card); }
+.mock-applicant-project-progress .task-card.overdue { border-left: 4px solid var(--app-prog-danger); }
+.mock-applicant-project-progress .task-card.in-progress { border-left: 4px solid var(--app-prog-header); }
+.mock-applicant-project-progress .task-card.done-task { border-left: 4px solid var(--app-prog-success); opacity: .8; }
+.mock-applicant-project-progress .task-head { padding: 12px 16px 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.mock-applicant-project-progress .task-main { flex: 1; min-width: 0; }
+.mock-applicant-project-progress .task-name { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; line-height: 1.4; }
+.mock-applicant-project-progress .task-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+.mock-applicant-project-progress .task-meta-item { font-size: 12px; color: var(--app-prog-muted); }
+.mock-applicant-project-progress .task-meta-item.overdue-date { color: var(--app-prog-danger); font-weight: 700; }
+.mock-applicant-project-progress .task-meta-item.today-date { color: var(--app-prog-warning); font-weight: 700; }
+.mock-applicant-project-progress .task-detail-area { margin-top: 3px; border-radius: 8px; }
+.mock-applicant-project-progress .task-assignee { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--app-prog-muted); margin-top: 4px; }
+.mock-applicant-project-progress .task-card-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.mock-applicant-project-progress .task-edit-btn { flex-shrink: 0; width: 30px; height: 30px; border: 1px solid var(--app-prog-border); border-radius: 8px; background: #fff; color: var(--app-prog-muted); font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .task-edit-btn:hover { background: var(--app-prog-teal-light); border-color: var(--app-prog-teal-mid); color: var(--app-prog-header); }
+.mock-applicant-project-progress .task-delete-btn { flex-shrink: 0; width: 30px; height: 30px; border: 1px solid var(--app-prog-border); border-radius: 8px; background: #fff; color: var(--app-prog-muted); font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .task-delete-btn:hover { background: #fef2f2; border-color: #f1b6bc; color: var(--app-prog-danger); }
+.mock-applicant-project-progress .task-body { padding: 0 16px 14px; }
+.mock-applicant-project-progress .status-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+.mock-applicant-project-progress .st-btn { flex: 1; padding: 7px 0; border-radius: 8px; border: 1.5px solid var(--app-prog-border); font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; color: var(--app-prog-muted); font-family: var(--font-family-base); }
+.mock-applicant-project-progress .st-btn.active-notstarted { background: #f3f4f6; border-color: #9ca3af; color: #374151; }
+.mock-applicant-project-progress .st-btn.active-progress { background: var(--app-prog-teal-light); border-color: var(--app-prog-header); color: var(--app-prog-header); }
+.mock-applicant-project-progress .st-btn.active-done { background: var(--app-prog-success-bg); border-color: var(--app-prog-success); color: var(--app-prog-success); }
+.mock-applicant-project-progress .progress-row { margin-bottom: 10px; }
+.mock-applicant-project-progress .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.mock-applicant-project-progress .progress-label { font-size: 12px; font-weight: 700; }
+.mock-applicant-project-progress .progress-pct { font-size: 16px; font-weight: 900; color: var(--app-prog-header); min-width: 40px; text-align: right; }
+.mock-applicant-project-progress .slider-wrap { position: relative; padding-bottom: 4px; }
+.mock-applicant-project-progress input[type=range].pct-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 8px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #e6eff1;
+  box-shadow: none;
+  outline: none;
+  cursor: pointer;
+}
+.mock-applicant-project-progress input[type=range].pct-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+}
+.mock-applicant-project-progress input[type=range].pct-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--app-prog-header);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(26,117,133,.4);
+  cursor: pointer;
+  transition: transform .1s;
+}
+.mock-applicant-project-progress input[type=range].pct-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.mock-applicant-project-progress input[type=range].pct-slider::-moz-range-track {
+  height: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+}
+.mock-applicant-project-progress input[type=range].pct-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--app-prog-header);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(26,117,133,.4);
+  cursor: pointer;
+}
+.mock-applicant-project-progress .quick-btns { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.mock-applicant-project-progress .qb { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--app-prog-border); font-size: 11px; font-weight: 700; cursor: pointer; background: #fff; color: var(--app-prog-muted); font-family: var(--font-family-base); }
+.mock-applicant-project-progress .dialog-overlay { position: fixed; inset: 0; background: rgba(28,43,48,.45); z-index: 500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.mock-applicant-project-progress .dialog-overlay.open { display: flex; }
+.mock-applicant-project-progress .dialog-box { background: #fff; border-radius: 16px; padding: 28px 32px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(28,43,48,.2); }
+.mock-applicant-project-progress .dlg-title { font-size: 17px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+.mock-applicant-project-progress .dlg-body { font-size: 13px; color: var(--app-prog-muted); text-align: center; line-height: 1.7; margin-bottom: 22px; }
+.mock-applicant-project-progress .dlg-btns { display: flex; gap: 10px; }
+.mock-applicant-project-progress .dlg-cancel, .mock-applicant-project-progress .dlg-ok { flex: 1; padding: 10px 0; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .dlg-cancel { border: 1.5px solid var(--app-prog-border); background: #fff; color: var(--app-prog-text); }
+.mock-applicant-project-progress .dlg-ok { background: var(--app-prog-warning); color: #fff; border: none; }
+.mock-applicant-project-progress .dlg-ok.is-danger { background: var(--app-prog-danger); }
+.mock-applicant-project-progress .dlg-ok.is-danger:hover { background: #b91c1c; }
+.mock-applicant-project-progress .dlg-ok.is-normal-update { background: #1a7585; }
+.mock-applicant-project-progress .dlg-ok.is-normal-update:hover { background: #155f6d; }
+.mock-applicant-project-progress .task-modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(28, 43, 48, 0.45); z-index: 500; padding: 16px; }
+.mock-applicant-project-progress .task-modal-overlay.open { display: flex; }
+.mock-applicant-project-progress .task-modal-box { width: min(480px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border: 1px solid var(--app-prog-border); border-radius: 16px; box-shadow: 0 12px 36px rgba(28, 43, 48, 0.14); padding: 20px 20px 16px; position: relative; }
+.mock-applicant-project-progress .task-modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--app-prog-border); background: #fff; color: var(--app-prog-muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.mock-applicant-project-progress .task-modal-title { margin: 4px 40px 8px 0; font-size: 20px; font-weight: 900; color: var(--app-prog-header); line-height: 1.3; }
+.mock-applicant-project-progress .task-modal-desc { margin: 0 0 16px; font-size: 13px; color: var(--app-prog-muted); line-height: 1.8; }
+.mock-applicant-project-progress .task-modal-field { margin-bottom: 14px; }
+.mock-applicant-project-progress .task-modal-field-label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; font-weight: 700; margin-bottom: 7px; }
+.mock-applicant-project-progress .req-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: #fef2f2; color: var(--app-prog-danger); border: 1px solid #f1b6bc; }
+.mock-applicant-project-progress .opt-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--app-prog-bg); color: var(--app-prog-muted); border: 1px solid var(--app-prog-border); }
+.mock-applicant-project-progress .field-hint { margin: -2px 0 7px; font-size: 11px; line-height: 1.6; color: var(--app-prog-muted); }
+.mock-applicant-project-progress .f-input { width: 100%; height: 42px; border: 1.5px solid var(--app-prog-border); border-radius: 9px; background: #fff; padding: 0 12px; outline: none; font-size: 14px; color: var(--app-prog-text); }
+.mock-applicant-project-progress .f-input:focus { border-color: var(--app-prog-header); box-shadow: 0 0 0 3px rgba(26, 117, 133, 0.12); }
+.mock-applicant-project-progress .f-input.error { border-color: var(--app-prog-danger); box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1); }
+.mock-applicant-project-progress .field-error { display: none; margin-top: 6px; font-size: 11px; color: var(--app-prog-danger); }
+.mock-applicant-project-progress .field-error.show { display: block; }
+.mock-applicant-project-progress .task-modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; }
+.mock-applicant-project-progress .task-modal-btn { min-width: 108px; height: 40px; border-radius: 9px; border: 1.5px solid transparent; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .task-modal-btn.cancel { border-color: var(--app-prog-border); background: #fff; color: var(--app-prog-text); }
+.mock-applicant-project-progress .task-modal-btn.submit { background: var(--app-prog-header); color: #fff; }
+.mock-applicant-project-progress .task-modal-btn.submit:disabled { background: #9ca3af; cursor: not-allowed; border-color: #9ca3af; }
+.mock-applicant-project-progress .task-modal-btn.submit:disabled:hover { background: #9ca3af; }
+.mock-applicant-project-progress .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--app-prog-text); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
+.mock-applicant-project-progress .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.applicant-progress-footer-info { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
+.applicant-progress-footer-project { color: #6b8c94; font-size: 13px; }
+.applicant-progress-footer-reset { height: 36px; padding: 0 16px; border-radius: 8px; background: #fff; color: #1a7585; border: 1.5px solid #1a7585; font-size: 13px; font-weight: 700; cursor: pointer; }
+.applicant-progress-footer-reset:hover { background: #e0f5f8; }
+.applicant-progress-footer-reset:disabled { background: #f3f4f6; color: #9ca3af; border-color: #9ca3af; cursor: not-allowed; box-shadow: none; }
+.applicant-progress-footer-reset:disabled:hover { background: #f3f4f6; }
+.applicant-progress-footer-update { height: 36px; padding: 0 16px; border-radius: 8px; background: #1a7585; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+.applicant-progress-footer-update:hover { background: #155f6d; }
+.applicant-progress-footer-update:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
+.applicant-progress-footer-update:disabled:hover { background: #9ca3af; }
+@media (max-width: 900px) {
+  .mock-applicant-project-progress .applicant-progress-content { padding: 16px 14px 110px; }
+  .mock-applicant-project-progress .two-col-layout, .mock-applicant-project-progress .summary-kpi-row { grid-template-columns: 1fr; }
+  .mock-applicant-project-progress .summary-kpi { border-right: none; border-bottom: 1px solid var(--app-prog-border); }
+  .mock-applicant-project-progress .task-meta { flex-direction: column; gap: 4px; }
+  .mock-applicant-project-progress .task-assignee { margin-top: 4px; }
+  .mock-applicant-project-progress .task-modal-overlay { align-items: flex-start; justify-content: center; padding: 84px 14px 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .mock-applicant-project-progress .task-modal-box { width: 100%; max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); overflow-y: auto; padding: 20px 18px 18px; }
+}
+@media (max-width: 600px) {
+  .mock-applicant-project-progress .budget-current-row { grid-template-columns: 1fr; }
+  .mock-applicant-project-progress .task-modal-overlay { padding: 76px 12px 104px; }
+  .mock-applicant-project-progress .task-modal-box { max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); border-radius: 14px; }
+  .mock-applicant-project-progress .task-modal-actions { position: sticky; bottom: 0; background: #fff; padding-top: 10px; padding-bottom: 2px; flex-direction: column-reverse; }
+  .mock-applicant-project-progress .task-modal-btn { width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<form
+  method="post"
+  action="{{ url_for('applicant_project_progress_detail', project_id=view_data.project_id) }}"
+  id="applicantProgressForm"
+  class="mock-applicant-project-progress"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="confirmed" id="applicantProgressConfirmed" value="0">
+  <input type="hidden" name="budget_actual_amount" id="applicantProgressBudgetActualAmount" value="">
+  <div class="applicant-progress-content">
+    {% include "partials/_flash.html" %}
+
+    <div class="summary-card">
+      <div class="summary-top">
+        <div>
+          <div class="summary-proj-name">{{ view_data.project_name }}</div>
+          <div class="summary-proj-meta">{{ view_data.department_name }}｜案件番号：{{ view_data.project_code }}｜予定期間：{{ view_data.planned_period_display }}</div>
+        </div>
+      </div>
+      <div class="summary-kpi-row">
+        <div class="summary-kpi">
+          <div class="kpi-label">全体進捗率</div>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <div class="kpi-big" id="applicantProgressOverallPct" style="color:var(--app-prog-header)">{{ view_data.overall_progress_pct }}%</div>
+            <div class="kpi-sub"><span id="applicantProgressDoneCount">{{ view_data.done_count }}</span>/<span id="applicantProgressTaskCount">{{ view_data.task_count }}</span> タスク完了済み</div>
+          </div>
+          <div class="kpi-gauge-track"><div class="kpi-gauge-fill gf-progress" id="applicantProgressOverallGauge" style="width:{{ view_data.overall_progress_pct }}%"></div></div>
+          <div class="kpi-gauge-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+        </div>
+        <div class="summary-kpi">
+          <div class="kpi-label">予算消費状況</div>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <div class="kpi-big" id="applicantProgressBudgetPctDisplay" style="color:{{ view_data.budget_pct_color }}">{{ view_data.budget_pct }}%</div>
+            <div class="kpi-sub" id="applicantProgressBudgetAmountDisplay">{{ view_data.current_actual_display }} / {{ view_data.budget_amount_display }}</div>
+          </div>
+          <div class="kpi-gauge-track"><div class="kpi-gauge-fill {{ view_data.budget_gauge_class }}" id="applicantProgressBudgetGauge" style="width:{{ [view_data.budget_pct, 100] | min }}%"></div></div>
+          <div class="kpi-gauge-labels"><span>0%</span><span style="color:var(--app-prog-warning);font-weight:700;">80%注意</span><span style="color:var(--app-prog-danger);font-weight:700;">100%超過</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col-layout">
+      <div class="col-left">
+        <div class="budget-input-card">
+          <div class="accordion-head" onclick="toggleApplicantProgressAccordion(this)">
+            <div class="accordion-title-wrap">
+              <div class="accordion-title">
+                <span class="unsaved-dot" aria-hidden="true"></span>
+                <span>予算実績入力</span>
+              </div>
+              <div class="budget-unsaved-note" id="applicantProgressBudgetUnsavedNote">※更新ボタンを押すまで確定されません</div>
+            </div>
+            <div class="accordion-arrow open">▼</div>
+          </div>
+          <div class="accordion-body open">
+            <div class="budget-current-row">
+              <div class="bc-item"><div class="bc-label">承認済み予算額</div><div class="bc-value">{{ view_data.budget_amount_display }}</div></div>
+              <div class="bc-item"><div class="bc-label">現在の累計実績</div><div class="bc-value" id="applicantProgressTotalActual" style="color:{{ view_data.budget_pct_color }}">{{ view_data.current_actual_display }}</div></div>
+            </div>
+            <label class="input-label">今回追加する実績額</label>
+            <div class="input-row">
+              <div class="money-input-wrap"><div class="money-prefix">¥</div><input type="number" class="money-input" id="addAmount" placeholder="例：500000" inputmode="numeric" oninput="updateApplicantProgressBudgetPreview()"></div>
+              <button type="button" class="input-apply-btn" onclick="applyApplicantProgressBudget()">反映</button>
+            </div>
+            <div class="preview-box">
+              <div class="preview-row"><span class="preview-key">現在の累計実績</span><span class="preview-val">{{ view_data.current_actual_display }}</span></div>
+              <div class="preview-row"><span class="preview-key">追加後の累計</span><span class="preview-val" id="applicantProgressPreviewTotal" style="color:var(--app-prog-header)">{{ view_data.current_actual_display }}</span></div>
+              <div class="preview-row"><span class="preview-key">追加後の消費率</span><span class="preview-val" id="applicantProgressPreviewPct" style="color:{{ view_data.budget_pct_color }}">{{ view_data.budget_pct }}%</span></div>
+              <div class="preview-gauge-wrap"><div class="preview-gauge-track"><div class="preview-gauge-fill {{ view_data.budget_gauge_class }}" id="applicantProgressPreviewGaugeFill" style="width:{{ [view_data.budget_pct, 100] | min }}%"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="monthly-card">
+          <div class="accordion-head" onclick="toggleApplicantProgressAccordion(this)">
+            <div class="accordion-title">
+              <span class="unsaved-dot" aria-hidden="true"></span>
+              <span>月次進捗報告（{{ view_data.report_month_label }}）</span>
+            </div>
+            <div class="accordion-arrow open">▼</div>
+          </div>
+          <div class="accordion-body open">
+            <button type="button" class="quote-btn" onclick="quoteApplicantProgressLastReport()">前回の報告を引用</button>
+            <textarea class="monthly-textarea" id="reportText" name="monthly_report_comment" placeholder="今月の進捗・課題・来月の予定などを入力してください。" oninput="updateApplicantProgressCharCount(this, true)">{{ view_data.monthly_report_comment }}</textarea>
+            <div class="char-count" id="applicantProgressCharCount">{{ view_data.monthly_report_comment|length }} 文字</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div>
+          <div class="sec-head">
+            <div class="sec-title">タスク進捗更新</div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <span style="font-size:12px;color:var(--app-prog-muted);">完了 <strong style="color:var(--app-prog-success)" id="applicantProgressListDoneCount">{{ view_data.done_count }}</strong> / <span id="applicantProgressListTaskCount">{{ view_data.task_count }}</span>件</span>
+              <button type="button" style="padding:5px 12px;border:1.5px solid var(--app-prog-border);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--app-prog-header);cursor:pointer;font-family:var(--font-family-base);" onclick="openApplicantTaskModal('add')">＋ タスク追加</button>
+            </div>
+          </div>
+          <div class="task-list" id="applicantProgressTaskList">
+            {% if view_data.tasks %}
+              {% for task in view_data.tasks %}
+                <div class="task-card {{ task.card_class }}" id="applicantProgressTaskCard{{ task.idx }}" data-overdue="{{ 'true' if task.overdue_flag else 'false' }}" data-task-id="{{ task.id }}" data-task-title="{{ task.title }}" data-task-assignee="{{ task.assignee_name }}" data-task-start-date="{{ task.start_date_value }}" data-task-due-date="{{ task.due_date_value }}">
+                  <div class="task-head">
+                    <div class="task-main">
+                      <div class="task-name">
+                        <span class="unsaved-dot" aria-hidden="true"></span>
+                        <span>{{ task.title }}</span>
+                      </div>
+                      <div class="task-detail-area">
+                        <div class="task-meta">
+                          <div class="task-meta-item {{ task.due_class }}">{{ task.due_display }}</div>
+                          <div class="task-meta-item">{{ task.start_display }}</div>
+                        </div>
+                        <div class="task-assignee">{{ task.assignee_name }}</div>
+                      </div>
+                    </div>
+                    <div class="task-card-actions">
+                      <button type="button" class="task-edit-btn" aria-label="タスクを編集" onclick="openApplicantTaskModal('edit', {{ task.id }}, {{ task.idx }})">✎</button>
+                      <button type="button" class="task-delete-btn" aria-label="タスクを削除" onclick="openApplicantTaskDeleteDialog({{ task.id }}, {{ task.idx }})">🗑</button>
+                    </div>
+                  </div>
+                  <div class="task-body">
+                    <input type="hidden" name="task_ids" value="{{ task.id }}">
+                    <input type="hidden" name="task_status_{{ task.id }}" id="taskStatus{{ task.idx }}" value="{{ task.status }}">
+                    <div class="status-toggle">
+                      <button type="button" class="st-btn {{ 'active-notstarted' if task.status == 'not_started' else '' }}" onclick="setApplicantProgressStatus(this,'notstarted',{{ task.idx }})">未着手</button>
+                      <button type="button" class="st-btn {{ 'active-progress' if task.status == 'in_progress' else '' }}" onclick="setApplicantProgressStatus(this,'progress',{{ task.idx }})">進行中</button>
+                      <button type="button" class="st-btn {{ 'active-done' if task.status == 'done' else '' }}" onclick="setApplicantProgressStatus(this,'done',{{ task.idx }})">完了</button>
+                    </div>
+                    <div class="progress-row">
+                      <div class="progress-header">
+                        <div class="progress-label">進捗率</div>
+                        <div class="progress-pct" id="pct{{ task.idx }}" style="color:{{ task.pct_color }}">{{ task.progress_rate }}%</div>
+                      </div>
+                      <div class="slider-wrap">
+                        <input type="range" class="pct-slider" name="task_progress_{{ task.id }}" min="0" max="100" step="5" value="{{ task.progress_rate }}" oninput="updateApplicantProgressSlider(this,'pct{{ task.idx }}')" style="background: linear-gradient(to right, {{ task.slider_color }} {{ task.progress_rate }}%, #e6eff1 {{ task.progress_rate }}%)">
+                      </div>
+                      <div class="quick-btns">
+                        <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},25)">25%</button>
+                        <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},50)">50%</button>
+                        <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},75)">75%</button>
+                        <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},90)">90%</button>
+                        <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},100)">100%</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="task-card">
+                <div class="task-head">
+                  <div class="task-main">
+                    <div class="task-name">
+                      <span>登録済みタスクはありません。</span>
+                    </div>
+                    <div class="task-detail-area">
+                      <div class="task-meta">
+                        <div class="task-meta-item">タスク追加機能は次の実装で対応予定です。</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="task-modal-overlay" id="applicantTaskModalOverlay" aria-hidden="true">
+    <section class="task-modal-box" role="dialog" aria-modal="true" aria-labelledby="applicantTaskModalTitle">
+      <button type="button" class="task-modal-close" id="applicantTaskModalClose" aria-label="モーダルを閉じる">×</button>
+      <h2 class="task-modal-title" id="applicantTaskModalTitle">タスクを追加</h2>
+      <p class="task-modal-desc" id="applicantTaskModalDescription">新しい作業タスクの基本情報を入力してください。</p>
+      <div id="applicantTaskModalForm" novalidate>
+        <input type="hidden" id="applicantTaskModalTaskId" value="">
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalTaskName">
+            タスク名 <span class="req-badge">必須</span>
+          </label>
+          <p class="field-hint">作業内容がひと目で分かる名称にしてください。</p>
+          <input type="text" class="f-input" id="applicantTaskModalTaskName" name="task_title" maxlength="200" placeholder="例：ステージング環境 動作検証">
+          <p class="field-error" id="applicantTaskModalTaskNameError">タスク名を入力してください。</p>
+        </div>
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalAssignee">
+            担当者名 <span class="req-badge">必須</span>
+          </label>
+          <p class="field-hint">担当するメンバー名を入力してください。</p>
+          <input type="text" class="f-input" id="applicantTaskModalAssignee" name="task_assignee_name" maxlength="100" placeholder="例：田中 太郎">
+          <p class="field-error" id="applicantTaskModalAssigneeError">担当者名を入力してください。</p>
+        </div>
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalStartDate">
+            開始日 <span class="opt-badge">任意</span>
+          </label>
+          <p class="field-hint">未定の場合は空欄のままで構いません。</p>
+          <input type="date" class="f-input" id="applicantTaskModalStartDate" name="task_start_date">
+          <p class="field-error" id="applicantTaskModalStartDateError">開始日は期限日以前の日付にしてください。</p>
+        </div>
+        <div class="task-modal-field">
+          <label class="task-modal-field-label" for="applicantTaskModalDueDate">
+            期限日 <span class="req-badge">必須</span>
+          </label>
+          <p class="field-hint">期限を過ぎた未完了タスクは遅延タスクとして表示されます。</p>
+          <input type="date" class="f-input" id="applicantTaskModalDueDate" name="task_due_date">
+          <p class="field-error" id="applicantTaskModalDueDateError">期限日を入力してください。</p>
+        </div>
+        <div class="task-modal-actions">
+          <button type="button" class="task-modal-btn cancel" id="applicantTaskModalCancel">キャンセル</button>
+          <button type="button" class="task-modal-btn submit" id="applicantTaskModalSubmit">追加する</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="dialog-overlay" id="applicantProgressDialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-title" id="applicantProgressDlgTitle">変更内容の確認</div>
+      <div class="dlg-body" id="applicantProgressDlgBody">追加入力後の予算消費率が <strong id="applicantProgressDlgPct">—</strong> になります。<br>このまま更新・報告してよろしいですか？</div>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-cancel" onclick="closeApplicantProgressDialog()">見直す</button>
+        <button type="button" class="dlg-ok" id="applicantProgressDlgOkBtn" onclick="confirmApplicantProgressSubmit()">このまま報告する</button>
+      </div>
+    </div>
+  </div>
+  <div class="dialog-overlay" id="applicantTaskDeleteDialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-title" id="applicantTaskDeleteDialogTitle">タスク削除の確認</div>
+      <div class="dlg-body" id="applicantTaskDeleteDialogBody">このタスクを削除しますか？</div>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-cancel" onclick="closeApplicantTaskDeleteDialog()">キャンセル</button>
+        <button type="button" class="dlg-ok is-danger" id="applicantTaskDeleteDialogOkBtn" onclick="confirmApplicantTaskDelete()">削除する</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="applicantProgressToast"></div>
+</form>
+{% endblock %}
+
+{% block content_footer %}
+  {% set footer_info_text = "" %}
+  {% set footer_info_value = "" %}
+  {% set footer_actions %}
+    <div class="applicant-progress-footer-info">
+      <span class="applicant-progress-footer-project">案件名：{{ view_data.project_name }}</span>
+    </div>
+    <button type="button" class="applicant-progress-footer-reset" id="applicantProgressFooterResetBtn" onclick="resetApplicantProgressChanges()" disabled>変更を戻す</button>
+    <button type="button" class="applicant-progress-footer-update" id="applicantProgressFooterUpdateBtn" onclick="submitApplicantProgressReport()" disabled>更新する</button>
+  {% endset %}
+  {% include "partials/_content_footer.html" %}
+{% endblock %}
+
+{% block script_extra %}
+<script>
+const APPLICANT_PROGRESS_BUDGET = {{ view_data.base_budget_amount }};
+const APPLICANT_PROGRESS_PROJECT_ID = {{ view_data.project_id }};
+let applicantProgressCurrentActual = {{ view_data.current_actual_amount }};
+let applicantProgressPendingBudgetActualAmount = 0;
+const applicantProgressUnsavedState = { budget: false, report: false, task: false };
+let applicantProgressInitialState = null;
+const applicantTaskModalState = { mode: "add", taskId: null, taskIdx: null };
+const applicantTaskDeleteState = { taskId: null, taskIdx: null, taskTitle: "" };
+function getApplicantProgressEl(id){return document.getElementById(id);}
+function getApplicantProgressCsrfToken(){const tokenInput=document.querySelector("#applicantProgressForm input[name='csrf_token']");return tokenInput?tokenInput.value:"";}
+function escapeApplicantProgressMockHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function hasApplicantProgressUnsavedChanges(){return Object.keys(applicantProgressUnsavedState).some(function(key){return applicantProgressUnsavedState[key];});}
+function getApplicantProgressBudgetPct(){if(!APPLICANT_PROGRESS_BUDGET){return 0;}return Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);}
+function isApplicantProgressAllTasksDone(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");if(!sliders.length){return false;}return Array.from(sliders).every(function(slider){return Number(slider.value)===100;});}
+function updateApplicantProgressFooterUnsaved(){const hasUnsaved=hasApplicantProgressUnsavedChanges();const updateBtn=getApplicantProgressEl("applicantProgressFooterUpdateBtn");const resetBtn=getApplicantProgressEl("applicantProgressFooterResetBtn");if(updateBtn){updateBtn.disabled=!hasUnsaved;}if(resetBtn){resetBtn.disabled=!hasUnsaved;}}
+function markApplicantProgressUnsaved(type){if(!type||!(type in applicantProgressUnsavedState))return;applicantProgressUnsavedState[type]=true;if(type==="budget"){const card=document.querySelector(".mock-applicant-project-progress .budget-input-card");if(card)card.classList.add("is-unsaved");}else if(type==="report"){const card=document.querySelector(".mock-applicant-project-progress .monthly-card");if(card)card.classList.add("is-unsaved");}updateApplicantProgressFooterUnsaved();}
+function markApplicantProgressTaskUnsaved(idx){applicantProgressUnsavedState.task=true;const card=getApplicantProgressEl("applicantProgressTaskCard"+idx);if(card){card.classList.add("is-unsaved");}updateApplicantProgressFooterUnsaved();}
+function clearApplicantProgressUnsaved(){applicantProgressUnsavedState.budget=false;applicantProgressUnsavedState.report=false;applicantProgressUnsavedState.task=false;document.querySelectorAll(".mock-applicant-project-progress .is-unsaved").forEach(function(el){el.classList.remove("is-unsaved");});updateApplicantProgressFooterUnsaved();}
+function captureApplicantProgressInitialState(){
+  const addAmount=getApplicantProgressEl("addAmount");
+  const totalActual=getApplicantProgressEl("applicantProgressTotalActual");
+  const budgetPct=getApplicantProgressEl("applicantProgressBudgetPctDisplay");
+  const budgetAmount=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");
+  const budgetGauge=getApplicantProgressEl("applicantProgressBudgetGauge");
+  const previewTotal=getApplicantProgressEl("applicantProgressPreviewTotal");
+  const previewPct=getApplicantProgressEl("applicantProgressPreviewPct");
+  const previewGauge=getApplicantProgressEl("applicantProgressPreviewGaugeFill");
+  const reportText=getApplicantProgressEl("reportText");
+  const charCount=getApplicantProgressEl("applicantProgressCharCount");
+  const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");
+  const budgetCard=document.querySelector(".mock-applicant-project-progress .budget-input-card");
+  const monthlyCard=document.querySelector(".mock-applicant-project-progress .monthly-card");
+  const taskStates=[];
+  document.querySelectorAll(".mock-applicant-project-progress [id^='applicantProgressTaskCard']").forEach(function(card){
+    const slider=card.querySelector("input[type=range]");
+    const pctEl=card.querySelector("[id^='pct']");
+    const btns=card.querySelectorAll(".st-btn");
+    taskStates.push({
+      id: card.id,
+      className: card.className,
+      overdue: card.dataset.overdue || "",
+      sliderValue: slider ? slider.value : "",
+      sliderBackground: slider ? slider.style.background : "",
+      pctText: pctEl ? pctEl.textContent : "",
+      pctColor: pctEl ? pctEl.style.color : "",
+      buttonClasses: Array.from(btns).map(function(b){return b.className;})
+    });
+  });
+  applicantProgressInitialState={
+    currentActual: applicantProgressCurrentActual,
+    addAmountValue: addAmount ? addAmount.value : "",
+    totalActualText: totalActual ? totalActual.textContent : "",
+    totalActualColor: totalActual ? totalActual.style.color : "",
+    budgetPctText: budgetPct ? budgetPct.textContent : "",
+    budgetPctColor: budgetPct ? budgetPct.style.color : "",
+    budgetAmountText: budgetAmount ? budgetAmount.textContent : "",
+    budgetGaugeClass: budgetGauge ? budgetGauge.className : "",
+    budgetGaugeWidth: budgetGauge ? budgetGauge.style.width : "",
+    previewTotalText: previewTotal ? previewTotal.textContent : "",
+    previewPctText: previewPct ? previewPct.textContent : "",
+    previewPctColor: previewPct ? previewPct.style.color : "",
+    previewGaugeClass: previewGauge ? previewGauge.className : "",
+    previewGaugeWidth: previewGauge ? previewGauge.style.width : "",
+    reportTextValue: reportText ? reportText.value : "",
+    charCountText: charCount ? charCount.textContent : "",
+    budgetActualHiddenValue: budgetActualInput ? budgetActualInput.value : "",
+    pendingBudgetActualAmount: applicantProgressPendingBudgetActualAmount,
+    budgetCardClass: budgetCard ? budgetCard.className : "",
+    monthlyCardClass: monthlyCard ? monthlyCard.className : "",
+    taskStates: taskStates,
+    unsavedState: {
+      budget: applicantProgressUnsavedState.budget,
+      report: applicantProgressUnsavedState.report,
+      task: applicantProgressUnsavedState.task
+    }
+  };
+}
+function resetApplicantProgressChanges(){
+  if(!applicantProgressInitialState){
+    return;
+  }
+  applicantProgressCurrentActual=applicantProgressInitialState.currentActual;
+  const addAmount=getApplicantProgressEl("addAmount");
+  const totalActual=getApplicantProgressEl("applicantProgressTotalActual");
+  const budgetPct=getApplicantProgressEl("applicantProgressBudgetPctDisplay");
+  const budgetAmount=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");
+  const budgetGauge=getApplicantProgressEl("applicantProgressBudgetGauge");
+  const previewTotal=getApplicantProgressEl("applicantProgressPreviewTotal");
+  const previewPct=getApplicantProgressEl("applicantProgressPreviewPct");
+  const previewGauge=getApplicantProgressEl("applicantProgressPreviewGaugeFill");
+  const reportText=getApplicantProgressEl("reportText");
+  const charCount=getApplicantProgressEl("applicantProgressCharCount");
+  const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");
+  const budgetCard=document.querySelector(".mock-applicant-project-progress .budget-input-card");
+  const monthlyCard=document.querySelector(".mock-applicant-project-progress .monthly-card");
+  if(addAmount){addAmount.value=applicantProgressInitialState.addAmountValue;}
+  if(totalActual){totalActual.textContent=applicantProgressInitialState.totalActualText;totalActual.style.color=applicantProgressInitialState.totalActualColor;}
+  if(budgetPct){budgetPct.textContent=applicantProgressInitialState.budgetPctText;budgetPct.style.color=applicantProgressInitialState.budgetPctColor;}
+  if(budgetAmount){budgetAmount.textContent=applicantProgressInitialState.budgetAmountText;}
+  if(budgetGauge){budgetGauge.className=applicantProgressInitialState.budgetGaugeClass;budgetGauge.style.width=applicantProgressInitialState.budgetGaugeWidth;}
+  if(previewTotal){previewTotal.textContent=applicantProgressInitialState.previewTotalText;}
+  if(previewPct){previewPct.textContent=applicantProgressInitialState.previewPctText;previewPct.style.color=applicantProgressInitialState.previewPctColor;}
+  if(previewGauge){previewGauge.className=applicantProgressInitialState.previewGaugeClass;previewGauge.style.width=applicantProgressInitialState.previewGaugeWidth;}
+  if(reportText){reportText.value=applicantProgressInitialState.reportTextValue;}
+  if(charCount){charCount.textContent=applicantProgressInitialState.charCountText;}
+  applicantProgressPendingBudgetActualAmount=0;
+  if(budgetActualInput){budgetActualInput.value="";}
+  if(budgetCard){budgetCard.className=applicantProgressInitialState.budgetCardClass;}
+  if(monthlyCard){monthlyCard.className=applicantProgressInitialState.monthlyCardClass;}
+  applicantProgressInitialState.taskStates.forEach(function(state){
+    const card=getApplicantProgressEl(state.id);
+    if(!card)return;
+    card.className=state.className;
+    card.dataset.overdue=state.overdue;
+    const slider=card.querySelector("input[type=range]");
+    const pctEl=card.querySelector("[id^='pct']");
+    const btns=card.querySelectorAll(".st-btn");
+    if(slider){slider.value=state.sliderValue;slider.style.background=state.sliderBackground;}
+    if(pctEl){pctEl.textContent=state.pctText;pctEl.style.color=state.pctColor;}
+    btns.forEach(function(btn,idx){
+      if(state.buttonClasses[idx]!==undefined){
+        btn.className=state.buttonClasses[idx];
+      }
+    });
+  });
+  applicantProgressUnsavedState.budget=applicantProgressInitialState.unsavedState.budget;
+  applicantProgressUnsavedState.report=applicantProgressInitialState.unsavedState.report;
+  applicantProgressUnsavedState.task=applicantProgressInitialState.unsavedState.task;
+  document.querySelectorAll(".mock-applicant-project-progress .is-unsaved").forEach(function(el){el.classList.remove("is-unsaved");});
+  recalcApplicantProgressOverall();
+  updateApplicantProgressFooterUnsaved();
+  showApplicantProgressToast("変更を戻しました");
+}
+function getApplicantProgressSliderColor(type,value){
+  if(type==="done"||Number(value)===100){return "var(--app-prog-success)";}
+  if(type==="notstarted"||Number(value)===0){return "#cbd5e1";}
+  return "var(--app-prog-header)";
+}
+function getApplicantProgressDbStatus(type){
+  if(type==="notstarted"){return "not_started";}
+  if(type==="progress"){return "in_progress";}
+  if(type==="done"){return "done";}
+  return "in_progress";
+}
+function updateApplicantProgressSliderBackground(slider,value,type){
+  if(!slider)return;
+  const color=getApplicantProgressSliderColor(type,value);
+  slider.style.background="linear-gradient(to right, "+color+" "+value+"%, #e6eff1 "+value+"%)";
+}
+function recalcApplicantProgressDoneCount(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");const doneCountEl=getApplicantProgressEl("applicantProgressDoneCount");const taskCountEl=getApplicantProgressEl("applicantProgressTaskCount");const listDoneCountEl=getApplicantProgressEl("applicantProgressListDoneCount");const listTaskCountEl=getApplicantProgressEl("applicantProgressListTaskCount");let doneCount=0;sliders.forEach(function(slider){if(Number(slider.value)===100){doneCount+=1;}});if(doneCountEl){doneCountEl.textContent=String(doneCount);}if(taskCountEl){taskCountEl.textContent=String(sliders.length);}if(listDoneCountEl){listDoneCountEl.textContent=String(doneCount);}if(listTaskCountEl){listTaskCountEl.textContent=String(sliders.length);}}
+function syncApplicantProgressTaskState(idx,type,value){
+  const card=getApplicantProgressEl("applicantProgressTaskCard"+idx);
+  if(!card)return;
+  const statusInput=getApplicantProgressEl("taskStatus"+idx);
+  const slider=card.querySelector("input[type=range]");
+  const pctEl=getApplicantProgressEl("pct"+idx);
+  const btns=card.querySelectorAll(".st-btn");
+  const v=Math.max(0,Math.min(100,Number(value)||0));
+  const isOriginallyOverdue=card.dataset.overdue==="true";
+  if(statusInput){
+    statusInput.value=getApplicantProgressDbStatus(type);
+  }
+  if(slider){
+    slider.value=v;
+    updateApplicantProgressSliderBackground(slider,v,type);
+  }
+  if(pctEl){
+    pctEl.textContent=v+"%";
+    if(type==="done"){pctEl.style.color="var(--app-prog-success)";}
+    else if(type==="notstarted"){pctEl.style.color="var(--app-prog-muted)";}
+    else{pctEl.style.color="var(--app-prog-header)";}
+  }
+  btns.forEach(function(b){b.className="st-btn";});
+  card.classList.remove("in-progress","done-task");
+  if(type==="done"){
+    card.classList.remove("overdue");
+  }else if(isOriginallyOverdue){
+    card.classList.add("overdue");
+  }else{
+    card.classList.remove("overdue");
+  }
+  if(type==="notstarted"){
+    if(btns[0])btns[0].classList.add("active-notstarted");
+  }else if(type==="progress"){
+    if(btns[1])btns[1].classList.add("active-progress");
+    if(!isOriginallyOverdue){
+      card.classList.add("in-progress");
+    }
+  }else if(type==="done"){
+    if(btns[2])btns[2].classList.add("active-done");
+    card.classList.add("done-task");
+  }
+}
+function updateApplicantProgressBudgetPreview(){const input=getApplicantProgressEl("addAmount");const pt=getApplicantProgressEl("applicantProgressPreviewTotal");const pp=getApplicantProgressEl("applicantProgressPreviewPct");const fill=getApplicantProgressEl("applicantProgressPreviewGaugeFill");if(!input||!pt||!pp||!fill)return;const add=parseInt(input.value,10)||0;const total=applicantProgressCurrentActual+add;const pct=Math.round(total/APPLICANT_PROGRESS_BUDGET*100);pt.textContent="¥"+total.toLocaleString();pp.textContent=pct+"%";fill.style.width=Math.min(pct,100)+"%";if(pct>=100){fill.className="preview-gauge-fill gf-over";pp.style.color="var(--app-prog-danger)";}else if(pct>=80){fill.className="preview-gauge-fill gf-warn";pp.style.color="var(--app-prog-warning)";}else{fill.className="preview-gauge-fill gf-ok";pp.style.color="var(--app-prog-success)";}}
+function applyApplicantProgressBudget(){const input=getApplicantProgressEl("addAmount");if(!input)return;const add=parseInt(input.value,10)||0;if(!add){showApplicantProgressToast("金額を入力してください");return;}const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");applicantProgressCurrentActual+=add;applicantProgressPendingBudgetActualAmount+=add;if(budgetActualInput){budgetActualInput.value=String(applicantProgressPendingBudgetActualAmount);}const pct=Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);const totalActual=getApplicantProgressEl("applicantProgressTotalActual");const pctDisplay=getApplicantProgressEl("applicantProgressBudgetPctDisplay");const amountDisplay=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");const gauge=getApplicantProgressEl("applicantProgressBudgetGauge");if(totalActual){totalActual.textContent="¥"+applicantProgressCurrentActual.toLocaleString();totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(pctDisplay){pctDisplay.textContent=pct+"%";pctDisplay.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(amountDisplay){amountDisplay.textContent="¥"+applicantProgressCurrentActual.toLocaleString()+" / ¥"+APPLICANT_PROGRESS_BUDGET.toLocaleString();}if(gauge){gauge.style.width=Math.min(pct,100)+"%";gauge.className="kpi-gauge-fill "+(pct>=100?"gf-over":pct>=80?"gf-warn":"gf-ok");}input.value="";updateApplicantProgressBudgetPreview();markApplicantProgressUnsaved("budget");showApplicantProgressToast("計算に反映しました");}
+function updateApplicantProgressSlider(el,pctId){
+  if(!el)return;
+  const idx=Number(String(pctId).replace("pct",""));
+  if(Number.isNaN(idx))return;
+  const v=Number(el.value)||0;
+  const type=v===100?"done":v===0?"notstarted":"progress";
+  syncApplicantProgressTaskState(idx,type,v);
+  markApplicantProgressTaskUnsaved(idx);
+  recalcApplicantProgressOverall();
+}
+function setApplicantProgressQuick(pctId,idx,val){
+  const v=Number(val)||0;
+  const type=v===100?"done":v===0?"notstarted":"progress";
+  syncApplicantProgressTaskState(idx,type,v);
+  markApplicantProgressTaskUnsaved(idx);
+  recalcApplicantProgressOverall();
+}
+function setApplicantProgressStatus(btn,type,idx){
+  const card=getApplicantProgressEl("applicantProgressTaskCard"+idx);
+  if(!card)return;
+  const slider=card.querySelector("input[type=range]");
+  const current=slider?(Number(slider.value)||0):0;
+  let nextValue=current;
+  let nextType=type;
+  if(type==="notstarted"){
+    nextValue=0;
+  }else if(type==="progress"){
+    if(current===0){nextValue=25;}
+    else if(current===100){nextValue=90;}
+  }else if(type==="done"){
+    nextValue=100;
+  }else{
+    nextType=current===100?"done":current===0?"notstarted":"progress";
+  }
+  syncApplicantProgressTaskState(idx,nextType,nextValue);
+  markApplicantProgressTaskUnsaved(idx);
+  recalcApplicantProgressOverall();
+}
+function recalcApplicantProgressOverall(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");recalcApplicantProgressDoneCount();if(!sliders.length){const pct=getApplicantProgressEl("applicantProgressOverallPct");const gauge=getApplicantProgressEl("applicantProgressOverallGauge");if(pct){pct.textContent="0%";}if(gauge){gauge.style.width="0%";}return;}let sum=0;sliders.forEach(function(s){sum+=parseInt(s.value,10)||0;});const avg=Math.round(sum/sliders.length);const pct=getApplicantProgressEl("applicantProgressOverallPct");const gauge=getApplicantProgressEl("applicantProgressOverallGauge");if(pct)pct.textContent=avg+"%";if(gauge)gauge.style.width=avg+"%";}
+function toggleApplicantProgressAccordion(head){if(!head)return;const body=head.nextElementSibling;const arrow=head.querySelector(".accordion-arrow");if(!body)return;const isOpen=body.classList.toggle("open");if(arrow)arrow.classList.toggle("open",isOpen);}
+function initApplicantProgressResponsiveAccordions(){const isOneColumn=window.matchMedia("(max-width: 900px)").matches;if(!isOneColumn)return;document.querySelectorAll(".mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card").forEach(function(card){const body=card.querySelector(".accordion-body");const arrow=card.querySelector(".accordion-arrow");if(body)body.classList.remove("open");if(arrow)arrow.classList.remove("open");});}
+function quoteApplicantProgressLastReport(){showApplicantProgressToast("前回報告の引用機能は今後対応予定です。");}
+function updateApplicantProgressCharCount(ta,markUnsaved){const c=getApplicantProgressEl("applicantProgressCharCount");if(!ta||!c)return;c.textContent=ta.value.length+" 文字";if(markUnsaved){markApplicantProgressUnsaved("report");}}
+function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges()){return;}const pct=getApplicantProgressBudgetPct();const allTasksDone=isApplicantProgressAllTasksDone();const dlgTitle=getApplicantProgressEl("applicantProgressDlgTitle");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay){return;}if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="更新する";}let title="";let message="";let useNormalButton=false;if(allTasksDone&&pct>=100){title="全タスク完了と予算超過の確認";message="全タスク完了済みとして更新します。あわせて予算消費率が100%を超過します。部門管理者に完了確認の通知が送信されます。このまま更新してよろしいですか？";}else if(allTasksDone&&pct>=80){title="全タスク完了と予算注意の確認";message="全タスク完了済みとして更新します。あわせて予算消費率が80%以上になります。部門管理者に完了確認の通知が送信されます。このまま更新してよろしいですか？";}else if(allTasksDone){title="全タスク完了の確認";message="全タスク完了済みとして更新しますか？部門管理者に完了確認の通知が送信されます。";useNormalButton=true;}else if(pct>=100){title="予算超過リスクの確認";message="予算を超過します。このまま更新してよろしいですか？";}else if(pct>=80){title="予算注意の確認";message="予算消費率が80%以上になります。このまま更新してよろしいですか？";}else{title="変更内容の確認";message="変更を更新してよろしいですか？";useNormalButton=true;}if(dlgTitle){dlgTitle.textContent=title;}if(dlgBody){dlgBody.textContent=message;}if(okBtn&&useNormalButton){okBtn.classList.add("is-normal-update");}overlay.classList.add("open");}
+function closeApplicantProgressDialog(){const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(overlay)overlay.classList.remove("open");}
+function confirmApplicantProgressSubmit(){const form=getApplicantProgressEl("applicantProgressForm");const confirmed=getApplicantProgressEl("applicantProgressConfirmed");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");const updateBtn=getApplicantProgressEl("applicantProgressFooterUpdateBtn");const resetBtn=getApplicantProgressEl("applicantProgressFooterResetBtn");if(!form||!confirmed){showApplicantProgressToast("送信準備に失敗しました。画面を再読み込みしてください。");return;}confirmed.value="1";if(okBtn){okBtn.disabled=true;okBtn.textContent="送信中...";}if(updateBtn){updateBtn.disabled=true;}if(resetBtn){resetBtn.disabled=true;}form.submit();}
+function showApplicantProgressToast(msg){const t=getApplicantProgressEl("applicantProgressToast");if(!t)return;t.textContent=escapeApplicantProgressMockHtml(msg);t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
+function getApplicantTaskModalEls(){
+  return {
+    overlay:getApplicantProgressEl("applicantTaskModalOverlay"),
+    box:document.querySelector(".mock-applicant-project-progress .task-modal-box"),
+    close:getApplicantProgressEl("applicantTaskModalClose"),
+    cancel:getApplicantProgressEl("applicantTaskModalCancel"),
+    title:getApplicantProgressEl("applicantTaskModalTitle"),
+    description:getApplicantProgressEl("applicantTaskModalDescription"),
+    submit:getApplicantProgressEl("applicantTaskModalSubmit"),
+    taskId:getApplicantProgressEl("applicantTaskModalTaskId"),
+    taskName:getApplicantProgressEl("applicantTaskModalTaskName"),
+    assignee:getApplicantProgressEl("applicantTaskModalAssignee"),
+    startDate:getApplicantProgressEl("applicantTaskModalStartDate"),
+    dueDate:getApplicantProgressEl("applicantTaskModalDueDate"),
+    taskNameError:getApplicantProgressEl("applicantTaskModalTaskNameError"),
+    assigneeError:getApplicantProgressEl("applicantTaskModalAssigneeError"),
+    startDateError:getApplicantProgressEl("applicantTaskModalStartDateError"),
+    dueDateError:getApplicantProgressEl("applicantTaskModalDueDateError")
+  };
+}
+function setApplicantTaskModalMode(mode,taskId,taskIdx){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  applicantTaskModalState.mode=mode==="edit"?"edit":"add";
+  applicantTaskModalState.taskId=taskId||null;
+  applicantTaskModalState.taskIdx=Number.isInteger(Number(taskIdx))?Number(taskIdx):null;
+  if(applicantTaskModalState.mode==="edit"){
+    const taskCard=applicantTaskModalState.taskIdx!==null?getApplicantProgressEl("applicantProgressTaskCard"+applicantTaskModalState.taskIdx):null;
+    const taskTitle=taskCard?(taskCard.dataset.taskTitle||""):"";
+    const assigneeName=taskCard?(taskCard.dataset.taskAssignee||""):"";
+    const startDateValue=taskCard?(taskCard.dataset.taskStartDate||""):"";
+    const dueDateValue=taskCard?(taskCard.dataset.taskDueDate||""):"";
+    if(els.title){els.title.textContent="タスクを編集";}
+    if(els.description){els.description.textContent="タスクの基本情報を修正できます。進捗率とステータスはカード上で更新してください。";}
+    if(els.submit){els.submit.textContent="保存する";}
+    if(els.taskId){els.taskId.value=taskId?String(taskId):"";}
+    if(els.taskName){els.taskName.value=taskTitle;}
+    if(els.assignee){els.assignee.value=assigneeName;}
+    if(els.startDate){els.startDate.value=startDateValue;}
+    if(els.dueDate){els.dueDate.value=dueDateValue;}
+  }else{
+    if(els.title){els.title.textContent="タスクを追加";}
+    if(els.description){els.description.textContent="新しい作業タスクの基本情報を入力してください。";}
+    if(els.submit){els.submit.textContent="追加する";}
+    if(els.taskId){els.taskId.value="";}
+    if(els.taskName){els.taskName.value="";}
+    if(els.assignee){els.assignee.value="";}
+    if(els.startDate){els.startDate.value="";}
+    if(els.dueDate){els.dueDate.value="";}
+  }
+  clearApplicantTaskModalErrors();
+  updateApplicantTaskModalSubmitDisabledState();
+}
+function openApplicantTaskModal(mode,taskId,taskIdx){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  if(hasApplicantProgressUnsavedChanges()){showApplicantProgressToast("先に進捗の変更を更新するか、変更を戻してください。");return;}
+  setApplicantTaskModalMode(mode,taskId,taskIdx);
+  els.overlay.classList.add("open");
+  els.overlay.setAttribute("aria-hidden","false");
+  setTimeout(function(){if(els.taskName){els.taskName.focus();}},0);
+}
+function closeApplicantTaskModal(){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  els.overlay.classList.remove("open");
+  els.overlay.setAttribute("aria-hidden","true");
+  clearApplicantTaskModalErrors();
+  updateApplicantTaskModalSubmitDisabledState();
+}
+function clearApplicantTaskModalErrors(){
+  const els=getApplicantTaskModalEls();
+  [els.taskName,els.assignee,els.startDate,els.dueDate].forEach(function(inputEl){if(inputEl){inputEl.classList.remove("error");}});
+  [els.taskNameError,els.assigneeError,els.startDateError,els.dueDateError].forEach(function(errorEl){if(errorEl){errorEl.classList.remove("show");}});
+}
+function updateApplicantTaskModalSubmitDisabledState(){
+  const els=getApplicantTaskModalEls();
+  if(!els.submit)return;
+  const taskName=els.taskName?els.taskName.value.trim():"";
+  const assignee=els.assignee?els.assignee.value.trim():"";
+  const startDate=els.startDate?els.startDate.value:"";
+  const dueDate=els.dueDate?els.dueDate.value:"";
+  const isDateOrderValid=!startDate||(dueDate&&startDate<=dueDate);
+  const canSubmit=Boolean(taskName&&assignee&&dueDate&&isDateOrderValid);
+  els.submit.disabled=!canSubmit;
+}
+function showApplicantTaskModalError(inputEl,errorEl,message){
+  if(inputEl){inputEl.classList.add("error");}
+  if(errorEl){errorEl.textContent=message;errorEl.classList.add("show");}
+}
+function validateApplicantTaskModal(){
+  const els=getApplicantTaskModalEls();
+  clearApplicantTaskModalErrors();
+  const taskName=els.taskName?els.taskName.value.trim():"";
+  const assignee=els.assignee?els.assignee.value.trim():"";
+  const startDate=els.startDate?els.startDate.value:"";
+  const dueDate=els.dueDate?els.dueDate.value:"";
+  let firstErrorInput=null;
+  let hasError=false;
+  if(!taskName){showApplicantTaskModalError(els.taskName,els.taskNameError,"タスク名を入力してください。");firstErrorInput=firstErrorInput||els.taskName;hasError=true;}
+  if(!assignee){showApplicantTaskModalError(els.assignee,els.assigneeError,"担当者名を入力してください。");firstErrorInput=firstErrorInput||els.assignee;hasError=true;}
+  if(!dueDate){showApplicantTaskModalError(els.dueDate,els.dueDateError,"期限日を入力してください。");firstErrorInput=firstErrorInput||els.dueDate;hasError=true;}
+  if(startDate&&dueDate&&startDate>dueDate){showApplicantTaskModalError(els.startDate,els.startDateError,"開始日は期限日以前の日付にしてください。");firstErrorInput=firstErrorInput||els.startDate;hasError=true;}
+  if(firstErrorInput){firstErrorInput.focus();}
+  return !hasError;
+}
+async function handleApplicantTaskModalSubmit(){
+  const els=getApplicantTaskModalEls();
+  if(hasApplicantProgressUnsavedChanges()){showApplicantProgressToast("先に進捗の変更を更新するか、変更を戻してください。");return;}
+  if(!validateApplicantTaskModal()){updateApplicantTaskModalSubmitDisabledState();return;}
+  if(!els.submit){return;}
+  const isEditMode=applicantTaskModalState.mode==="edit";
+  const defaultSubmitText=isEditMode?"保存する":"追加する";
+  const submitUrl=isEditMode
+    ?"/applicant/projects/"+APPLICANT_PROGRESS_PROJECT_ID+"/tasks/"+applicantTaskModalState.taskId+"/update"
+    :"/applicant/projects/"+APPLICANT_PROGRESS_PROJECT_ID+"/tasks/create";
+  const formData=new FormData();
+  formData.append("csrf_token",getApplicantProgressCsrfToken());
+  formData.append("task_title",els.taskName?els.taskName.value.trim():"");
+  formData.append("task_assignee_name",els.assignee?els.assignee.value.trim():"");
+  formData.append("task_start_date",els.startDate?els.startDate.value:"");
+  formData.append("task_due_date",els.dueDate?els.dueDate.value:"");
+  els.submit.disabled=true;
+  els.submit.textContent="送信中...";
+  try{
+    const response=await fetch(submitUrl,{method:"POST",body:formData,credentials:"same-origin"});
+    let data=null;
+    try{
+      data=await response.json();
+    }catch(jsonError){
+      throw new Error("invalid_json");
+    }
+    if(!response.ok||!data||!data.ok){
+      showApplicantProgressToast(data&&data.message?data.message:"タスク保存に失敗しました。");
+      els.submit.disabled=false;
+      els.submit.textContent=defaultSubmitText;
+      updateApplicantTaskModalSubmitDisabledState();
+      return;
+    }
+    showApplicantProgressToast(data.message||"タスクを保存しました。");
+    setTimeout(function(){window.location.href=data.redirect_url||window.location.href;},700);
+  }catch(error){
+    showApplicantProgressToast("タスク保存に失敗しました。画面を再読み込みしてもう一度お試しください。");
+    els.submit.disabled=false;
+    els.submit.textContent=defaultSubmitText;
+    updateApplicantTaskModalSubmitDisabledState();
+  }
+}
+function openApplicantTaskDeleteDialog(taskId,taskIdx){
+  if(hasApplicantProgressUnsavedChanges()){showApplicantProgressToast("先に進捗の変更を更新するか、変更を戻してください。");return;}
+  const overlay=getApplicantProgressEl("applicantTaskDeleteDialogOverlay");
+  const body=getApplicantProgressEl("applicantTaskDeleteDialogBody");
+  const okBtn=getApplicantProgressEl("applicantTaskDeleteDialogOkBtn");
+  const card=getApplicantProgressEl("applicantProgressTaskCard"+taskIdx);
+  const title=card?(card.dataset.taskTitle||""):"";
+  applicantTaskDeleteState.taskId=taskId||null;
+  applicantTaskDeleteState.taskIdx=Number.isInteger(Number(taskIdx))?Number(taskIdx):null;
+  applicantTaskDeleteState.taskTitle=title;
+  if(body){
+    const safeTitle=title?escapeApplicantProgressMockHtml(title):"このタスク";
+    body.innerHTML="「"+safeTitle+"」を削除します。<br>削除すると元に戻せません。";
+  }
+  if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+  if(overlay){overlay.classList.add("open");}
+}
+function closeApplicantTaskDeleteDialog(){
+  const overlay=getApplicantProgressEl("applicantTaskDeleteDialogOverlay");
+  const okBtn=getApplicantProgressEl("applicantTaskDeleteDialogOkBtn");
+  if(overlay){overlay.classList.remove("open");}
+  if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+  applicantTaskDeleteState.taskId=null;
+  applicantTaskDeleteState.taskIdx=null;
+  applicantTaskDeleteState.taskTitle="";
+}
+async function confirmApplicantTaskDelete(){
+  const okBtn=getApplicantProgressEl("applicantTaskDeleteDialogOkBtn");
+  if(!applicantTaskDeleteState.taskId){showApplicantProgressToast("削除対象のタスク情報が取得できませんでした。");return;}
+  if(okBtn){okBtn.disabled=true;okBtn.textContent="削除中...";}
+  const formData=new FormData();
+  formData.append("csrf_token",getApplicantProgressCsrfToken());
+  try{
+    const response=await fetch("/applicant/projects/"+APPLICANT_PROGRESS_PROJECT_ID+"/tasks/"+applicantTaskDeleteState.taskId+"/delete",{method:"POST",body:formData,credentials:"same-origin"});
+    let data=null;
+    try{
+      data=await response.json();
+    }catch(jsonError){
+      throw new Error("invalid_json");
+    }
+    if(!response.ok||!data||!data.ok){
+      showApplicantProgressToast(data&&data.message?data.message:"このタスクは削除できません。");
+      if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+      return;
+    }
+    window.location.href=data.redirect_url||window.location.href;
+  }catch(error){
+    showApplicantProgressToast("タスク削除に失敗しました。画面を再読み込みしてもう一度お試しください。");
+    if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+  }
+}
+function initApplicantTaskModal(){
+  const els=getApplicantTaskModalEls();
+  if(!els.overlay)return;
+  if(els.close){els.close.addEventListener("click",closeApplicantTaskModal);}
+  if(els.cancel){els.cancel.addEventListener("click",closeApplicantTaskModal);}
+  if(els.overlay){els.overlay.addEventListener("click",function(event){if(event.target===els.overlay){closeApplicantTaskModal();}});}
+  if(els.box){els.box.addEventListener("click",function(event){event.stopPropagation();});}
+  if(els.submit){els.submit.addEventListener("click",handleApplicantTaskModalSubmit);}
+  [els.taskName,els.assignee,els.startDate,els.dueDate].forEach(function(inputEl){
+    if(!inputEl)return;
+    inputEl.addEventListener("input",updateApplicantTaskModalSubmitDisabledState);
+    inputEl.addEventListener("change",updateApplicantTaskModalSubmitDisabledState);
+  });
+  updateApplicantTaskModalSubmitDisabledState();
+  const deleteOverlay=getApplicantProgressEl("applicantTaskDeleteDialogOverlay");
+  const deleteBox=deleteOverlay?deleteOverlay.querySelector(".dialog-box"):null;
+  if(deleteOverlay){deleteOverlay.addEventListener("click",function(event){if(event.target===deleteOverlay){closeApplicantTaskDeleteDialog();}});}
+  if(deleteBox){deleteBox.addEventListener("click",function(event){event.stopPropagation();});}
+}
+(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();initApplicantTaskModal();const loginSuccessToast={{ login_success_toast|tojson }};if(loginSuccessToast){showApplicantProgressToast(loginSuccessToast);}})();
+</script>
+{% endblock %}
