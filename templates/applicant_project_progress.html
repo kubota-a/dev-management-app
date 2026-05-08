@@ -3,7 +3,7 @@
 {% set page_role = "applicant" %}
 {% set active_menu = "applicant_progress" %}
 {% set header_title = "案件の進捗管理" %}
-{% set header_meta = "開発進行中案件の進捗や予算実績の更新を行います" %}
+{% set header_meta = "開発中案件の進捗や予算実績の更新・タスクの管理を行います" %}
 {% set content_footer_enabled = true %}
 {% set content_width_class = "app-content-wide" %}
 
@@ -116,8 +116,11 @@
 .mock-applicant-project-progress .task-meta-item.today-date { color: var(--app-prog-warning); font-weight: 700; }
 .mock-applicant-project-progress .task-detail-area { margin-top: 3px; border-radius: 8px; }
 .mock-applicant-project-progress .task-assignee { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--app-prog-muted); margin-top: 4px; }
+.mock-applicant-project-progress .task-card-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
 .mock-applicant-project-progress .task-edit-btn { flex-shrink: 0; width: 30px; height: 30px; border: 1px solid var(--app-prog-border); border-radius: 8px; background: #fff; color: var(--app-prog-muted); font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; font-family: var(--font-family-base); }
 .mock-applicant-project-progress .task-edit-btn:hover { background: var(--app-prog-teal-light); border-color: var(--app-prog-teal-mid); color: var(--app-prog-header); }
+.mock-applicant-project-progress .task-delete-btn { flex-shrink: 0; width: 30px; height: 30px; border: 1px solid var(--app-prog-border); border-radius: 8px; background: #fff; color: var(--app-prog-muted); font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; font-family: var(--font-family-base); }
+.mock-applicant-project-progress .task-delete-btn:hover { background: #fef2f2; border-color: #f1b6bc; color: var(--app-prog-danger); }
 .mock-applicant-project-progress .task-body { padding: 0 16px 14px; }
 .mock-applicant-project-progress .status-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
 .mock-applicant-project-progress .st-btn { flex: 1; padding: 7px 0; border-radius: 8px; border: 1.5px solid var(--app-prog-border); font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; color: var(--app-prog-muted); font-family: var(--font-family-base); }
@@ -192,6 +195,8 @@
 .mock-applicant-project-progress .dlg-cancel, .mock-applicant-project-progress .dlg-ok { flex: 1; padding: 10px 0; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
 .mock-applicant-project-progress .dlg-cancel { border: 1.5px solid var(--app-prog-border); background: #fff; color: var(--app-prog-text); }
 .mock-applicant-project-progress .dlg-ok { background: var(--app-prog-warning); color: #fff; border: none; }
+.mock-applicant-project-progress .dlg-ok.is-danger { background: var(--app-prog-danger); }
+.mock-applicant-project-progress .dlg-ok.is-danger:hover { background: #b91c1c; }
 .mock-applicant-project-progress .dlg-ok.is-normal-update { background: #1a7585; }
 .mock-applicant-project-progress .dlg-ok.is-normal-update:hover { background: #155f6d; }
 .mock-applicant-project-progress .task-modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(28, 43, 48, 0.45); z-index: 500; padding: 16px; }
@@ -364,7 +369,10 @@
                         <div class="task-assignee">{{ task.assignee_name }}</div>
                       </div>
                     </div>
-                    <button type="button" class="task-edit-btn" aria-label="タスクを編集" onclick="openApplicantTaskModal('edit', {{ task.id }}, {{ task.idx }})">✎</button>
+                    <div class="task-card-actions">
+                      <button type="button" class="task-edit-btn" aria-label="タスクを編集" onclick="openApplicantTaskModal('edit', {{ task.id }}, {{ task.idx }})">✎</button>
+                      <button type="button" class="task-delete-btn" aria-label="タスクを削除" onclick="openApplicantTaskDeleteDialog({{ task.id }}, {{ task.idx }})">🗑</button>
+                    </div>
                   </div>
                   <div class="task-body">
                     <input type="hidden" name="task_ids" value="{{ task.id }}">
@@ -470,6 +478,16 @@
       </div>
     </div>
   </div>
+  <div class="dialog-overlay" id="applicantTaskDeleteDialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-title" id="applicantTaskDeleteDialogTitle">タスク削除の確認</div>
+      <div class="dlg-body" id="applicantTaskDeleteDialogBody">このタスクを削除しますか？</div>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-cancel" onclick="closeApplicantTaskDeleteDialog()">キャンセル</button>
+        <button type="button" class="dlg-ok is-danger" id="applicantTaskDeleteDialogOkBtn" onclick="confirmApplicantTaskDelete()">削除する</button>
+      </div>
+    </div>
+  </div>
   <div class="toast" id="applicantProgressToast"></div>
 </form>
 {% endblock %}
@@ -496,6 +514,7 @@ let applicantProgressPendingBudgetActualAmount = 0;
 const applicantProgressUnsavedState = { budget: false, report: false, task: false };
 let applicantProgressInitialState = null;
 const applicantTaskModalState = { mode: "add", taskId: null, taskIdx: null };
+const applicantTaskDeleteState = { taskId: null, taskIdx: null, taskTitle: "" };
 function getApplicantProgressEl(id){return document.getElementById(id);}
 function getApplicantProgressCsrfToken(){const tokenInput=document.querySelector("#applicantProgressForm input[name='csrf_token']");return tokenInput?tokenInput.value:"";}
 function escapeApplicantProgressMockHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -786,6 +805,7 @@ function setApplicantTaskModalMode(mode,taskId,taskIdx){
 function openApplicantTaskModal(mode,taskId,taskIdx){
   const els=getApplicantTaskModalEls();
   if(!els.overlay)return;
+  if(hasApplicantProgressUnsavedChanges()){showApplicantProgressToast("先に進捗の変更を更新するか、変更を戻してください。");return;}
   setApplicantTaskModalMode(mode,taskId,taskIdx);
   els.overlay.classList.add("open");
   els.overlay.setAttribute("aria-hidden","false");
@@ -877,6 +897,57 @@ async function handleApplicantTaskModalSubmit(){
     updateApplicantTaskModalSubmitDisabledState();
   }
 }
+function openApplicantTaskDeleteDialog(taskId,taskIdx){
+  if(hasApplicantProgressUnsavedChanges()){showApplicantProgressToast("先に進捗の変更を更新するか、変更を戻してください。");return;}
+  const overlay=getApplicantProgressEl("applicantTaskDeleteDialogOverlay");
+  const body=getApplicantProgressEl("applicantTaskDeleteDialogBody");
+  const okBtn=getApplicantProgressEl("applicantTaskDeleteDialogOkBtn");
+  const card=getApplicantProgressEl("applicantProgressTaskCard"+taskIdx);
+  const title=card?(card.dataset.taskTitle||""):"";
+  applicantTaskDeleteState.taskId=taskId||null;
+  applicantTaskDeleteState.taskIdx=Number.isInteger(Number(taskIdx))?Number(taskIdx):null;
+  applicantTaskDeleteState.taskTitle=title;
+  if(body){
+    const safeTitle=title?escapeApplicantProgressMockHtml(title):"このタスク";
+    body.innerHTML="「"+safeTitle+"」を削除します。<br>削除すると元に戻せません。";
+  }
+  if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+  if(overlay){overlay.classList.add("open");}
+}
+function closeApplicantTaskDeleteDialog(){
+  const overlay=getApplicantProgressEl("applicantTaskDeleteDialogOverlay");
+  const okBtn=getApplicantProgressEl("applicantTaskDeleteDialogOkBtn");
+  if(overlay){overlay.classList.remove("open");}
+  if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+  applicantTaskDeleteState.taskId=null;
+  applicantTaskDeleteState.taskIdx=null;
+  applicantTaskDeleteState.taskTitle="";
+}
+async function confirmApplicantTaskDelete(){
+  const okBtn=getApplicantProgressEl("applicantTaskDeleteDialogOkBtn");
+  if(!applicantTaskDeleteState.taskId){showApplicantProgressToast("削除対象のタスク情報が取得できませんでした。");return;}
+  if(okBtn){okBtn.disabled=true;okBtn.textContent="削除中...";}
+  const formData=new FormData();
+  formData.append("csrf_token",getApplicantProgressCsrfToken());
+  try{
+    const response=await fetch("/applicant/projects/"+APPLICANT_PROGRESS_PROJECT_ID+"/tasks/"+applicantTaskDeleteState.taskId+"/delete",{method:"POST",body:formData,credentials:"same-origin"});
+    let data=null;
+    try{
+      data=await response.json();
+    }catch(jsonError){
+      throw new Error("invalid_json");
+    }
+    if(!response.ok||!data||!data.ok){
+      showApplicantProgressToast(data&&data.message?data.message:"このタスクは削除できません。");
+      if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+      return;
+    }
+    window.location.href=data.redirect_url||window.location.href;
+  }catch(error){
+    showApplicantProgressToast("タスク削除に失敗しました。画面を再読み込みしてもう一度お試しください。");
+    if(okBtn){okBtn.disabled=false;okBtn.textContent="削除する";}
+  }
+}
 function initApplicantTaskModal(){
   const els=getApplicantTaskModalEls();
   if(!els.overlay)return;
@@ -891,6 +962,10 @@ function initApplicantTaskModal(){
     inputEl.addEventListener("change",updateApplicantTaskModalSubmitDisabledState);
   });
   updateApplicantTaskModalSubmitDisabledState();
+  const deleteOverlay=getApplicantProgressEl("applicantTaskDeleteDialogOverlay");
+  const deleteBox=deleteOverlay?deleteOverlay.querySelector(".dialog-box"):null;
+  if(deleteOverlay){deleteOverlay.addEventListener("click",function(event){if(event.target===deleteOverlay){closeApplicantTaskDeleteDialog();}});}
+  if(deleteBox){deleteBox.addEventListener("click",function(event){event.stopPropagation();});}
 }
 (function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();initApplicantTaskModal();const loginSuccessToast={{ login_success_toast|tojson }};if(loginSuccessToast){showApplicantProgressToast(loginSuccessToast);}})();
 </script>

@@ -1227,6 +1227,51 @@ def applicant_project_task_update(project_id, task_id):
     )
 
 
+@app.route("/applicant/projects/<int:project_id>/tasks/<int:task_id>/delete", methods=["POST"])
+@login_required
+def applicant_project_task_delete(project_id, task_id):
+    """申請者の進捗管理画面からタスクを削除する。"""
+    access_error = require_applicant()
+    if access_error:
+        return jsonify({"ok": False, "message": "このタスクは削除できません。"}), 403
+
+    project = (
+        Project.query.filter(
+            Project.id == project_id,
+            Project.applicant_id == current_user.id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .first()
+    )
+    if project is None:
+        return jsonify({"ok": False, "message": "このタスクは削除できません。"}), 403
+
+    task = Task.query.filter(Task.id == task_id, Task.project_id == project.id).first()
+    if task is None:
+        return jsonify({"ok": False, "message": "このタスクは削除できません。"}), 403
+
+    task_count = Task.query.filter(Task.project_id == project.id).count()
+    if task_count <= 1:
+        return jsonify({"ok": False, "message": "最後の1件のタスクは削除できません。"}), 400
+
+    try:
+        db.session.delete(task)
+        project.updated_at = utc_now()
+        db.session.commit()
+        flash("タスクを削除しました。", "success")
+        return jsonify(
+            {
+                "ok": True,
+                "message": "タスクを削除しました。",
+                "redirect_url": url_for("applicant_project_progress_detail", project_id=project.id),
+            }
+        )
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"ok": False, "message": "タスク削除に失敗しました。時間をおいてもう一度お試しください。"}), 500
+
+
 @app.route("/applicant/projects/<int:project_id>/progress", methods=["GET", "POST"])
 @login_required
 def applicant_project_progress_detail(project_id):
