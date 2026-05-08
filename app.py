@@ -1086,6 +1086,147 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     return errors, payload
 
 
+def validate_applicant_task_modal_form(form_data):
+    """案件進捗のタスク追加・編集モーダル入力を検証する。"""
+    errors: list[str] = []
+    title = (form_data.get("task_title") or "").strip()
+    assignee_name = (form_data.get("task_assignee_name") or "").strip()
+    start_date_raw = (form_data.get("task_start_date") or "").strip()
+    due_date_raw = (form_data.get("task_due_date") or "").strip()
+
+    start_date = None
+    due_date = None
+
+    if not title:
+        errors.append("タスク名を入力してください。")
+    elif len(title) > 200:
+        errors.append("タスク名は200文字以内で入力してください。")
+
+    if not assignee_name:
+        errors.append("担当者名を入力してください。")
+    elif len(assignee_name) > 100:
+        errors.append("担当者名は100文字以内で入力してください。")
+
+    if start_date_raw:
+        start_date, start_date_err = parse_date_value(start_date_raw)
+        if start_date_err:
+            errors.append("日付の形式が正しくありません。")
+
+    if not due_date_raw:
+        errors.append("期限日を入力してください。")
+    else:
+        due_date, due_date_err = parse_date_value(due_date_raw)
+        if due_date_err:
+            errors.append("日付の形式が正しくありません。")
+
+    if start_date and due_date and start_date > due_date:
+        errors.append("開始日は期限日以前の日付にしてください。")
+
+    normalized = {
+        "title": title,
+        "assignee_name": assignee_name,
+        "start_date": start_date,
+        "due_date": due_date,
+    }
+    return errors, normalized
+
+
+@app.route("/applicant/projects/<int:project_id>/tasks/create", methods=["POST"])
+@login_required
+def applicant_project_task_create(project_id):
+    access_error = require_applicant()
+    if access_error:
+        return jsonify({"ok": False, "message": "この案件ではタスクを追加できません。"}), 403
+
+    project = (
+        Project.query.filter(
+            Project.id == project_id,
+            Project.applicant_id == current_user.id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .first()
+    )
+    if project is None:
+        return jsonify({"ok": False, "message": "この案件ではタスクを追加できません。"}), 403
+
+    errors, normalized = validate_applicant_task_modal_form(request.form)
+    if errors:
+        return jsonify({"ok": False, "message": errors[0]}), 400
+
+    task = Task(
+        project_id=project.id,
+        title=normalized["title"],
+        assignee_name=normalized["assignee_name"],
+        start_date=normalized["start_date"],
+        due_date=normalized["due_date"],
+        status="not_started",
+        progress_rate=0,
+    )
+    db.session.add(task)
+
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"ok": False, "message": "タスク追加に失敗しました。時間をおいてもう一度お試しください。"}), 500
+
+    return jsonify(
+        {
+            "ok": True,
+            "message": "タスクを追加しました。",
+            "redirect_url": url_for("applicant_project_progress_detail", project_id=project.id),
+        }
+    )
+
+
+@app.route("/applicant/projects/<int:project_id>/tasks/<int:task_id>/update", methods=["POST"])
+@login_required
+def applicant_project_task_update(project_id, task_id):
+    access_error = require_applicant()
+    if access_error:
+        return jsonify({"ok": False, "message": "この案件ではタスクを編集できません。"}), 403
+
+    project = (
+        Project.query.filter(
+            Project.id == project_id,
+            Project.applicant_id == current_user.id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .first()
+    )
+    if project is None:
+        return jsonify({"ok": False, "message": "この案件ではタスクを編集できません。"}), 403
+
+    task = Task.query.filter(Task.id == task_id, Task.project_id == project.id).first()
+    if task is None:
+        return jsonify({"ok": False, "message": "対象のタスクが見つかりません。"}), 404
+
+    errors, normalized = validate_applicant_task_modal_form(request.form)
+    if errors:
+        return jsonify({"ok": False, "message": errors[0]}), 400
+
+    task.title = normalized["title"]
+    task.assignee_name = normalized["assignee_name"]
+    task.start_date = normalized["start_date"]
+    task.due_date = normalized["due_date"]
+
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"ok": False, "message": "タスク保存に失敗しました。時間をおいてもう一度お試しください。"}), 500
+
+    return jsonify(
+        {
+            "ok": True,
+            "message": "タスクを保存しました。",
+            "redirect_url": url_for("applicant_project_progress_detail", project_id=project.id),
+        }
+    )
+
+
 @app.route("/applicant/projects/<int:project_id>/progress", methods=["GET", "POST"])
 @login_required
 def applicant_project_progress_detail(project_id):

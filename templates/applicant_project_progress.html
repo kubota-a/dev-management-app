@@ -234,9 +234,15 @@
   .mock-applicant-project-progress .summary-kpi { border-right: none; border-bottom: 1px solid var(--app-prog-border); }
   .mock-applicant-project-progress .task-meta { flex-direction: column; gap: 4px; }
   .mock-applicant-project-progress .task-assignee { margin-top: 4px; }
+  .mock-applicant-project-progress .task-modal-overlay { align-items: flex-start; justify-content: center; padding: 84px 14px 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .mock-applicant-project-progress .task-modal-box { width: 100%; max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); overflow-y: auto; padding: 20px 18px 18px; }
 }
 @media (max-width: 600px) {
   .mock-applicant-project-progress .budget-current-row { grid-template-columns: 1fr; }
+  .mock-applicant-project-progress .task-modal-overlay { padding: 76px 12px 104px; }
+  .mock-applicant-project-progress .task-modal-box { max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); border-radius: 14px; }
+  .mock-applicant-project-progress .task-modal-actions { position: sticky; bottom: 0; background: #fff; padding-top: 10px; padding-bottom: 2px; flex-direction: column-reverse; }
+  .mock-applicant-project-progress .task-modal-btn { width: 100%; }
 }
 </style>
 {% endblock %}
@@ -420,7 +426,7 @@
             タスク名 <span class="req-badge">必須</span>
           </label>
           <p class="field-hint">作業内容がひと目で分かる名称にしてください。</p>
-          <input type="text" class="f-input" id="applicantTaskModalTaskName" maxlength="200" placeholder="例：ステージング環境 動作検証">
+          <input type="text" class="f-input" id="applicantTaskModalTaskName" name="task_title" maxlength="200" placeholder="例：ステージング環境 動作検証">
           <p class="field-error" id="applicantTaskModalTaskNameError">タスク名を入力してください。</p>
         </div>
         <div class="task-modal-field">
@@ -428,7 +434,7 @@
             担当者名 <span class="req-badge">必須</span>
           </label>
           <p class="field-hint">担当するメンバー名を入力してください。</p>
-          <input type="text" class="f-input" id="applicantTaskModalAssignee" maxlength="100" placeholder="例：田中 太郎">
+          <input type="text" class="f-input" id="applicantTaskModalAssignee" name="task_assignee_name" maxlength="100" placeholder="例：田中 太郎">
           <p class="field-error" id="applicantTaskModalAssigneeError">担当者名を入力してください。</p>
         </div>
         <div class="task-modal-field">
@@ -436,7 +442,7 @@
             開始日 <span class="opt-badge">任意</span>
           </label>
           <p class="field-hint">未定の場合は空欄のままで構いません。</p>
-          <input type="date" class="f-input" id="applicantTaskModalStartDate">
+          <input type="date" class="f-input" id="applicantTaskModalStartDate" name="task_start_date">
           <p class="field-error" id="applicantTaskModalStartDateError">開始日は期限日以前の日付にしてください。</p>
         </div>
         <div class="task-modal-field">
@@ -444,7 +450,7 @@
             期限日 <span class="req-badge">必須</span>
           </label>
           <p class="field-hint">期限を過ぎた未完了タスクは遅延タスクとして表示されます。</p>
-          <input type="date" class="f-input" id="applicantTaskModalDueDate">
+          <input type="date" class="f-input" id="applicantTaskModalDueDate" name="task_due_date">
           <p class="field-error" id="applicantTaskModalDueDateError">期限日を入力してください。</p>
         </div>
         <div class="task-modal-actions">
@@ -484,12 +490,14 @@
 {% block script_extra %}
 <script>
 const APPLICANT_PROGRESS_BUDGET = {{ view_data.base_budget_amount }};
+const APPLICANT_PROGRESS_PROJECT_ID = {{ view_data.project_id }};
 let applicantProgressCurrentActual = {{ view_data.current_actual_amount }};
 let applicantProgressPendingBudgetActualAmount = 0;
 const applicantProgressUnsavedState = { budget: false, report: false, task: false };
 let applicantProgressInitialState = null;
 const applicantTaskModalState = { mode: "add", taskId: null, taskIdx: null };
 function getApplicantProgressEl(id){return document.getElementById(id);}
+function getApplicantProgressCsrfToken(){const tokenInput=document.querySelector("#applicantProgressForm input[name='csrf_token']");return tokenInput?tokenInput.value:"";}
 function escapeApplicantProgressMockHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function hasApplicantProgressUnsavedChanges(){return Object.keys(applicantProgressUnsavedState).some(function(key){return applicantProgressUnsavedState[key];});}
 function getApplicantProgressBudgetPct(){if(!APPLICANT_PROGRESS_BUDGET){return 0;}return Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);}
@@ -827,11 +835,47 @@ function validateApplicantTaskModal(){
   if(firstErrorInput){firstErrorInput.focus();}
   return !hasError;
 }
-function handleApplicantTaskModalSubmit(){
+async function handleApplicantTaskModalSubmit(){
+  const els=getApplicantTaskModalEls();
+  if(hasApplicantProgressUnsavedChanges()){showApplicantProgressToast("先に進捗の変更を更新するか、変更を戻してください。");return;}
   if(!validateApplicantTaskModal()){updateApplicantTaskModalSubmitDisabledState();return;}
-  if(applicantTaskModalState.mode==="edit"){showApplicantProgressToast("タスク編集機能は次の実装で保存処理を接続します。");}
-  else{showApplicantProgressToast("タスク追加機能は次の実装で保存処理を接続します。");}
-  closeApplicantTaskModal();
+  if(!els.submit){return;}
+  const isEditMode=applicantTaskModalState.mode==="edit";
+  const defaultSubmitText=isEditMode?"保存する":"追加する";
+  const submitUrl=isEditMode
+    ?"/applicant/projects/"+APPLICANT_PROGRESS_PROJECT_ID+"/tasks/"+applicantTaskModalState.taskId+"/update"
+    :"/applicant/projects/"+APPLICANT_PROGRESS_PROJECT_ID+"/tasks/create";
+  const formData=new FormData();
+  formData.append("csrf_token",getApplicantProgressCsrfToken());
+  formData.append("task_title",els.taskName?els.taskName.value.trim():"");
+  formData.append("task_assignee_name",els.assignee?els.assignee.value.trim():"");
+  formData.append("task_start_date",els.startDate?els.startDate.value:"");
+  formData.append("task_due_date",els.dueDate?els.dueDate.value:"");
+  els.submit.disabled=true;
+  els.submit.textContent="送信中...";
+  try{
+    const response=await fetch(submitUrl,{method:"POST",body:formData,credentials:"same-origin"});
+    let data=null;
+    try{
+      data=await response.json();
+    }catch(jsonError){
+      throw new Error("invalid_json");
+    }
+    if(!response.ok||!data||!data.ok){
+      showApplicantProgressToast(data&&data.message?data.message:"タスク保存に失敗しました。");
+      els.submit.disabled=false;
+      els.submit.textContent=defaultSubmitText;
+      updateApplicantTaskModalSubmitDisabledState();
+      return;
+    }
+    showApplicantProgressToast(data.message||"タスクを保存しました。");
+    setTimeout(function(){window.location.href=data.redirect_url||window.location.href;},700);
+  }catch(error){
+    showApplicantProgressToast("タスク保存に失敗しました。画面を再読み込みしてもう一度お試しください。");
+    els.submit.disabled=false;
+    els.submit.textContent=defaultSubmitText;
+    updateApplicantTaskModalSubmitDisabledState();
+  }
 }
 function initApplicantTaskModal(){
   const els=getApplicantTaskModalEls();
