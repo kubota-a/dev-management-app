@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv  # .envファイルを読み込むライブラリ
-from flask import Flask, flash, jsonify, redirect, render_template, request, url_for  # Webアプリ本体を作るフレームワーク
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for  # Webアプリ本体を作るフレームワーク
 from flask_migrate import Migrate  # DBマイグレーション（DB構造変更の履歴管理）ツール
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user  # ログイン管理用ライブラリ
 from flask_wtf import CSRFProtect
@@ -86,7 +86,7 @@ def login():
         # 認証可否に関わらず同じエラーメッセージを返す
         if user and user.is_active and check_password_hash(user.password_hash, form.password.data):
             login_user(user, remember=form.remember.data)
-            flash("ログインに成功しました。", "success")
+            session["login_success_toast"] = "ログイン成功"
             return redirect(redirect_by_role(user.role))
 
         inline_error = "IDまたはパスワードが正しくありません"
@@ -1178,9 +1178,11 @@ def applicant_project_progress_detail(project_id):
         return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
+    login_success_toast = session.pop("login_success_toast", None)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
+        login_success_toast=login_success_toast,
         unread_notifications_count=get_unread_notifications_count(),
     )
 
