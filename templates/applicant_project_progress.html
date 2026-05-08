@@ -228,7 +228,10 @@
 >
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="confirmed" id="applicantProgressConfirmed" value="0">
+  <input type="hidden" name="budget_actual_amount" id="applicantProgressBudgetActualAmount" value="">
   <div class="applicant-progress-content">
+    {% include "partials/_flash.html" %}
+
     <div class="summary-card">
       <div class="summary-top">
         <div>
@@ -241,7 +244,7 @@
           <div class="kpi-label">全体進捗率</div>
           <div style="display:flex;align-items:baseline;gap:8px;">
             <div class="kpi-big" id="applicantProgressOverallPct" style="color:var(--app-prog-header)">{{ view_data.overall_progress_pct }}%</div>
-            <div class="kpi-sub">{{ view_data.done_count }}/{{ view_data.task_count }} タスク完了済み</div>
+            <div class="kpi-sub"><span id="applicantProgressDoneCount">{{ view_data.done_count }}</span>/<span id="applicantProgressTaskCount">{{ view_data.task_count }}</span> タスク完了済み</div>
           </div>
           <div class="kpi-gauge-track"><div class="kpi-gauge-fill gf-progress" id="applicantProgressOverallGauge" style="width:{{ view_data.overall_progress_pct }}%"></div></div>
           <div class="kpi-gauge-labels"><span>0%</span><span>50%</span><span>100%</span></div>
@@ -278,7 +281,7 @@
             </div>
             <label class="input-label">今回追加する実績額</label>
             <div class="input-row">
-              <div class="money-input-wrap"><div class="money-prefix">¥</div><input type="number" class="money-input" id="addAmount" name="budget_actual_amount" placeholder="例：500000" inputmode="numeric" oninput="updateApplicantProgressBudgetPreview()"></div>
+              <div class="money-input-wrap"><div class="money-prefix">¥</div><input type="number" class="money-input" id="addAmount" placeholder="例：500000" inputmode="numeric" oninput="updateApplicantProgressBudgetPreview()"></div>
               <button type="button" class="input-apply-btn" onclick="applyApplicantProgressBudget()">反映</button>
             </div>
             <div class="preview-box">
@@ -311,7 +314,7 @@
           <div class="sec-head">
             <div class="sec-title">タスク進捗更新</div>
             <div style="display:flex;gap:10px;align-items:center;">
-              <span style="font-size:12px;color:var(--app-prog-muted);">完了 <strong style="color:var(--app-prog-success)">{{ view_data.done_count }}</strong> / {{ view_data.task_count }}件</span>
+              <span style="font-size:12px;color:var(--app-prog-muted);">完了 <strong style="color:var(--app-prog-success)" id="applicantProgressListDoneCount">{{ view_data.done_count }}</strong> / <span id="applicantProgressListTaskCount">{{ view_data.task_count }}</span>件</span>
               <button type="button" style="padding:5px 12px;border:1.5px solid var(--app-prog-border);border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:var(--app-prog-header);cursor:pointer;font-family:var(--font-family-base);">＋ タスク追加</button>
             </div>
           </div>
@@ -414,6 +417,7 @@
 <script>
 const APPLICANT_PROGRESS_BUDGET = {{ view_data.base_budget_amount }};
 let applicantProgressCurrentActual = {{ view_data.current_actual_amount }};
+let applicantProgressPendingBudgetActualAmount = 0;
 const applicantProgressUnsavedState = { budget: false, report: false, task: false };
 let applicantProgressInitialState = null;
 function getApplicantProgressEl(id){return document.getElementById(id);}
@@ -436,6 +440,7 @@ function captureApplicantProgressInitialState(){
   const previewGauge=getApplicantProgressEl("applicantProgressPreviewGaugeFill");
   const reportText=getApplicantProgressEl("reportText");
   const charCount=getApplicantProgressEl("applicantProgressCharCount");
+  const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");
   const budgetCard=document.querySelector(".mock-applicant-project-progress .budget-input-card");
   const monthlyCard=document.querySelector(".mock-applicant-project-progress .monthly-card");
   const taskStates=[];
@@ -471,6 +476,8 @@ function captureApplicantProgressInitialState(){
     previewGaugeWidth: previewGauge ? previewGauge.style.width : "",
     reportTextValue: reportText ? reportText.value : "",
     charCountText: charCount ? charCount.textContent : "",
+    budgetActualHiddenValue: budgetActualInput ? budgetActualInput.value : "",
+    pendingBudgetActualAmount: applicantProgressPendingBudgetActualAmount,
     budgetCardClass: budgetCard ? budgetCard.className : "",
     monthlyCardClass: monthlyCard ? monthlyCard.className : "",
     taskStates: taskStates,
@@ -496,6 +503,7 @@ function resetApplicantProgressChanges(){
   const previewGauge=getApplicantProgressEl("applicantProgressPreviewGaugeFill");
   const reportText=getApplicantProgressEl("reportText");
   const charCount=getApplicantProgressEl("applicantProgressCharCount");
+  const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");
   const budgetCard=document.querySelector(".mock-applicant-project-progress .budget-input-card");
   const monthlyCard=document.querySelector(".mock-applicant-project-progress .monthly-card");
   if(addAmount){addAmount.value=applicantProgressInitialState.addAmountValue;}
@@ -508,6 +516,8 @@ function resetApplicantProgressChanges(){
   if(previewGauge){previewGauge.className=applicantProgressInitialState.previewGaugeClass;previewGauge.style.width=applicantProgressInitialState.previewGaugeWidth;}
   if(reportText){reportText.value=applicantProgressInitialState.reportTextValue;}
   if(charCount){charCount.textContent=applicantProgressInitialState.charCountText;}
+  applicantProgressPendingBudgetActualAmount=0;
+  if(budgetActualInput){budgetActualInput.value="";}
   if(budgetCard){budgetCard.className=applicantProgressInitialState.budgetCardClass;}
   if(monthlyCard){monthlyCard.className=applicantProgressInitialState.monthlyCardClass;}
   applicantProgressInitialState.taskStates.forEach(function(state){
@@ -530,6 +540,7 @@ function resetApplicantProgressChanges(){
   applicantProgressUnsavedState.report=applicantProgressInitialState.unsavedState.report;
   applicantProgressUnsavedState.task=applicantProgressInitialState.unsavedState.task;
   document.querySelectorAll(".mock-applicant-project-progress .is-unsaved").forEach(function(el){el.classList.remove("is-unsaved");});
+  recalcApplicantProgressOverall();
   updateApplicantProgressFooterUnsaved();
   showApplicantProgressToast("変更を戻しました");
 }
@@ -549,6 +560,7 @@ function updateApplicantProgressSliderBackground(slider,value,type){
   const color=getApplicantProgressSliderColor(type,value);
   slider.style.background="linear-gradient(to right, "+color+" "+value+"%, #e6eff1 "+value+"%)";
 }
+function recalcApplicantProgressDoneCount(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");const doneCountEl=getApplicantProgressEl("applicantProgressDoneCount");const taskCountEl=getApplicantProgressEl("applicantProgressTaskCount");const listDoneCountEl=getApplicantProgressEl("applicantProgressListDoneCount");const listTaskCountEl=getApplicantProgressEl("applicantProgressListTaskCount");let doneCount=0;sliders.forEach(function(slider){if(Number(slider.value)===100){doneCount+=1;}});if(doneCountEl){doneCountEl.textContent=String(doneCount);}if(taskCountEl){taskCountEl.textContent=String(sliders.length);}if(listDoneCountEl){listDoneCountEl.textContent=String(doneCount);}if(listTaskCountEl){listTaskCountEl.textContent=String(sliders.length);}}
 function syncApplicantProgressTaskState(idx,type,value){
   const card=getApplicantProgressEl("applicantProgressTaskCard"+idx);
   if(!card)return;
@@ -593,7 +605,7 @@ function syncApplicantProgressTaskState(idx,type,value){
   }
 }
 function updateApplicantProgressBudgetPreview(){const input=getApplicantProgressEl("addAmount");const pt=getApplicantProgressEl("applicantProgressPreviewTotal");const pp=getApplicantProgressEl("applicantProgressPreviewPct");const fill=getApplicantProgressEl("applicantProgressPreviewGaugeFill");if(!input||!pt||!pp||!fill)return;const add=parseInt(input.value,10)||0;const total=applicantProgressCurrentActual+add;const pct=Math.round(total/APPLICANT_PROGRESS_BUDGET*100);pt.textContent="¥"+total.toLocaleString();pp.textContent=pct+"%";fill.style.width=Math.min(pct,100)+"%";if(pct>=100){fill.className="preview-gauge-fill gf-over";pp.style.color="var(--app-prog-danger)";}else if(pct>=80){fill.className="preview-gauge-fill gf-warn";pp.style.color="var(--app-prog-warning)";}else{fill.className="preview-gauge-fill gf-ok";pp.style.color="var(--app-prog-success)";}}
-function applyApplicantProgressBudget(){const input=getApplicantProgressEl("addAmount");if(!input)return;const add=parseInt(input.value,10)||0;if(!add){showApplicantProgressToast("金額を入力してください");return;}applicantProgressCurrentActual+=add;const pct=Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);const totalActual=getApplicantProgressEl("applicantProgressTotalActual");const pctDisplay=getApplicantProgressEl("applicantProgressBudgetPctDisplay");const amountDisplay=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");const gauge=getApplicantProgressEl("applicantProgressBudgetGauge");if(totalActual){totalActual.textContent="¥"+applicantProgressCurrentActual.toLocaleString();totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(pctDisplay){pctDisplay.textContent=pct+"%";pctDisplay.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(amountDisplay){amountDisplay.textContent="¥"+applicantProgressCurrentActual.toLocaleString()+" / ¥"+APPLICANT_PROGRESS_BUDGET.toLocaleString();}if(gauge){gauge.style.width=Math.min(pct,100)+"%";gauge.className="kpi-gauge-fill "+(pct>=100?"gf-over":pct>=80?"gf-warn":"gf-ok");}input.value="";updateApplicantProgressBudgetPreview();markApplicantProgressUnsaved("budget");showApplicantProgressToast("計算に反映しました");}
+function applyApplicantProgressBudget(){const input=getApplicantProgressEl("addAmount");if(!input)return;const add=parseInt(input.value,10)||0;if(!add){showApplicantProgressToast("金額を入力してください");return;}const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");applicantProgressCurrentActual+=add;applicantProgressPendingBudgetActualAmount+=add;if(budgetActualInput){budgetActualInput.value=String(applicantProgressPendingBudgetActualAmount);}const pct=Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);const totalActual=getApplicantProgressEl("applicantProgressTotalActual");const pctDisplay=getApplicantProgressEl("applicantProgressBudgetPctDisplay");const amountDisplay=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");const gauge=getApplicantProgressEl("applicantProgressBudgetGauge");if(totalActual){totalActual.textContent="¥"+applicantProgressCurrentActual.toLocaleString();totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(pctDisplay){pctDisplay.textContent=pct+"%";pctDisplay.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(amountDisplay){amountDisplay.textContent="¥"+applicantProgressCurrentActual.toLocaleString()+" / ¥"+APPLICANT_PROGRESS_BUDGET.toLocaleString();}if(gauge){gauge.style.width=Math.min(pct,100)+"%";gauge.className="kpi-gauge-fill "+(pct>=100?"gf-over":pct>=80?"gf-warn":"gf-ok");}input.value="";updateApplicantProgressBudgetPreview();markApplicantProgressUnsaved("budget");showApplicantProgressToast("計算に反映しました");}
 function updateApplicantProgressSlider(el,pctId){
   if(!el)return;
   const idx=Number(String(pctId).replace("pct",""));
@@ -632,15 +644,15 @@ function setApplicantProgressStatus(btn,type,idx){
   markApplicantProgressTaskUnsaved(idx);
   recalcApplicantProgressOverall();
 }
-function recalcApplicantProgressOverall(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");if(!sliders.length)return;let sum=0;sliders.forEach(function(s){sum+=parseInt(s.value,10)||0;});const avg=Math.round(sum/sliders.length);const pct=getApplicantProgressEl("applicantProgressOverallPct");const gauge=getApplicantProgressEl("applicantProgressOverallGauge");if(pct)pct.textContent=avg+"%";if(gauge)gauge.style.width=avg+"%";}
+function recalcApplicantProgressOverall(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");recalcApplicantProgressDoneCount();if(!sliders.length){const pct=getApplicantProgressEl("applicantProgressOverallPct");const gauge=getApplicantProgressEl("applicantProgressOverallGauge");if(pct){pct.textContent="0%";}if(gauge){gauge.style.width="0%";}return;}let sum=0;sliders.forEach(function(s){sum+=parseInt(s.value,10)||0;});const avg=Math.round(sum/sliders.length);const pct=getApplicantProgressEl("applicantProgressOverallPct");const gauge=getApplicantProgressEl("applicantProgressOverallGauge");if(pct)pct.textContent=avg+"%";if(gauge)gauge.style.width=avg+"%";}
 function toggleApplicantProgressAccordion(head){if(!head)return;const body=head.nextElementSibling;const arrow=head.querySelector(".accordion-arrow");if(!body)return;const isOpen=body.classList.toggle("open");if(arrow)arrow.classList.toggle("open",isOpen);}
 function initApplicantProgressResponsiveAccordions(){const isOneColumn=window.matchMedia("(max-width: 900px)").matches;if(!isOneColumn)return;document.querySelectorAll(".mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card").forEach(function(card){const body=card.querySelector(".accordion-body");const arrow=card.querySelector(".accordion-arrow");if(body)body.classList.remove("open");if(arrow)arrow.classList.remove("open");});}
 function quoteApplicantProgressLastReport(){showApplicantProgressToast("前回報告の引用機能は今後対応予定です。");}
 function updateApplicantProgressCharCount(ta,markUnsaved){const c=getApplicantProgressEl("applicantProgressCharCount");if(!ta||!c)return;c.textContent=ta.value.length+" 文字";if(markUnsaved){markApplicantProgressUnsaved("report");}}
 function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges()){return;}const pct=getApplicantProgressBudgetPct();const allTasksDone=isApplicantProgressAllTasksDone();const dlgTitle=getApplicantProgressEl("applicantProgressDlgTitle");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay){return;}if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="更新する";}let title="";let message="";let useNormalButton=false;if(allTasksDone&&pct>=100){title="全タスク完了と予算超過の確認";message="全タスク完了済みとして更新します。あわせて予算消費率が100%を超過します。部門管理者に完了確認の通知が送信されます。このまま更新してよろしいですか？";}else if(allTasksDone&&pct>=80){title="全タスク完了と予算注意の確認";message="全タスク完了済みとして更新します。あわせて予算消費率が80%以上になります。部門管理者に完了確認の通知が送信されます。このまま更新してよろしいですか？";}else if(allTasksDone){title="全タスク完了の確認";message="全タスク完了済みとして更新しますか？部門管理者に完了確認の通知が送信されます。";useNormalButton=true;}else if(pct>=100){title="予算超過リスクの確認";message="予算を超過します。このまま更新してよろしいですか？";}else if(pct>=80){title="予算注意の確認";message="予算消費率が80%以上になります。このまま更新してよろしいですか？";}else{title="変更内容の確認";message="変更を更新してよろしいですか？";useNormalButton=true;}if(dlgTitle){dlgTitle.textContent=title;}if(dlgBody){dlgBody.textContent=message;}if(okBtn&&useNormalButton){okBtn.classList.add("is-normal-update");}overlay.classList.add("open");}
 function closeApplicantProgressDialog(){const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(overlay)overlay.classList.remove("open");}
-function confirmApplicantProgressSubmit(){closeApplicantProgressDialog();clearApplicantProgressUnsaved();}
+function confirmApplicantProgressSubmit(){const form=getApplicantProgressEl("applicantProgressForm");const confirmed=getApplicantProgressEl("applicantProgressConfirmed");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");const updateBtn=getApplicantProgressEl("applicantProgressFooterUpdateBtn");const resetBtn=getApplicantProgressEl("applicantProgressFooterResetBtn");if(!form||!confirmed){showApplicantProgressToast("送信準備に失敗しました。画面を再読み込みしてください。");return;}confirmed.value="1";if(okBtn){okBtn.disabled=true;okBtn.textContent="送信中...";}if(updateBtn){updateBtn.disabled=true;}if(resetBtn){resetBtn.disabled=true;}form.submit();}
 function showApplicantProgressToast(msg){const t=getApplicantProgressEl("applicantProgressToast");if(!t)return;t.textContent=escapeApplicantProgressMockHtml(msg);t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
-(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();})();
+(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();})();
 </script>
 {% endblock %}
