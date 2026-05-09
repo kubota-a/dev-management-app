@@ -256,8 +256,17 @@
   .mock-manager-project-monitoring .m-card { width: 100%; max-width: 100%; }
   .mock-manager-project-monitoring table.task-tbl { min-width: 560px; }
 }
+@media (min-width: 900px) {
+  .mock-manager-project-monitoring-header-after {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 690;
+    background: var(--mpm-card);
+  }
+}
 @media (max-width: 899px) {
   .mock-manager-project-monitoring-header-after {
+    position: static;
     padding-top: var(--mobile-header-height);
   }
   .app-content:has(.mock-manager-project-monitoring) {
