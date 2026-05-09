@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% set page_role = "manager" %}
+{% set active_menu = "manager_monitoring" %}
+{% set header_title = "案件モニタリング" %}
+{% set header_meta = "自部門の開発中案件の状況確認・完了認定を行います" %}
+{% set content_width_class = "app-content-wide" %}
+{% set content_footer_enabled = false %}
+
+{% block title %}案件モニタリング{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-manager-project-monitoring-empty .content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+}
+.mock-manager-project-monitoring-empty .empty-card {
+  background: #fff;
+  border: 1px solid var(--app-border, #e5e7eb);
+  border-radius: 12px;
+}
+.mock-manager-project-monitoring-empty .ec-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--app-border, #e5e7eb);
+}
+.mock-manager-project-monitoring-empty .ec-title { font-weight: 700; }
+.mock-manager-project-monitoring-empty .ec-body { padding: 18px; line-height: 1.7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mock-manager-project-monitoring-empty">
+  <div class="content">
+    {% include "partials/_flash.html" %}
+    <div class="empty-card">
+      <div class="ec-head">
+        <div class="ec-title">案件モニタリング</div>
+      </div>
+      <div class="ec-body">
+        <p>データがまだありません</p>
+        <p>現在、モニタリング対象の開発中案件はありません。</p>
+        <p style="margin-top:16px;">
+          <a href="{{ url_for('manager_top') }}" class="app-nav-link">部門管理者トップへ戻る</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

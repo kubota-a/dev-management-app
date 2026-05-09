@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% set page_role = "manager" %}
-{% set active_menu = "manager_project_monitoring.html" %}
+{% set active_menu = "manager_monitoring" %}
 {% set header_title = "案件モニタリング" %}
 {% set header_meta = "自部門の開発中案件の状況確認・完了認定を行います" %}
 {% set content_footer_enabled = true %}
@@ -259,6 +259,7 @@
   margin-bottom: 22px;
 }
 .mock-manager-project-monitoring .manager-complete-dialog-btns { display: flex; gap: 10px; }
+.mock-manager-project-monitoring .manager-complete-dialog-btns form { flex: 1; }
 .mock-manager-project-monitoring .manager-complete-dialog-cancel,
 .mock-manager-project-monitoring .manager-complete-dialog-ok {
   flex: 1;
@@ -279,6 +280,7 @@
   background: var(--mpm-header);
   color: #fff;
   border: none;
+  width: 100%;
 }
 .mock-manager-project-monitoring .manager-complete-dialog-ok:hover { background: var(--mpm-header-dark); }
 .manager-project-monitoring-footer-info { font-size: 13px; color: #7a6480; margin-right: 8px; }
@@ -286,6 +288,7 @@
   height: 36px; padding: 0 16px; border-radius: 8px; background: #3d2040; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .manager-project-monitoring-footer-complete:hover { background: #2e1830; }
+.manager-project-monitoring-footer-complete:disabled { background: #b9b0bc; cursor: not-allowed; }
 @media (max-width: 1100px) {
   .mock-manager-project-monitoring .monitor-grid { grid-template-columns: 1fr; }
 }
@@ -325,23 +328,14 @@
 <div class="mock-manager-project-monitoring mock-manager-project-monitoring-header-after">
   <div class="proj-tabbar">
     <div style="font-size:12px;color:var(--mpm-muted);font-weight:700;flex-shrink:0;">案件切替：</div>
-    <div class="proj-tab active" onclick="switchManagerProjectMonitoringProj(this,'クラウド移行PJ')">
-      クラウド移行PJ
-    </div>
-    <div class="proj-tab" onclick="switchManagerProjectMonitoringProj(this,'顧客管理システム刷新')">
-      顧客管理システム刷新
+    {% for item in monitoring_projects %}
+    <a href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}" class="proj-tab{% if item.project_id == current_project_id %} active{% endif %}">
+      {{ item.title }}
+      {% if item.has_delay %}
       <span class="pt-delay-badge">遅延</span>
-    </div>
-    <div class="proj-tab" onclick="switchManagerProjectMonitoringProj(this,'API Gateway整備')">
-      API Gateway整備
-    </div>
-    <div class="proj-tab" onclick="switchManagerProjectMonitoringProj(this,'DBマイグレーション')">
-      DBマイグレーション
-      <span class="pt-delay-badge">遅延</span>
-    </div>
-    <div class="proj-tab" onclick="switchManagerProjectMonitoringProj(this,'ログ管理システム')">
-      ログ管理システム
-    </div>
+      {% endif %}
+    </a>
+    {% endfor %}
   </div>
 </div>
 {% endblock %}
@@ -349,34 +343,35 @@
 {% block content %}
 <div class="mock-manager-project-monitoring">
   <div class="manager-project-monitoring-content">
+    {% include "partials/_flash.html" %}
     <div class="monitor-grid">
       <div class="col-left">
         <div class="hero-card">
           <div class="hero-main">
-            <div class="hero-name" id="managerProjectMonitoringHeroName">クラウド移行PJ</div>
+            <div class="hero-name" id="managerProjectMonitoringHeroName">{{ view_data.project_name }}</div>
             <div class="hero-meta">
-              <div class="hero-meta-item">主担当：田中 太郎</div>
-              <div class="hero-meta-item">タスク最長期限：2025/09/15</div>
+              <div class="hero-meta-item">主担当：{{ view_data.applicant_name }}</div>
+              <div class="hero-meta-item">タスク最長期限：{{ view_data.longest_due_display }}</div>
             </div>
             <div class="hero-gauge">
               <div class="hg-header">
                 <div>
                   <div class="hg-label">全体進捗率</div>
-                  <div class="hg-sub">7 / 12 タスク完了</div>
+                  <div class="hg-sub">{{ view_data.done_count }} / {{ view_data.task_count }} タスク完了</div>
                 </div>
-                <div class="hg-pct" id="managerProjectMonitoringHeroPct">58%</div>
+                <div class="hg-pct" id="managerProjectMonitoringHeroPct">{{ view_data.overall_progress_pct }}%</div>
               </div>
-              <div class="hg-track"><div class="hg-fill" id="managerProjectMonitoringHeroGauge" style="width:0%"></div></div>
+              <div class="hg-track"><div class="hg-fill" id="managerProjectMonitoringHeroGauge" style="width:{{ view_data.overall_progress_pct }}%"></div></div>
               <div class="hero-budget-summary">
                 <div class="hbs-header">
                   <div>
                     <div class="hbs-label">予算消費状況</div>
-                    <div class="hbs-sub">¥9,300,000 / ¥15,000,000</div>
+                    <div class="hbs-sub">{{ view_data.budget_actual_display }} / {{ view_data.budget_base_display }}</div>
                   </div>
-                  <div class="hbs-pct" id="managerProjectMonitoringBudgetPct">62%</div>
+                  <div class="hbs-pct" id="managerProjectMonitoringBudgetPct">{{ view_data.budget_pct }}%</div>
                 </div>
                 <div class="hbs-track">
-                  <div class="hbs-fill hbs-ok" id="managerProjectMonitoringBudgetGauge" style="width:0%"></div>
+                  <div class="hbs-fill {{ view_data.budget_gauge_class }}" id="managerProjectMonitoringBudgetGauge" style="width:{{ 100 if view_data.budget_pct > 100 else view_data.budget_pct }}%"></div>
                 </div>
               </div>
             </div>
@@ -385,16 +380,26 @@
             <div class="ap-title">現在のアラート状況</div>
             <div class="ap-alerts">
               <div class="ap-item api-danger">
-                <div class="ap-text">期限超過タスク<small>最大4日超過</small></div>
-                <div class="ap-val">2件</div>
+                {% if view_data.overdue_count > 0 %}
+                <div class="ap-text">期限超過タスク<small>最大{{ view_data.max_overdue_days }}日超過</small></div>
+                <div class="ap-val">{{ view_data.overdue_count }}件</div>
+                {% else %}
+                <div class="ap-text">期限超過タスク<small>期限超過中のタスクはありません</small></div>
+                <div class="ap-val">0件</div>
+                {% endif %}
               </div>
               <div class="ap-item api-warning">
-                <div class="ap-text">最終進捗更新<small>田中 太郎 · 2025/05/13</small></div>
-                <div class="ap-val">3日前</div>
+                <div class="ap-text">最終進捗更新<small>{{ view_data.last_progress_meta }}</small></div>
+                <div class="ap-val">{{ view_data.last_progress_label }}</div>
               </div>
               <div class="ap-item api-info">
-                <div class="ap-text">月次進捗報告<small>2025年5月分を提出済み</small></div>
+                {% if view_data.report_submitted %}
+                <div class="ap-text">月次進捗報告<small>{{ view_data.report_month_label }}を提出済み</small></div>
                 <div class="ap-val">提出済</div>
+                {% else %}
+                <div class="ap-text">月次進捗報告<small>{{ view_data.report_month_label }}は未提出です</small></div>
+                <div class="ap-val">未提出</div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -404,20 +409,23 @@
           <div class="rc-head report-accordion-head" onclick="toggleManagerProjectMonitoringReportAccordion(this)">
             <div class="rc-title">月次進捗報告</div>
             <div class="rc-head-right">
-              <div class="rc-meta"><div class="rc-date">2025/05/13 提出</div><div class="rc-new-badge">最新</div></div>
+              <div class="rc-meta">
+                <div class="rc-date">{% if view_data.report_submitted %}{{ view_data.report_updated_display }} 提出{% else %}{{ view_data.report_month_label }} 未提出{% endif %}</div>
+                {% if view_data.report_submitted %}<div class="rc-new-badge">最新</div>{% endif %}
+              </div>
               <div class="rc-arrow open">▼</div>
             </div>
           </div>
           <div class="report-body report-accordion-body open">
-            <div class="report-text">・移行計画の最終確認が完了し、ステージング環境での動作検証を開始しました。
-・DBスキーマの変換ツールは開発完了、コードレビュー待ちです。
-・マイグレーションスクリプトの一部で処理速度の問題が発生中、現在対応中です。
+            {% if view_data.report_submitted %}
+            <div class="report-text">{{ view_data.report_comment }}</div>
+            {% else %}
+            <div class="report-text">月次進捗報告はまだ提出されていません
 
-【来月の予定】
-・ステージング環境での総合テスト完了
-・本番環境切り替えスケジュールの確定</div>
+主担当者が案件進捗管理画面で報告を入力すると、ここに表示されます。</div>
+            {% endif %}
             <div class="report-footer">
-              <div class="report-owner">主担当：<strong>田中 太郎</strong></div>
+              <div class="report-owner">主担当：<strong>{{ view_data.applicant_name }}</strong></div>
             </div>
           </div>
         </div>
@@ -427,27 +435,42 @@
         <div class="m-card">
           <div class="mc-head"><div class="mc-title">タスク一覧</div><div class="mc-badge-ro">読み取り専用</div></div>
           <div class="task-toolbar">
-            <div class="task-count">全 <strong>9</strong> タスク ／ 完了 <strong>3</strong> 件 ／ 遅延 <strong>2</strong> 件</div>
+            <div class="task-count">全 <strong>{{ view_data.task_count }}</strong> タスク ／ 完了 <strong>{{ view_data.done_count }}</strong> 件 ／ 遅延 <strong>{{ view_data.overdue_count }}</strong> 件</div>
             <div class="filter-group">
-              <button class="f-btn active" id="managerProjectMonitoringFAll" onclick="setManagerProjectMonitoringFilter(this,'all')">全て</button>
-              <button class="f-btn f-delay" id="managerProjectMonitoringFDelay" onclick="setManagerProjectMonitoringFilter(this,'delay')">遅延</button>
-              <button class="f-btn" id="managerProjectMonitoringFProg" onclick="setManagerProjectMonitoringFilter(this,'progress')">進行中</button>
-              <button class="f-btn" id="managerProjectMonitoringFDone" onclick="setManagerProjectMonitoringFilter(this,'done')">完了</button>
+              <button type="button" class="f-btn active" id="managerProjectMonitoringFAll" onclick="setManagerProjectMonitoringFilter(this,'all')">全て</button>
+              <button type="button" class="f-btn f-delay" id="managerProjectMonitoringFDelay" onclick="setManagerProjectMonitoringFilter(this,'delay')">遅延</button>
+              <button type="button" class="f-btn" id="managerProjectMonitoringFProg" onclick="setManagerProjectMonitoringFilter(this,'progress')">進行中</button>
+              <button type="button" class="f-btn" id="managerProjectMonitoringFNotStarted" onclick="setManagerProjectMonitoringFilter(this,'notstarted')">未着手</button>
+              <button type="button" class="f-btn" id="managerProjectMonitoringFDone" onclick="setManagerProjectMonitoringFilter(this,'done')">完了</button>
             </div>
           </div>
           <div class="task-table-wrap">
             <table class="task-tbl">
               <thead><tr><th>タスク名</th><th>状態</th><th>担当者</th><th>期限</th><th>進捗</th></tr></thead>
               <tbody id="managerProjectMonitoringTaskTbody">
-                <tr class="tr-delay" data-status="delay"><td><strong>DBスキーマ変換ツール 開発</strong></td><td><span class="s-badge sb-delay">遅延</span></td><td><div class="member-chip">田中 太郎</div></td><td><span class="dl-over">5/14 <small>+2日</small></span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-mid" style="width:85%"></div></div><span class="task-prog-pct">85%</span></div></td></tr>
-                <tr class="tr-delay" data-status="delay"><td><strong>CI/CDパイプライン構築</strong></td><td><span class="s-badge sb-delay">遅延</span></td><td><div class="member-chip">佐藤 次郎</div></td><td><span class="dl-over">5/12 <small>+4日</small></span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-low" style="width:45%"></div></div><span class="task-prog-pct">45%</span></div></td></tr>
-                <tr data-status="progress"><td><strong>ステージング環境 動作検証</strong></td><td><span class="s-badge sb-progress">進行中</span></td><td><div class="member-chip">田中 太郎</div></td><td><span class="dl-today">5/17 <small>明日</small></span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-mid" style="width:60%"></div></div><span class="task-prog-pct">60%</span></div></td></tr>
-                <tr data-status="progress"><td><strong>マイグレーションスクリプト 速度改善</strong></td><td><span class="s-badge sb-progress">進行中</span></td><td><div class="member-chip">鈴木 花子</div></td><td><span class="dl-soon">5/20</span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-low" style="width:30%"></div></div><span class="task-prog-pct">30%</span></div></td></tr>
-                <tr data-status="progress"><td><strong>認証・権限設計</strong></td><td><span class="s-badge sb-progress">進行中</span></td><td><div class="member-chip">高橋 良介</div></td><td><span class="dl-normal">5/28</span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-mid" style="width:70%"></div></div><span class="task-prog-pct">70%</span></div></td></tr>
-                <tr data-status="notstarted"><td>本番環境 切り替え作業</td><td><span class="s-badge sb-notstarted">未着手</span></td><td><div class="member-chip">田中 太郎</div></td><td><span class="dl-normal">9/15</span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-low" style="width:0%"></div></div><span class="task-prog-pct">0%</span></div></td></tr>
-                <tr class="tr-done" data-status="done"><td>移行計画書 最終確認</td><td><span class="s-badge sb-done">完了</span></td><td><div class="member-chip">田中 太郎</div></td><td><span class="dl-normal">5/10</span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-high" style="width:100%"></div></div><span class="task-prog-pct" style="color:var(--mpm-success)">100%</span></div></td></tr>
-                <tr class="tr-done" data-status="done"><td>ネットワーク設計書 作成</td><td><span class="s-badge sb-done">完了</span></td><td><div class="member-chip">鈴木 花子</div></td><td><span class="dl-normal">5/08</span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-high" style="width:100%"></div></div><span class="task-prog-pct" style="color:var(--mpm-success)">100%</span></div></td></tr>
-                <tr class="tr-done" data-status="done"><td>要件定義・スコープ確定</td><td><span class="s-badge sb-done">完了</span></td><td><div class="member-chip">田中 太郎</div></td><td><span class="dl-normal">4/30</span></td><td><div class="task-prog-wrap"><div class="task-prog-track"><div class="task-prog-fill tpf-high" style="width:100%"></div></div><span class="task-prog-pct" style="color:var(--mpm-success)">100%</span></div></td></tr>
+                {% if view_data.tasks %}
+                  {% for task in view_data.tasks %}
+                  <tr class="{{ task.row_class }}" data-status="{{ task.filter_status }}" data-overdue="{{ 1 if task.is_overdue else 0 }}">
+                    <td>{% if task.is_overdue %}<strong>{{ task.title }}</strong>{% else %}{{ task.title }}{% endif %}</td>
+                    <td><span class="s-badge {{ task.status_badge_class }}">{{ task.status_label }}</span></td>
+                    <td><div class="member-chip">{{ task.assignee_name }}</div></td>
+                    <td><span class="{{ task.due_class }}">{{ task.due_display }}</span></td>
+                    <td>
+                      <div class="task-prog-wrap">
+                        <div class="task-prog-track"><div class="task-prog-fill {{ task.progress_fill_class }}" style="width:{{ task.progress_rate }}%"></div></div>
+                        <span class="task-prog-pct"{% if task.is_done %} style="color:var(--mpm-success)"{% endif %}>{{ task.progress_rate }}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5">
+                      タスクがまだ登録されていません<br>
+                      主担当者がタスクを登録すると、ここに進捗が表示されます。
+                    </td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
@@ -461,14 +484,20 @@
       <div class="manager-complete-dialog-body">
         この案件を完了済みとして認定しますか？<br>
         完了認定後は、主担当者側にも完了状態として反映・通知されます。
+        {% if view_data.budget_is_over %}
+        <br><br>予算消費率が100%以上です。内容を確認のうえ実行してください。
+        {% endif %}
       </div>
       <div class="manager-complete-dialog-btns">
         <button type="button" class="manager-complete-dialog-cancel" onclick="closeManagerProjectMonitoringCompleteDialog()">見直す</button>
-        <button type="button" class="manager-complete-dialog-ok" onclick="confirmManagerProjectMonitoringComplete()">完了認定する</button>
+        <form method="post" action="{{ url_for('manager_project_monitoring_detail', project_id=view_data.project_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="confirm_complete" value="1">
+          <button type="submit" class="manager-complete-dialog-ok">完了認定する</button>
+        </form>
       </div>
     </div>
   </div>
-  <div class="manager-project-monitoring-toast" id="managerProjectMonitoringToast"></div>
 </div>
 {% endblock %}
 
@@ -476,8 +505,8 @@
     {% set footer_info_text = "" %}
     {% set footer_info_value = "" %}
     {% set footer_actions %}
-        <span class="manager-project-monitoring-footer-info">案件名：<span id="managerProjectMonitoringFooterProject">クラウド移行PJ</span></span>
-        <button type="button" class="manager-project-monitoring-footer-complete" onclick="completeManagerProjectMonitoringProject()">完了認定</button>
+        <span class="manager-project-monitoring-footer-info">案件名：<span id="managerProjectMonitoringFooterProject">{{ view_data.project_name }}</span></span>
+        <button type="button" class="manager-project-monitoring-footer-complete" onclick="completeManagerProjectMonitoringProject()"{% if not view_data.can_complete %} disabled title="{{ view_data.complete_disabled_reason }}"{% endif %}>完了認定</button>
     {% endset %}
     {% include "partials/_content_footer.html" %}
 {% endblock %}
@@ -486,43 +515,10 @@
 <script>
 (function initManagerProjectMonitoringMock() {
   initManagerProjectMonitoringResponsiveAccordions();
-  requestAnimationFrame(function () {
-    setTimeout(function () {
-      var gaugeEl = document.getElementById('managerProjectMonitoringHeroGauge');
-      if (gaugeEl) gaugeEl.style.width = '58%';
-      updateManagerProjectMonitoringBudgetGauge(62);
-    }, 200);
-  });
 })();
 
 function getManagerProjectMonitoringEl(id) {
   return document.getElementById(id);
-}
-
-function escapeManagerProjectMonitoringMockHtml(text) {
-  return String(text).replace(/[&<>"']/g, function (char) {
-    return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[char] || char;
-  });
-}
-
-function updateManagerProjectMonitoringBudgetGauge(pct) {
-  var gauge = getManagerProjectMonitoringEl('managerProjectMonitoringBudgetGauge');
-  var pctEl = getManagerProjectMonitoringEl('managerProjectMonitoringBudgetPct');
-  if (!gauge || !pctEl) return;
-  var safePct = Math.max(0, Math.min(100, Number(pct) || 0));
-  gauge.style.width = safePct + '%';
-  gauge.classList.remove('hbs-ok', 'hbs-warn', 'hbs-over');
-  if (safePct >= 100) {
-    gauge.classList.add('hbs-over');
-    pctEl.style.color = '#ea5757';
-  } else if (safePct >= 80) {
-    gauge.classList.add('hbs-warn');
-    pctEl.style.color = '#f7ae18';
-  } else {
-    gauge.classList.add('hbs-ok');
-    pctEl.style.color = '#6ee7b7';
-  }
-  pctEl.textContent = safePct + '%';
 }
 
 function toggleManagerProjectMonitoringReportAccordion(head) {
@@ -543,20 +539,8 @@ function initManagerProjectMonitoringResponsiveAccordions() {
   if (arrow) arrow.classList.remove('open');
 }
 
-function switchManagerProjectMonitoringProj(el, name) {
-  if (!el) return;
-  var tabs = document.querySelectorAll('.mock-manager-project-monitoring .proj-tab');
-  tabs.forEach(function (tab) { tab.classList.remove('active'); });
-  el.classList.add('active');
-  var safeName = escapeManagerProjectMonitoringMockHtml(name);
-  var nameEl = getManagerProjectMonitoringEl('managerProjectMonitoringHeroName');
-  if (nameEl) nameEl.innerHTML = safeName;
-  var footerNameEl = getManagerProjectMonitoringEl('managerProjectMonitoringFooterProject');
-  if (footerNameEl) footerNameEl.innerHTML = safeName;
-}
-
 function setManagerProjectMonitoringFilter(btn, type) {
-  var ids = ['managerProjectMonitoringFAll', 'managerProjectMonitoringFDelay', 'managerProjectMonitoringFProg', 'managerProjectMonitoringFDone'];
+  var ids = ['managerProjectMonitoringFAll', 'managerProjectMonitoringFDelay', 'managerProjectMonitoringFProg', 'managerProjectMonitoringFNotStarted', 'managerProjectMonitoringFDone'];
   ids.forEach(function (id) {
     var el = getManagerProjectMonitoringEl(id);
     if (el) el.classList.remove('active');
@@ -565,22 +549,14 @@ function setManagerProjectMonitoringFilter(btn, type) {
   var rows = document.querySelectorAll('#managerProjectMonitoringTaskTbody tr');
   rows.forEach(function (row) {
     var status = row.getAttribute('data-status');
+    var overdue = row.getAttribute('data-overdue');
     row.style.display =
       type === 'all' ? '' :
-      type === 'delay' ? (status === 'delay' ? '' : 'none') :
+      type === 'delay' ? (overdue === '1' ? '' : 'none') :
       type === 'progress' ? (status === 'progress' ? '' : 'none') :
+      type === 'notstarted' ? (status === 'notstarted' ? '' : 'none') :
       type === 'done' ? (status === 'done' ? '' : 'none') : '';
   });
-}
-
-function showManagerProjectMonitoringToast(msg) {
-  var toastEl = getManagerProjectMonitoringEl('managerProjectMonitoringToast');
-  if (!toastEl) return;
-  toastEl.textContent = msg;
-  toastEl.classList.add('show');
-  setTimeout(function () {
-    toastEl.classList.remove('show');
-  }, 2600);
 }
 
 function openManagerProjectMonitoringCompleteDialog() {
@@ -597,12 +573,9 @@ function closeManagerProjectMonitoringCompleteDialog() {
   overlay.setAttribute('aria-hidden', 'true');
 }
 
-function confirmManagerProjectMonitoringComplete() {
-  closeManagerProjectMonitoringCompleteDialog();
-  showManagerProjectMonitoringToast('完了認定しました');
-}
-
 function completeManagerProjectMonitoringProject() {
+  var btn = document.querySelector('.manager-project-monitoring-footer-complete');
+  if (btn && btn.disabled) return;
   openManagerProjectMonitoringCompleteDialog();
 }
 </script>
