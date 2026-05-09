@@ -127,7 +127,7 @@
   margin-top: 2px;
 }
 .mock-manager-project-monitoring .hbs-pct {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 900;
   color: #6ee7b7;
   line-height: 1;
@@ -165,6 +165,13 @@
 .mock-manager-project-monitoring .rc-date { font-size: 11px; color: var(--mpm-muted); }
 .mock-manager-project-monitoring .rc-new-badge { font-size: 10px; font-weight: 800; padding: 2px 9px; border-radius: 8px; background: var(--mpm-success); color: #fff; }
 .mock-manager-project-monitoring .report-body { padding: 20px 22px; }
+.mock-manager-project-monitoring .report-accordion-head { cursor: pointer; user-select: none; }
+.mock-manager-project-monitoring .report-accordion-head:hover { background: var(--mpm-purple-soft); }
+.mock-manager-project-monitoring .rc-head-right { display: flex; align-items: center; gap: 10px; }
+.mock-manager-project-monitoring .rc-arrow { font-size: 12px; color: var(--mpm-muted); transition: transform .25s; flex-shrink: 0; }
+.mock-manager-project-monitoring .rc-arrow.open { transform: rotate(180deg); }
+.mock-manager-project-monitoring .report-accordion-body { display: none; }
+.mock-manager-project-monitoring .report-accordion-body.open { display: block; }
 .mock-manager-project-monitoring .report-text {
   font-size: 14px; line-height: 2; color: var(--mpm-text); white-space: pre-line; background: #faf7fb; border: 1px solid var(--mpm-border);
   border-radius: 10px; padding: 16px 18px; border-left: 4px solid var(--mpm-sidebar);
@@ -338,11 +345,14 @@
         </div>
 
         <div class="report-card">
-          <div class="rc-head">
-            <div class="rc-title">申請者からの月次報告</div>
-            <div class="rc-meta"><div class="rc-date">2025/05/13 提出</div><div class="rc-new-badge">最新</div></div>
+          <div class="rc-head report-accordion-head" onclick="toggleManagerProjectMonitoringReportAccordion(this)">
+            <div class="rc-title">月次進捗報告</div>
+            <div class="rc-head-right">
+              <div class="rc-meta"><div class="rc-date">2025/05/13 提出</div><div class="rc-new-badge">最新</div></div>
+              <div class="rc-arrow open">▼</div>
+            </div>
           </div>
-          <div class="report-body">
+          <div class="report-body report-accordion-body open">
             <div class="report-text">・移行計画の最終確認が完了し、ステージング環境での動作検証を開始しました。
 ・DBスキーマの変換ツールは開発完了、コードレビュー待ちです。
 ・マイグレーションスクリプトの一部で処理速度の問題が発生中、現在対応中です。
@@ -406,6 +416,7 @@
 {% block script_extra %}
 <script>
 (function initManagerProjectMonitoringMock() {
+  initManagerProjectMonitoringResponsiveAccordions();
   requestAnimationFrame(function () {
     setTimeout(function () {
       var gaugeEl = document.getElementById('managerProjectMonitoringHeroGauge');
@@ -443,6 +454,24 @@ function updateManagerProjectMonitoringBudgetGauge(pct) {
     pctEl.style.color = '#6ee7b7';
   }
   pctEl.textContent = safePct + '%';
+}
+
+function toggleManagerProjectMonitoringReportAccordion(head) {
+  if (!head) return;
+  var body = head.nextElementSibling;
+  var arrow = head.querySelector('.rc-arrow');
+  if (!body) return;
+  var isOpen = body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', isOpen);
+}
+
+function initManagerProjectMonitoringResponsiveAccordions() {
+  var isSmall = window.matchMedia('(max-width: 899px)').matches;
+  if (!isSmall) return;
+  var body = document.querySelector('.mock-manager-project-monitoring .report-accordion-body');
+  var arrow = document.querySelector('.mock-manager-project-monitoring .rc-arrow');
+  if (body) body.classList.remove('open');
+  if (arrow) arrow.classList.remove('open');
 }
 
 function switchManagerProjectMonitoringProj(el, name) {
