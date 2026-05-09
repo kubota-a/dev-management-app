@@ -1015,6 +1015,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "budget_pct_color": "var(--app-prog-danger)" if budget_pct >= 100 else "var(--app-prog-warning)" if budget_pct >= 80 else "var(--app-prog-success)",
         "tasks": [build_applicant_progress_task_data(task, idx, today, tomorrow) for idx, task in enumerate(sorted_tasks)],
         "monthly_report_comment": project.monthly_report_comment or "",
+        "previous_monthly_report_comment": project.monthly_report_comment or "",
         "report_month_label": f"{today.year}年{today.month}月",
         "current_position": current_index + 1 if current_index >= 0 else 0,
         "total_projects": len(progress_projects),
