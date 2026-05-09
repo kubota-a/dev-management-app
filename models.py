@@ -123,6 +123,7 @@ class Project(db.Model):
     planned_start_date = db.Column(db.Date, nullable=False)
     planned_end_date = db.Column(db.Date, nullable=True)
     monthly_report_comment = db.Column(db.Text, nullable=True)
+    monthly_report_updated_at = db.Column(db.DateTime(timezone=True), nullable=True)
     final_rejected_at = db.Column(db.DateTime(timezone=True), nullable=True)
     approved_at = db.Column(db.DateTime(timezone=True), nullable=True)
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)

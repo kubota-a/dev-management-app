@@ -1323,6 +1323,7 @@ def applicant_project_progress_detail(project_id):
         if (project.monthly_report_comment or "") != payload["monthly_report_comment"]:
             changed = True
             project.monthly_report_comment = payload["monthly_report_comment"]
+            project.monthly_report_updated_at = utc_now()
 
         task_map = {task.id: task for task in project.tasks}
         for task_id, update_data in payload["task_updates"].items():
