@@ -1840,6 +1840,14 @@ def manager_project_review(project_id: int):
 
 
 # =============================
+# ■ 部門管理者：案件モニタリング画面
+# =============================
+@app.route("/manager/projects/monitoring")
+def manager_project_monitoring():
+    return render_template("manager_project_monitoring.html")
+
+
+# =============================
 # ■ 本部管理者：トップ画面
 # =============================
 @app.route("/top/hq")
