@@ -188,7 +188,7 @@
 .mock-manager-project-monitoring .filter-group { display: flex; gap: 5px; }
 .mock-manager-project-monitoring .f-btn {
   padding: 4px 12px; border: 1.5px solid var(--mpm-border); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer;
-  background: #fff; color: var(--mpm-muted); font-family: var(--font-family-base); transition: all .15s;
+  background: #fff; color: var(--mpm-muted); font-family: var(--font-family-base); transition: all .15s; white-space: nowrap; flex-shrink: 0;
 }
 .mock-manager-project-monitoring .f-btn:hover { border-color: var(--mpm-purple-mid); color: var(--mpm-sidebar); }
 .mock-manager-project-monitoring .f-btn.active { background: var(--mpm-sidebar); color: #fff; border-color: var(--mpm-sidebar); }
@@ -299,6 +299,8 @@
   .mock-manager-project-monitoring .col-left,
   .mock-manager-project-monitoring .col-right { width: 100%; min-width: 0; }
   .mock-manager-project-monitoring .m-card { width: 100%; max-width: 100%; }
+  .mock-manager-project-monitoring .task-toolbar { width: 100%; }
+  .mock-manager-project-monitoring .filter-group { width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   .mock-manager-project-monitoring table.task-tbl { min-width: 560px; }
 }
 @media (min-width: 900px) {
