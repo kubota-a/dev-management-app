@@ -225,6 +225,62 @@
   border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap;
 }
 .mock-manager-project-monitoring .manager-project-monitoring-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.mock-manager-project-monitoring .manager-complete-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 22, 36, .45);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.mock-manager-project-monitoring .manager-complete-dialog-overlay.open { display: flex; }
+.mock-manager-project-monitoring .manager-complete-dialog-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 32px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(30, 22, 36, .2);
+}
+.mock-manager-project-monitoring .manager-complete-dialog-title {
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 8px;
+  color: var(--mpm-header);
+}
+.mock-manager-project-monitoring .manager-complete-dialog-body {
+  font-size: 13px;
+  color: var(--mpm-muted);
+  text-align: center;
+  line-height: 1.7;
+  margin-bottom: 22px;
+}
+.mock-manager-project-monitoring .manager-complete-dialog-btns { display: flex; gap: 10px; }
+.mock-manager-project-monitoring .manager-complete-dialog-cancel,
+.mock-manager-project-monitoring .manager-complete-dialog-ok {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-family-base);
+}
+.mock-manager-project-monitoring .manager-complete-dialog-cancel {
+  border: 1.5px solid var(--mpm-border);
+  background: #fff;
+  color: var(--mpm-text);
+}
+.mock-manager-project-monitoring .manager-complete-dialog-cancel:hover { background: var(--mpm-purple-light); }
+.mock-manager-project-monitoring .manager-complete-dialog-ok {
+  background: var(--mpm-header);
+  color: #fff;
+  border: none;
+}
+.mock-manager-project-monitoring .manager-complete-dialog-ok:hover { background: var(--mpm-header-dark); }
 .manager-project-monitoring-footer-info { font-size: 13px; color: #7a6480; margin-right: 8px; }
 .manager-project-monitoring-footer-complete {
   height: 36px; padding: 0 16px; border-radius: 8px; background: #3d2040; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer;
@@ -399,6 +455,19 @@
       </div>
     </div>
   </div>
+  <div class="manager-complete-dialog-overlay" id="managerProjectMonitoringCompleteDialogOverlay" aria-hidden="true">
+    <div class="manager-complete-dialog-box" role="dialog" aria-modal="true" aria-labelledby="managerProjectMonitoringCompleteDialogTitle">
+      <div class="manager-complete-dialog-title" id="managerProjectMonitoringCompleteDialogTitle">完了認定の確認</div>
+      <div class="manager-complete-dialog-body">
+        この案件を完了済みとして認定しますか？<br>
+        完了認定後は、主担当者側にも完了状態として反映・通知されます。
+      </div>
+      <div class="manager-complete-dialog-btns">
+        <button type="button" class="manager-complete-dialog-cancel" onclick="closeManagerProjectMonitoringCompleteDialog()">見直す</button>
+        <button type="button" class="manager-complete-dialog-ok" onclick="confirmManagerProjectMonitoringComplete()">完了認定する</button>
+      </div>
+    </div>
+  </div>
   <div class="manager-project-monitoring-toast" id="managerProjectMonitoringToast"></div>
 </div>
 {% endblock %}
@@ -514,8 +583,27 @@ function showManagerProjectMonitoringToast(msg) {
   }, 2600);
 }
 
+function openManagerProjectMonitoringCompleteDialog() {
+  var overlay = getManagerProjectMonitoringEl('managerProjectMonitoringCompleteDialogOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeManagerProjectMonitoringCompleteDialog() {
+  var overlay = getManagerProjectMonitoringEl('managerProjectMonitoringCompleteDialogOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function confirmManagerProjectMonitoringComplete() {
+  closeManagerProjectMonitoringCompleteDialog();
+  showManagerProjectMonitoringToast('完了認定しました');
+}
+
 function completeManagerProjectMonitoringProject() {
-  showManagerProjectMonitoringToast('完了認定を実行します');
+  openManagerProjectMonitoringCompleteDialog();
 }
 </script>
 {% endblock %}
