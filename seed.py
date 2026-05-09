@@ -159,6 +159,28 @@ PROJECT_SUMMARIES = {
     "proj_15": "主な施策：\n・申請フォームの入力項目整理\n・承認前チェック項目の見直し\n・完了報告までの導線整備\n\n期待効果：\n・申請作成時間の短縮\n・差し戻し件数の削減\n・完了報告の抜け漏れ防止",
 }
 
+PROJECT_MONTHLY_REPORTS = {
+    "proj_03": "検索条件UIの設計とAPI実装を進めています。検索条件の保存機能は設計方針が固まり、現在は検索APIの実装とインデックス最適化の検証を行っています。",
+    "proj_07": "バックアップジョブ見直しと監視閾値調整を進めています。一部タスクに遅れが出ているため、担当者間で優先度を見直しながら対応しています。",
+    "proj_10": "月次報告フォームの入力項目整理と画面遷移改善を進めています。入力補助ロジックの実装に着手しており、次回は部門ヒアリング結果を反映する予定です。",
+    "proj_11": "予算執行状況の集計ロジックとグラフ表示の調整を進めています。予算消化が大きいため、残作業の範囲と追加費用の見込みを確認しています。",
+    "proj_14": "前月データ参照ロジックの整理が完了し、報告文案生成ルールの作成を進めています。入力漏れチェック実装に一部遅れがあるため、優先的に対応しています。",
+    "proj_04": "申請フォーム入力補助機能の導入作業は完了しました。入力補助候補の整備、フォーム文言改修、操作説明更新まで完了しています。",
+    "proj_08": "権限棚卸し支援ダッシュボード作成は完了しました。権限一覧取り込み、棚卸し画面実装、判定ルール調整まで完了しています。",
+    "proj_15": "社内申請ワークフロー簡素化対応は完了しました。申請手順の棚卸し、入力項目整理、承認前チェック項目の調整まで完了しています。",
+}
+
+PROJECT_MONTHLY_REPORT_ROLES = {
+    "proj_03": "report_mid",
+    "proj_07": "report_old",
+    "proj_10": "report_recent",
+    "proj_11": "report_mid",
+    "proj_14": "report_recent",
+    "proj_04": "report_completed_old",
+    "proj_08": "report_completed",
+    "proj_15": "report_completed",
+}
+
 
 PROJECT_DRAFT_DATE_RULES = {
     "draft_recent_a": {"fixed": {"created": -5, "updated": -1}, "relative": {"created": -5, "updated": -1}},
@@ -183,6 +205,15 @@ PROJECT_DATE_RULES = {
     "pending_watanabe_recent": {"fixed": {"created": -5, "updated": -1, "approved": None, "completed": None, "rejected": None}, "relative": {"created": -4, "updated": -1, "approved": None, "completed": None, "rejected": None}},
     "progress_watanabe_attention": {"fixed": {"created": -24, "updated": -1, "approved": -2, "completed": None, "rejected": None}, "relative": {"created": -18, "updated": 0, "approved": -2, "completed": None, "rejected": None}},
     "completed_watanabe_recent": {"fixed": {"created": -28, "updated": -1, "approved": -8, "completed": -1, "rejected": None}, "relative": {"created": -24, "updated": -1, "approved": -8, "completed": -1, "rejected": None}},
+}
+
+MONTHLY_REPORT_DATE_RULES = {
+    "report_recent": {"fixed": -1, "relative": -1},
+    "report_today": {"fixed": 0, "relative": 0},
+    "report_mid": {"fixed": -3, "relative": -3},
+    "report_old": {"fixed": -7, "relative": -7},
+    "report_completed": {"fixed": -1, "relative": -1},
+    "report_completed_old": {"fixed": -2, "relative": -2},
 }
 
 PLANNED_DATE_RULES = {
@@ -335,6 +366,12 @@ def resolve_budget_log_dates(mode: str, role: str) -> tuple[date, datetime]:
     return recorded_on, created_at
 
 
+def resolve_monthly_report_updated_at(mode: str, role: str) -> datetime:
+    anchor = get_seed_anchor(mode)
+    target = anchor + timedelta(days=MONTHLY_REPORT_DATE_RULES[role][mode])
+    return combine_jst_to_utc(target, 17, 30)
+
+
 def resolve_notification_created_at(mode: str, role: str) -> datetime:
     anchor = get_seed_anchor(mode)
     target = anchor + timedelta(days=NOTIFICATION_DATE_RULES[role][mode])
@@ -434,6 +471,13 @@ def create_projects(mode: str, users_by_key: dict[str, User], departments_by_key
         applicant = users_by_key[item["applicant_key"]]
         project_dates = resolve_project_dates(mode, item["date_role"])
         planned_start_date, planned_end_date = resolve_planned_date(mode, item["planned_role"])
+        monthly_report_comment = PROJECT_MONTHLY_REPORTS.get(item["key"])
+        monthly_report_role = PROJECT_MONTHLY_REPORT_ROLES.get(item["key"])
+        monthly_report_updated_at = (
+            resolve_monthly_report_updated_at(mode, monthly_report_role)
+            if monthly_report_comment and monthly_report_role
+            else None
+        )
         approved_budget = Decimal(item["budget"]) if item["status"] in {"in_progress", "completed"} else None
         rejection_comment = "現行運用との差分整理と移行対象範囲の記載が不足しています。" if item["status"] == "rejected" else None
 
@@ -452,6 +496,8 @@ def create_projects(mode: str, users_by_key: dict[str, User], departments_by_key
             rejection_comment=rejection_comment,
             planned_start_date=planned_start_date,
             planned_end_date=planned_end_date,
+            monthly_report_comment=monthly_report_comment,
+            monthly_report_updated_at=monthly_report_updated_at,
             final_rejected_at=project_dates["final_rejected_at"],
             approved_at=project_dates["approved_at"],
             completed_at=project_dates["completed_at"],
