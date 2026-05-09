@@ -150,9 +150,9 @@
 .mock-manager-project-monitoring .ap-title { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
 .mock-manager-project-monitoring .ap-alerts { display: flex; flex-direction: column; gap: 8px; }
 .mock-manager-project-monitoring .ap-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; font-size: 13px; font-weight: 600; }
-.mock-manager-project-monitoring .api-danger { background: rgba(220,53,69,.28); color: #fca5a5; border: 1px solid rgba(220,53,69,.4); }
-.mock-manager-project-monitoring .api-warning { background: rgba(217,119,6,.25); color: #fcd34d; border: 1px solid rgba(217,119,6,.4); }
-.mock-manager-project-monitoring .api-info { background: rgba(37,99,235,.22); color: #93c5fd; border: 1px solid rgba(37,99,235,.35); }
+.mock-manager-project-monitoring .api-danger { background: transparent; color: #fca5a5; border: 1px solid #fca5a5; }
+.mock-manager-project-monitoring .api-warning { background: transparent; color: #fcd34d; border: 1px solid #fcd34d; }
+.mock-manager-project-monitoring .api-info { background: transparent; color: #93c5fd; border: 1px solid #93c5fd; }
 .mock-manager-project-monitoring .ap-text { flex: 1; line-height: 1.4; }
 .mock-manager-project-monitoring .ap-text small { display: block; font-size: 11px; opacity: .75; margin-top: 1px; font-weight: 400; }
 .mock-manager-project-monitoring .ap-val { font-size: 16px; font-weight: 900; flex-shrink: 0; }
@@ -385,7 +385,7 @@
             <div class="ap-title">現在のアラート状況</div>
             <div class="ap-alerts">
               <div class="ap-item api-danger">
-                <div class="ap-text">期限超過タスク<small>DBスキーマ変換ツール(+2日)、CI/CD構築(+4日)</small></div>
+                <div class="ap-text">期限超過タスク<small>最大4日超過</small></div>
                 <div class="ap-val">2件</div>
               </div>
               <div class="ap-item api-warning">
@@ -393,7 +393,7 @@
                 <div class="ap-val">3日前</div>
               </div>
               <div class="ap-item api-info">
-                <div class="ap-text">月次報告<small>2025年5月分を提出済み</small></div>
+                <div class="ap-text">月次進捗報告<small>2025年5月分を提出済み</small></div>
                 <div class="ap-val">提出済</div>
               </div>
             </div>
