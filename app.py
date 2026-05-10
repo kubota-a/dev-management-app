@@ -120,7 +120,6 @@ def redirect_by_role(role: str):
 def require_applicant():
     """申請者ロールのみ通す。権限外はロール別トップへ戻す。"""
     if current_user.role != "applicant":
-        flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
 
@@ -128,7 +127,6 @@ def require_applicant():
 def require_manager():
     """部門管理者ロールのみ許可する。"""
     if current_user.role != "manager":
-        flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
 
@@ -136,7 +134,6 @@ def require_manager():
 def require_hq():
     """本部管理者ロールのみ許可する。"""
     if current_user.role != "hq":
-        flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
 
