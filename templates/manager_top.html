@@ -50,20 +50,21 @@
 .mock-manager-dashboard .col-main { display: flex; flex-direction: column; gap: 22px; min-width: 0; max-width: 100%; }
 .mock-manager-dashboard .col-right { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 80px; min-width: 0; max-width: 100%; }
 .mock-manager-dashboard .summary-band { margin-bottom: 24px; }
-.mock-manager-dashboard .sb-value-delay {
-  color: var(--color-status-delay, var(--md-danger));
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-normal .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-normal .sb-unit {
+  color: var(--md-purple-light) !important;
 }
-.mock-manager-dashboard .sb-value-completion {
-  color: var(--md-purple-light);
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-yellow .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-yellow .sb-unit {
+  color: #fef08a !important;
 }
-.mock-manager-dashboard .sb-value-budget {
-  color: var(--color-status-budget-alert, var(--md-warning));
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-orange .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-orange .sb-unit {
+  color: #fdba74 !important;
 }
-.mock-manager-dashboard .summary-band .sb-value-budget {
-  color: var(--color-status-budget-alert, var(--md-warning));
-}
-.mock-manager-dashboard .summary-band-segment.is-delay .sb-value.sb-value-budget {
-  color: var(--color-status-budget-alert, var(--md-warning));
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-red .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-red .sb-unit {
+  color: #ff8aa0 !important;
 }
 .mock-manager-dashboard .approval-card, .mock-manager-dashboard .project-list-card, .mock-manager-dashboard .resource-card { background: var(--md-card); border: 1px solid var(--md-border); border-radius: var(--md-radius); overflow: hidden; min-width: 0; max-width: 100%; }
 .mock-manager-dashboard .approval-card { box-shadow: var(--md-shadow-card); }
@@ -194,6 +195,7 @@
 .mock-manager-dashboard .donut-center-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
 .mock-manager-dashboard .donut-pct { font-size: 30px; line-height: 1; font-weight: 900; color: var(--md-sidebar); letter-spacing: -.01em; }
 .mock-manager-dashboard .donut-pct.dp-warn { color: var(--md-warning); }
+.mock-manager-dashboard .donut-pct.dp-danger { color: var(--md-danger); }
 .mock-manager-dashboard .donut-unit { margin-top: 4px; font-size: 12px; color: var(--md-muted); font-weight: 700; }
 .mock-manager-dashboard .donut-legend { border-top: 1px solid var(--md-border); padding-top: 10px; }
 .mock-manager-dashboard .dl-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-top: 6px; }
@@ -201,6 +203,11 @@
 .mock-manager-dashboard .dl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .mock-manager-dashboard .dl-key { font-size: 12px; color: var(--md-muted); }
 .mock-manager-dashboard .dl-val { font-size: 12px; color: var(--md-text); font-weight: 700; }
+.mock-manager-dashboard .table-empty-main { font-weight: 700; color: var(--md-text); }
+.mock-manager-dashboard .table-empty-sub { margin-top: 4px; color: var(--md-muted); font-size: 12px; }
+.mock-manager-dashboard .project-empty-row { display: block; grid-column: 1 / -1; text-align: center; padding: 24px 12px; }
+.mock-manager-dashboard .card-empty { text-align: center; padding: 28px 12px; }
+.mock-manager-dashboard .card-empty .table-empty-main { display: block; }
 .mock-manager-dashboard .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--md-text); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
 .mock-manager-dashboard .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 @media (max-width: 1100px) {
@@ -324,34 +331,34 @@
     <section class="summary-band" aria-label="件数サマリー">
       <div class="summary-band-inner">
         <div class="summary-band-segment sb-accent-blue">
-          <div class="sb-number-row"><span class="sb-value">12</span><span class="sb-unit">件</span></div>
+          <div class="sb-number-row sb-number-normal"><span class="sb-value">{{ view_data.summary.project_total }}</span><span class="sb-unit">件</span></div>
           <span class="sb-label">部門案件</span>
-          <span class="sb-meta">進行中8/完了3/申請中1</span>
+          <span class="sb-meta">{{ view_data.summary.project_meta }}</span>
         </div>
         <div class="summary-band-segment sb-accent-amber is-warning">
-          <div class="sb-number-row"><span class="sb-value sb-value-delay">4</span><span class="sb-unit">件</span></div>
+          <div class="sb-number-row {{ 'sb-number-yellow' if view_data.summary.approval_wait3_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.approval_total }}</span><span class="sb-unit">件</span></div>
           <span class="sb-label">承認依頼</span>
-          <span class="sb-meta">3日以上待機 2件</span>
+          <span class="sb-meta">3日以上待機 {% if view_data.summary.approval_wait3_total > 0 %}{{ view_data.summary.approval_wait3_total }}件{% else %}なし{% endif %}</span>
         </div>
         <div class="summary-band-segment sb-accent-teal">
-          <div class="sb-number-row"><span class="sb-value sb-value-completion">1</span><span class="sb-unit">件</span></div>
+          <div class="sb-number-row {{ 'sb-number-yellow' if view_data.summary.completion_wait3_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.completion_total }}</span><span class="sb-unit">件</span></div>
           <span class="sb-label">完了認定依頼</span>
-          <span class="sb-meta">3日以上待機 なし</span>
+          <span class="sb-meta">3日以上待機 {% if view_data.summary.completion_wait3_total > 0 %}{{ view_data.summary.completion_wait3_total }}件{% else %}なし{% endif %}</span>
         </div>
         <div class="summary-band-segment sb-accent-green">
-          <div class="sb-number-row"><span class="sb-value sb-value-budget">2</span><span class="sb-unit">名</span></div>
+          <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.load_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.load_total }}</span><span class="sb-unit">名</span></div>
           <span class="sb-label">負荷集中メンバー</span>
-          <span class="sb-meta">過負荷1/高負荷1</span>
+          <span class="sb-meta">過負荷{{ view_data.summary.over_load_total }}/高負荷{{ view_data.summary.high_load_total }}</span>
         </div>
         <div class="summary-band-segment sb-accent-red is-delay">
-          <div class="sb-number-row"><span class="sb-value sb-value-budget">2</span><span class="sb-unit">件</span></div>
+          <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.delay_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.delay_total }}</span><span class="sb-unit">件</span></div>
           <span class="sb-label">遅延案件</span>
-          <span class="sb-meta">最長遅延2日</span>
+          <span class="sb-meta">{% if view_data.summary.delay_total > 0 %}最長遅延{{ view_data.summary.max_delay_days }}日{% else %}最長遅延なし{% endif %}</span>
         </div>
         <div class="summary-band-segment sb-accent-orange is-budget-alert">
-          <div class="sb-number-row"><span class="sb-value sb-value-budget">2</span><span class="sb-unit">件</span></div>
+          <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.budget_over_total > 0 else ('sb-number-orange' if view_data.summary.budget_caution_total > 0 else 'sb-number-normal') }}"><span class="sb-value">{{ view_data.summary.budget_caution_total + view_data.summary.budget_over_total }}</span><span class="sb-unit">件</span></div>
           <span class="sb-label">予算注意</span>
-          <span class="sb-meta">注意1/超過1</span>
+          <span class="sb-meta">注意{{ view_data.summary.budget_caution_total }}/超過{{ view_data.summary.budget_over_total }}</span>
         </div>
       </div>
     </section>
@@ -361,7 +368,7 @@
           <div class="ac-header dashboard-accordion-head" onclick="toggleManagerDashboardAccordion(this)">
             <div class="ac-title">承認依頼<span class="ac-action-label">要アクション</span></div>
             <div class="ac-head-right">
-              <div class="ac-count">4件</div>
+              <div class="ac-count">{{ view_data.summary.approval_total }}件</div>
               <div class="ac-arrow open">▼</div>
             </div>
           </div>
@@ -378,38 +385,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td style="color:var(--md-danger);font-weight:700;">5/13</td>
-                  <td><div class="proj-link" onclick="showManagerDashboardToast('「基幹システム刷新PJ」の申請詳細へ')">基幹システム刷新PJ</div></td>
-                  <td>田中 太郎</td>
-                  <td style="font-weight:700;">¥12,000,000</td>
-                  <td><span class="badge-primary bp-urgent">3日待機</span></td>
-                  <td><button class="review-btn" onclick="showManagerDashboardToast('「基幹システム刷新PJ」の審査画面へ')">審査へ →</button></td>
-                </tr>
-                <tr>
-                  <td>5/14</td>
-                  <td><div class="proj-link" onclick="showManagerDashboardToast('「BI基盤整備」の申請詳細へ')">BI基盤整備</div></td>
-                  <td>鈴木 花子</td>
-                  <td style="font-weight:700;">¥5,500,000</td>
-                  <td><span class="badge badge-approval-dept">部門承認待ち</span></td>
-                  <td><button class="review-btn" onclick="showManagerDashboardToast('「BI基盤整備」の審査画面へ')">審査へ →</button></td>
-                </tr>
-                <tr>
-                  <td>5/15</td>
-                  <td><div class="proj-link" onclick="showManagerDashboardToast('「モバイルアプリ開発」の申請詳細へ')">モバイルアプリ開発</div></td>
-                  <td>佐藤 次郎</td>
-                  <td style="font-weight:700;">¥8,200,000</td>
-                  <td><span class="badge badge-approval-dept">部門承認待ち</span></td>
-                  <td><button class="review-btn" onclick="showManagerDashboardToast('「モバイルアプリ開発」の審査画面へ')">審査へ →</button></td>
-                </tr>
-                <tr>
-                  <td>5/16</td>
-                  <td><div class="proj-link" onclick="showManagerDashboardToast('「セキュリティ監査対応」の申請詳細へ')">セキュリティ監査対応</div></td>
-                  <td>高橋 良介</td>
-                  <td style="font-weight:700;">¥3,000,000</td>
-                  <td><span class="badge badge-approval-dept">部門承認待ち</span></td>
-                  <td><button class="review-btn" onclick="showManagerDashboardToast('「セキュリティ監査対応」の審査画面へ')">審査へ →</button></td>
-                </tr>
+                {% if view_data.review_requests %}
+                  {% for item in view_data.review_requests %}
+                    <tr>
+                      <td{% if item.is_waiting_long %} style="color:var(--md-danger);font-weight:700;"{% endif %}>{{ item.submitted_date }}</td>
+                      <td><a class="proj-link" href="{{ url_for('manager_project_review', project_id=item.project_id) }}">{{ item.project_name }}</a></td>
+                      <td>{{ item.applicant_name }}</td>
+                      <td style="font-weight:700;">{{ item.budget_display }}</td>
+                      <td><span class="badge-primary {{ 'bp-urgent' if item.is_waiting_long else 'bp-wait' }}">{{ item.status_label }}</span></td>
+                      <td><a class="review-btn" style="display:inline-block;text-decoration:none;" href="{{ url_for('manager_project_review', project_id=item.project_id) }}">審査へ →</a></td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" style="text-align:center;">
+                      <div class="table-empty-main">データがまだありません</div>
+                      <div class="table-empty-sub">現在、部門承認が必要な申請はありません。</div>
+                    </td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
@@ -418,7 +412,7 @@
           <div class="ac-header dashboard-accordion-head" onclick="toggleManagerDashboardAccordion(this)">
             <div class="ac-title">完了認定依頼<span class="ac-action-label">要アクション</span></div>
             <div class="ac-head-right">
-              <div class="ac-count">1件</div>
+              <div class="ac-count">{{ view_data.summary.completion_total }}件</div>
               <div class="ac-arrow open">▼</div>
             </div>
           </div>
@@ -435,21 +429,32 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>5/14</td>
-                  <td><div class="proj-link" onclick="showManagerDashboardToast('「クラウド移行PJ」の案件詳細へ')">クラウド移行PJ</div></td>
-                  <td>田中 太郎</td>
-                  <td>
-                    <div class="gauge-mini-wrap">
-                      <div class="gauge-mini-track">
-                        <div class="gauge-mini-fill gmf-ok" style="width:91%"></div>
-                      </div>
-                      <span class="gauge-mini-pct gmp-ok" style="font-size:11px;">91%</span>
-                    </div>
-                  </td>
-                  <td><span class="badge-primary bp-done">完了認定待ち</span></td>
-                  <td><button class="review-btn" onclick="showManagerDashboardToast('「クラウド移行PJ」の完了認定画面へ')">完了認定へ →</button></td>
-                </tr>
+                {% if view_data.completion_requests %}
+                  {% for item in view_data.completion_requests %}
+                    <tr>
+                      <td>{{ item.request_date }}</td>
+                      <td><a class="proj-link" href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}">{{ item.project_name }}</a></td>
+                      <td>{{ item.owner_name }}</td>
+                      <td>
+                        <div class="gauge-mini-wrap">
+                          <div class="gauge-mini-track">
+                            <div class="gauge-mini-fill {{ 'gmf-danger' if item.budget_rate_value >= 100 else ('gmf-warn' if item.budget_rate_value >= 80 else 'gmf-ok') }}" style="width:{{ 100 if item.budget_rate_value > 100 else item.budget_rate_value }}%"></div>
+                          </div>
+                          <span class="gauge-mini-pct {{ 'gmp-danger' if item.budget_rate_value >= 100 else ('gmp-warn' if item.budget_rate_value >= 80 else 'gmp-ok') }}" style="font-size:11px;">{{ item.budget_rate_display }}</span>
+                        </div>
+                      </td>
+                      <td><span class="badge-primary bp-done">完了認定待ち</span></td>
+                      <td><a class="review-btn" style="display:inline-block;text-decoration:none;" href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}">完了認定へ →</a></td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" style="text-align:center;">
+                      <div class="table-empty-main">データがまだありません</div>
+                      <div class="table-empty-sub">現在、完了認定が必要な案件はありません。</div>
+                    </td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
@@ -459,10 +464,10 @@
           <div class="plc-header">
             <div class="plc-title">自部門案件一覧</div>
             <div class="plc-filters">
-              <button class="filter-btn active" onclick="setManagerDashboardFilter(this,'全て')">全て</button>
-              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'進行中')">進行中</button>
-              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'遅延')">遅延</button>
-              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'完了')">完了</button>
+              <button class="filter-btn active" onclick="setManagerDashboardFilter(this,'all')">全て</button>
+              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'in_progress')">進行中</button>
+              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'delay')">遅延</button>
+              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'completed')">完了</button>
             </div>
           </div>
           <div class="project-list-head">
@@ -473,47 +478,22 @@
             <div>操作</div>
           </div>
 
-          <div class="proj-row">
-            <div><div class="proj-name">クラウド移行PJ</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-done">完了認定待ち</span></div></div>
-            <div class="proj-owner">田中 太郎</div>
-            <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:100%"></div></div><span class="gauge-mini-pct gmp-ok">100%</span></div>
-            <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:91%"></div></div><span class="gauge-mini-pct gmp-ok" style="font-size:11px;">91%</span></div></div>
-            <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('クラウド移行PJ 詳細へ')">詳細 →</button></div>
+          {% for item in view_data.project_items %}
+            <div class="proj-row{% if item.is_completed %} proj-row-completed{% endif %}" data-filter-status="{{ 'completed' if item.is_completed else 'in_progress' }}" data-filter-delay="{{ '1' if item.is_delayed else '0' }}">
+              <div><div class="proj-name{% if item.is_completed %} proj-name-normal{% endif %}">{{ item.project_name }}</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;">{% for label in item.status_labels %}<span class="badge-primary {{ label.class }}">{{ label.label }}</span>{% endfor %}</div></div>
+              <div class="proj-owner">{{ item.owner_name }}</div>
+              <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill {{ item.progress_class }}" style="width:{{ item.progress_width }}%"></div></div><span class="gauge-mini-pct {{ item.progress_text_class }}">{{ item.progress_pct }}%</span></div>
+              <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill {{ item.budget_class }}" style="width:{{ item.budget_width }}%"></div></div><span class="gauge-mini-pct {{ item.budget_text_class }}" style="font-size:11px;">{{ item.budget_display }}</span></div></div>
+              <div style="text-align:right;">{% if item.is_completed %}<button class="detail-btn" onclick="showManagerDashboardToast('完了済み案件の詳細ページは未実装')">詳細 →</button>{% else %}<a class="detail-btn" style="display:inline-block;text-decoration:none;" href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}">詳細 →</a>{% endif %}</div>
+            </div>
+          {% endfor %}
+          <div id="managerDashboardProjectEmpty" class="proj-row project-empty-row" style="{% if view_data.project_items %}display:none;{% endif %}">
+            <div class="table-empty-main">データがまだありません</div>
+            <div class="table-empty-sub">現在、表示できる自部門の開発中・完了案件はありません。</div>
           </div>
-          <div class="proj-row" style="background:#fff8f8;">
-            <div><div class="proj-name">顧客管理システム刷新</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-delay">遅延</span><span class="badge-primary bp-budget">予算注意</span></div></div>
-            <div class="proj-owner">鈴木 花子</div>
-            <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-danger" style="width:44%"></div></div><span class="gauge-mini-pct gmp-danger">44%</span></div>
-            <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-warn" style="width:88%"></div></div><span class="gauge-mini-pct gmp-warn" style="font-size:11px;">88%</span></div></div>
-            <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('顧客管理システム刷新 詳細へ')">詳細 →</button></div>
-          </div>
-          <div class="proj-row">
-            <div><div class="proj-name">API Gateway整備</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-prog">進行中</span></div></div>
-            <div class="proj-owner">佐藤 次郎</div>
-            <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-purple" style="width:72%"></div></div><span class="gauge-mini-pct gmp-purple">72%</span></div>
-            <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-danger" style="width:100%"></div></div><span class="gauge-mini-pct gmp-danger" style="font-size:11px;">103%</span></div></div>
-            <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('API Gateway整備 詳細へ')">詳細 →</button></div>
-          </div>
-          <div class="proj-row" style="background:#fff8f8;">
-            <div><div class="proj-name">DBマイグレーション</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-delay">遅延</span></div></div>
-            <div class="proj-owner">高橋 良介</div>
-            <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-danger" style="width:62%"></div></div><span class="gauge-mini-pct gmp-danger">62%</span></div>
-            <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:70%"></div></div><span class="gauge-mini-pct gmp-ok" style="font-size:11px;">70%</span></div></div>
-            <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('DBマイグレーション 詳細へ')">詳細 →</button></div>
-          </div>
-          <div class="proj-row">
-            <div><div class="proj-name">ログ管理システム</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-prog">進行中</span></div></div>
-            <div class="proj-owner">田中 太郎</div>
-            <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-purple" style="width:88%"></div></div><span class="gauge-mini-pct gmp-purple">88%</span></div>
-            <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:74%"></div></div><span class="gauge-mini-pct gmp-ok" style="font-size:11px;">74%</span></div></div>
-            <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('ログ管理システム 詳細へ')">詳細 →</button></div>
-          </div>
-          <div class="proj-row proj-row-completed">
-            <div><div class="proj-name proj-name-normal">認証基盤改修</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-done bp-done-outline">完了</span></div></div>
-            <div class="proj-owner">鈴木 花子</div>
-            <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:100%"></div></div><span class="gauge-mini-pct gmp-ok">100%</span></div>
-            <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:91%"></div></div><span class="gauge-mini-pct gmp-ok" style="font-size:11px;">91%</span></div></div>
-            <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('完了済み案件の詳細ページは未実装')">詳細 →</button></div>
+          <div id="managerDashboardProjectFilterEmpty" class="proj-row project-empty-row" style="display:none;">
+            <div class="table-empty-main">データがまだありません</div>
+            <div class="table-empty-sub">選択中の条件に該当する案件はありません。</div>
           </div>
         </div>
       </div>
@@ -522,78 +502,74 @@
         <div class="resource-card">
           <div class="rc-head"><div class="rc-title">メンバー負荷・リソース状況</div></div>
           <div class="rc-body">
-            <div class="member-bar-row">
-              <div class="mbr-top"><div class="mbr-name">田中 太郎</div><div class="mbr-meta"><span>未完了タスク 5件</span></div></div>
-              <div class="mbr-bar-track"><div class="mbr-bar-fill mbf-high" style="width:80%"></div></div>
-              <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 3</span><span class="task-mini-chip tmc-delay">遅延 1</span><span class="task-mini-chip tmc-not-started">未着手 1</span></div>
-            </div>
-            <div class="member-bar-row">
-              <div class="mbr-top"><div class="mbr-name">鈴木 花子</div><div class="mbr-meta"><span>未完了タスク 4件</span></div></div>
-              <div class="mbr-bar-track"><div class="mbr-bar-fill mbf-mid" style="width:60%"></div></div>
-              <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 3</span><span class="task-mini-chip tmc-not-started">未着手 1</span></div>
-            </div>
-            <div class="member-bar-row">
-              <div class="mbr-top"><div class="mbr-name">佐藤 次郎</div><div class="mbr-meta"><span>未完了タスク 7件</span></div></div>
-              <div class="mbr-bar-track"><div class="mbr-bar-fill mbf-over" style="width:95%"></div></div>
-              <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 4</span><span class="task-mini-chip tmc-delay">遅延 2</span><span class="task-mini-chip tmc-not-started">未着手 1</span></div>
-            </div>
-            <div class="member-bar-row">
-              <div class="mbr-top"><div class="mbr-name">高橋 良介</div><div class="mbr-meta"><span>未完了タスク 3件</span></div></div>
-              <div class="mbr-bar-track"><div class="mbr-bar-fill mbf-low" style="width:35%"></div></div>
-              <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 2</span><span class="task-mini-chip tmc-not-started">未着手 1</span></div>
-            </div>
-            <div class="member-bar-row" style="margin-bottom:0">
-              <div class="mbr-top"><div class="mbr-name">中村 美咲</div><div class="mbr-meta"><span>未完了タスク 2件</span></div></div>
-              <div class="mbr-bar-track"><div class="mbr-bar-fill mbf-low" style="width:25%"></div></div>
-              <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 2</span></div>
-            </div>
-            <div class="resource-legend">
-              <div class="rl-item"><div class="rl-dot" style="background:var(--md-success)"></div>余裕あり</div>
-              <div class="rl-item"><div class="rl-dot" style="background:var(--md-sidebar)"></div>適正</div>
-              <div class="rl-item"><div class="rl-dot" style="background:var(--md-warning)"></div>高負荷</div>
-              <div class="rl-item"><div class="rl-dot" style="background:var(--md-danger)"></div>過負荷</div>
-            </div>
+            {% if view_data.resource_has_tasks %}
+              {% for item in view_data.resource_items %}
+                <div class="member-bar-row"{% if loop.last %} style="margin-bottom:0"{% endif %}>
+                  <div class="mbr-top"><div class="mbr-name">{{ item.member_name }}</div><div class="mbr-meta"><span>未完了タスク {{ item.not_done_count }}件</span></div></div>
+                  <div class="mbr-bar-track"><div class="mbr-bar-fill {{ item.load_class }}" style="width:{{ item.load_width }}%"></div></div>
+                  <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 {{ item.in_progress_count }}</span>{% if item.delayed_count > 0 %}<span class="task-mini-chip tmc-delay">遅延 {{ item.delayed_count }}</span>{% endif %}{% if item.not_started_count > 0 %}<span class="task-mini-chip tmc-not-started">未着手 {{ item.not_started_count }}</span>{% endif %}</div>
+                </div>
+              {% endfor %}
+              <div class="resource-legend">
+                <div class="rl-item"><div class="rl-dot" style="background:var(--md-success)"></div>余裕あり</div>
+                <div class="rl-item"><div class="rl-dot" style="background:var(--md-sidebar)"></div>適正</div>
+                <div class="rl-item"><div class="rl-dot" style="background:var(--md-warning)"></div>高負荷</div>
+                <div class="rl-item"><div class="rl-dot" style="background:var(--md-danger)"></div>過負荷</div>
+              </div>
+            {% else %}
+              <div class="card-empty">
+                <div class="table-empty-main">データがまだありません</div>
+                <div class="table-empty-sub">現在、表示できる未完了タスクはありません。</div>
+              </div>
+            {% endif %}
           </div>
         </div>
 
         <div class="resource-card">
           <div class="rc-head"><div class="rc-title">部門年間予算 執行率</div></div>
           <div class="rc-body">
-            <div class="donut-body">
-              <div class="donut-svg-wrap">
-                <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e0eb" stroke-width="4"></circle>
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="var(--md-purple-mid)" stroke-width="4" stroke-dasharray="87.96 0" stroke-dashoffset="0"></circle>
-                  <circle id="managerBudgetDonutMain" cx="18" cy="18" r="14" fill="none" stroke="var(--md-sidebar)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" style="transition: stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)"></circle>
-                  <circle id="managerBudgetDonutOver" cx="18" cy="18" r="14" fill="none" stroke="var(--md-danger)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" stroke-dashoffset="-68.6" style="transition: stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1)"></circle>
-                </svg>
-                <div class="donut-center-text">
-                  <div class="donut-pct dp-warn" id="managerBudgetDonutPct">78%</div>
-                  <div class="donut-unit">執行率</div>
+            {% if view_data.budget.is_empty %}
+              <div class="card-empty">
+                <div class="table-empty-main">年間予算が未登録です</div>
+                <div class="table-empty-sub">部門年間予算が登録されると、執行率が表示されます。</div>
+              </div>
+            {% else %}
+              <div class="donut-body">
+                <div class="donut-svg-wrap">
+                  <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e0eb" stroke-width="4"></circle>
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="var(--md-purple-mid)" stroke-width="4" stroke-dasharray="87.96 0" stroke-dashoffset="0"></circle>
+                    <circle id="managerBudgetDonutMain" cx="18" cy="18" r="14" fill="none" stroke="var(--md-sidebar)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" data-used-pct="{{ view_data.budget.used_arc_percent }}" style="transition: stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)"></circle>
+                    <circle id="managerBudgetDonutOver" cx="18" cy="18" r="14" fill="none" stroke="var(--md-danger)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" stroke-dashoffset="0" data-over-pct="{{ view_data.budget.over_arc_percent }}" style="transition: stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1)"></circle>
+                  </svg>
+                  <div class="donut-center-text">
+                    <div class="donut-pct{% if view_data.budget.usage_class == 'danger' %} dp-danger{% elif view_data.budget.usage_class == 'warn' %} dp-warn{% endif %}" id="managerBudgetDonutPct">{{ view_data.budget.usage_percent_display }}</div>
+                    <div class="donut-unit">執行率</div>
+                  </div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-row">
+                    <div class="dl-dot" style="background:var(--md-sidebar)"></div>
+                    <div class="dl-key">執行済</div>
+                    <div class="dl-val">{{ view_data.budget.actual_display }}</div>
+                  </div>
+                  <div class="dl-row">
+                    <div class="dl-dot" style="background:var(--md-danger)"></div>
+                    <div class="dl-key">超過分</div>
+                    <div class="dl-val" style="color:var(--md-danger)">{{ view_data.budget.over_display }}</div>
+                  </div>
+                  <div class="dl-row">
+                    <div class="dl-dot" style="background:#e8e0eb"></div>
+                    <div class="dl-key">残余</div>
+                    <div class="dl-val" style="color:var(--md-muted)">{{ view_data.budget.remaining_display }}</div>
+                  </div>
+                  <div class="dl-row" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--md-border);">
+                    <div class="dl-key" style="font-weight:700;color:var(--md-text);">年間予算</div>
+                    <div class="dl-val" style="color:var(--md-header)">{{ view_data.budget.annual_budget_display }}</div>
+                  </div>
                 </div>
               </div>
-              <div class="donut-legend">
-                <div class="dl-row">
-                  <div class="dl-dot" style="background:var(--md-sidebar)"></div>
-                  <div class="dl-key">執行済</div>
-                  <div class="dl-val">156,000,000円</div>
-                </div>
-                <div class="dl-row">
-                  <div class="dl-dot" style="background:var(--md-danger)"></div>
-                  <div class="dl-key">超過分</div>
-                  <div class="dl-val" style="color:var(--md-danger)">4,500,000円</div>
-                </div>
-                <div class="dl-row">
-                  <div class="dl-dot" style="background:#e8e0eb"></div>
-                  <div class="dl-key">残余</div>
-                  <div class="dl-val" style="color:var(--md-muted)">44,000,000円</div>
-                </div>
-                <div class="dl-row" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--md-border);">
-                  <div class="dl-key" style="font-weight:700;color:var(--md-text);">年間予算</div>
-                  <div class="dl-val" style="color:var(--md-header)">200,000,000円</div>
-                </div>
-              </div>
-            </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -617,12 +593,33 @@ function showManagerDashboardToast(msg) {
   toast.classList.add("show");
   setTimeout(function () { toast.classList.remove("show"); }, 2400);
 }
-function setManagerDashboardFilter(btn, label) {
+function setManagerDashboardFilter(btn, filterKey) {
   if (!btn) return;
   const buttons = document.querySelectorAll(".mock-manager-dashboard .filter-btn");
   buttons.forEach(function (b) { b.classList.remove("active"); });
   btn.classList.add("active");
-  showManagerDashboardToast("フィルター：" + label + " を表示中");
+  const rows = document.querySelectorAll(".mock-manager-dashboard .project-list-card .proj-row[data-filter-status]");
+  let visibleCount = 0;
+  rows.forEach(function (row) {
+    const status = row.getAttribute("data-filter-status");
+    const isDelay = row.getAttribute("data-filter-delay") === "1";
+    let visible = false;
+    if (filterKey === "all") visible = true;
+    if (filterKey === "in_progress") visible = status === "in_progress";
+    if (filterKey === "completed") visible = status === "completed";
+    if (filterKey === "delay") visible = status === "in_progress" && isDelay;
+    row.style.display = visible ? "" : "none";
+    if (visible) visibleCount += 1;
+  });
+  const emptyRow = getManagerDashboardEl("managerDashboardProjectEmpty");
+  const filterEmptyRow = getManagerDashboardEl("managerDashboardProjectFilterEmpty");
+  const hasProjectRows = rows.length > 0;
+  if (emptyRow) {
+    emptyRow.style.display = hasProjectRows ? "none" : "";
+  }
+  if (filterEmptyRow) {
+    filterEmptyRow.style.display = (hasProjectRows && visibleCount === 0) ? "" : "none";
+  }
 }
 function initManagerBudgetDonut() {
   var mainArc = getManagerDashboardEl("managerBudgetDonutMain");
@@ -630,16 +627,23 @@ function initManagerBudgetDonut() {
   var pctEl = getManagerDashboardEl("managerBudgetDonutPct");
   if (!mainArc || !overArc || !pctEl) return;
   var circle = 87.96;
-  var usedPct = 78;
-  var overPct = 4.5 / 200 * 100;
-  var usedDash = circle * usedPct / 100;
-  var overDash = circle * overPct / 100;
+  var usedPct = Number(mainArc.getAttribute("data-used-pct") || "0");
+  var overPct = Number(overArc.getAttribute("data-over-pct") || "0");
+  var usedDash = circle * Math.min(Math.max(usedPct, 0), 100) / 100;
+  var overDash = circle * Math.min(Math.max(overPct, 0), 100) / 100;
+
+  if (overPct <= 0) {
+    overArc.style.opacity = "0";
+  } else {
+    overArc.style.opacity = "1";
+  }
+
   requestAnimationFrame(function () {
     setTimeout(function () {
       mainArc.setAttribute("stroke-dasharray", usedDash.toFixed(2) + " " + (circle - usedDash).toFixed(2));
       overArc.setAttribute("stroke-dasharray", overDash.toFixed(2) + " " + (circle - overDash).toFixed(2));
       overArc.setAttribute("stroke-dashoffset", String(-usedDash));
-      pctEl.textContent = usedPct + "%";
+      pctEl.textContent = "{{ view_data.budget.usage_percent_display }}";
     }, 90);
   });
 }
