@@ -52,6 +52,8 @@ csrf = CSRFProtect(app)
 
 # 未ログイン時に飛ばすログイン画面のURL
 login_manager.login_view = "login"
+login_manager.login_message = "このページを表示するにはログインしてください。"
+login_manager.login_message_category = "warning"
 
 
 @login_manager.user_loader
@@ -97,7 +99,12 @@ def login():
                 inline_error = field.errors[0]
                 break
 
-    return render_template("login.html", form=form, inline_error=inline_error)
+    return render_template(
+        "login.html",
+        form=form,
+        inline_error=inline_error,
+        login_toast_message=session.pop("login_toast_message", None),
+    )
 
 
 def redirect_by_role(role: str):
@@ -113,7 +120,6 @@ def redirect_by_role(role: str):
 def require_applicant():
     """申請者ロールのみ通す。権限外はロール別トップへ戻す。"""
     if current_user.role != "applicant":
-        flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
 
@@ -121,7 +127,6 @@ def require_applicant():
 def require_manager():
     """部門管理者ロールのみ許可する。"""
     if current_user.role != "manager":
-        flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
 
@@ -129,7 +134,6 @@ def require_manager():
 def require_hq():
     """本部管理者ロールのみ許可する。"""
     if current_user.role != "hq":
-        flash("この画面を表示する権限がありません。", "danger")
         return redirect(redirect_by_role(current_user.role))
     return None
 
@@ -541,7 +545,7 @@ def generate_project_code() -> str:
 def logout():
     """ログアウト処理。"""
     logout_user()
-    flash("ログアウトしました。", "success")
+    session["login_toast_message"] = "ログアウトしました。"
     return redirect(url_for("login"))
 
 
@@ -868,7 +872,11 @@ def applicant_project_progress():
 def get_applicant_progress_projects(user_id: int) -> list[Project]:
     """申請者本人の開発中案件一覧を表示順で取得する。"""
     return (
-        Project.query.options(joinedload(Project.department))
+        Project.query.options(
+            joinedload(Project.department),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+        )
         .filter(
             Project.applicant_id == user_id,
             Project.status == "in_progress",
@@ -1015,7 +1023,9 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "budget_pct_color": "var(--app-prog-danger)" if budget_pct >= 100 else "var(--app-prog-warning)" if budget_pct >= 80 else "var(--app-prog-success)",
         "tasks": [build_applicant_progress_task_data(task, idx, today, tomorrow) for idx, task in enumerate(sorted_tasks)],
         "monthly_report_comment": project.monthly_report_comment or "",
+        "previous_monthly_report_comment": project.monthly_report_comment or "",
         "report_month_label": f"{today.year}年{today.month}月",
+        "today_iso": today.isoformat(),
         "current_position": current_index + 1 if current_index >= 0 else 0,
         "total_projects": len(progress_projects),
         "prev_project_id": prev_project_id,
@@ -1024,6 +1034,56 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "base_budget_amount": int(base_budget),
         "current_actual_amount": int(current_actual),
     }
+
+
+def build_applicant_progress_switcher_data(projects: list[Project], current_project_id: int) -> list[dict]:
+    """申請者向け案件切替サブヘッダーの表示データを作る。"""
+    today = jst_today()
+    items: list[dict] = []
+
+    for project in projects:
+        tasks = list(project.tasks or [])
+        has_delay = any(task.status != "done" and task.due_date and task.due_date < today for task in tasks)
+
+        base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
+        budget_base = Decimal(base_budget or 0)
+        budget_actual = sum((Decimal(log.amount or 0) for log in project.budget_actual_logs), Decimal("0"))
+        has_budget_alert = bool(budget_base > 0 and ((budget_actual / budget_base) * Decimal("100")) >= Decimal("80"))
+
+        can_complete_wait = bool(
+            tasks
+            and project.status == "in_progress"
+            and project.approval_stage == "approved"
+            and all(task.status == "done" and int(task.progress_rate or 0) == 100 for task in tasks)
+        )
+
+        nearest_due_date = min(
+            (task.due_date for task in tasks if task.status != "done" and task.due_date),
+            default=date.max,
+        )
+
+        items.append(
+            {
+                "project_id": project.id,
+                "title": project.title,
+                "has_delay": has_delay,
+                "has_budget_alert": has_budget_alert,
+                "can_complete_wait": can_complete_wait,
+                "nearest_due_date": nearest_due_date,
+                "is_current": project.id == current_project_id,
+            }
+        )
+
+    items.sort(
+        key=lambda item: (
+            0 if item["has_delay"] else 1,
+            0 if item["has_budget_alert"] else 1,
+            item["nearest_due_date"],
+            1 if item["can_complete_wait"] else 0,
+            item["project_id"],
+        )
+    )
+    return items
 
 
 def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[str], dict]:
@@ -1046,7 +1106,7 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     budget_raw = (form_data.get("budget_actual_amount") or "").strip()
     if budget_raw:
         if not re.fullmatch(r"[0-9]+", budget_raw):
-            errors.append("予算実績額は半角数字で入力してください。")
+            errors.append("予算実績額は1円以上の半角数字で入力してください。")
             return errors, payload
         budget_value = int(budget_raw)
         if budget_value < 1 or budget_value > 999_999_999:
@@ -1323,6 +1383,7 @@ def applicant_project_progress_detail(project_id):
         if (project.monthly_report_comment or "") != payload["monthly_report_comment"]:
             changed = True
             project.monthly_report_comment = payload["monthly_report_comment"]
+            project.monthly_report_updated_at = utc_now()
 
         task_map = {task.id: task for task in project.tasks}
         for task_id, update_data in payload["task_updates"].items():
@@ -1340,6 +1401,7 @@ def applicant_project_progress_detail(project_id):
             return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
 
         try:
+            project.updated_at = utc_now()
             after_all_done = is_all_tasks_done(project.tasks)
             if should_notify_all_tasks_done(before_all_done, after_all_done, project):
                 managers = User.query.filter(
@@ -1366,10 +1428,13 @@ def applicant_project_progress_detail(project_id):
         return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
+    progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
     login_success_toast = session.pop("login_success_toast", None)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
+        progress_switcher_projects=progress_switcher_projects,
+        current_progress_project_id=project.id,
         login_success_toast=login_success_toast,
         unread_notifications_count=get_unread_notifications_count(),
     )
@@ -1837,6 +1902,379 @@ def manager_project_review(project_id: int):
     if next_project:
         return redirect(url_for("manager_project_review", project_id=next_project.id))
     return redirect(url_for("manager_project_review_entry"))
+
+
+# =============================
+# ■ 部門管理者：案件モニタリング画面
+# =============================
+def is_manager_monitoring_project_complete_ready(project: Project) -> bool:
+    """完了認定可能な案件かを判定する。"""
+    if project.status != "in_progress" or project.approval_stage != "approved":
+        return False
+    tasks = list(project.tasks or [])
+    if not tasks:
+        return False
+    return all(task.status == "done" and int(task.progress_rate or 0) == 100 for task in tasks)
+
+
+def _get_monitoring_budget_metrics(project: Project) -> dict:
+    base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
+    budget_base = Decimal(base_budget or 0)
+    actual_total = sum((Decimal(log.amount or 0) for log in project.budget_actual_logs), Decimal("0"))
+    budget_pct = 0
+    if budget_base > 0:
+        budget_pct = int(round((actual_total / budget_base) * Decimal("100")))
+    return {
+        "budget_base": budget_base,
+        "actual_total": actual_total,
+        "budget_pct": max(0, budget_pct),
+    }
+
+
+def _get_monitoring_overdue_metrics(project: Project, today: date) -> dict:
+    overdue_tasks = [task for task in project.tasks if task.status != "done" and task.due_date and task.due_date < today]
+    max_overdue_days = max(((today - task.due_date).days for task in overdue_tasks), default=0)
+    return {
+        "overdue_count": len(overdue_tasks),
+        "max_overdue_days": max_overdue_days,
+    }
+
+
+def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict:
+    candidate_timestamps = [
+        project.updated_at,
+        project.monthly_report_updated_at,
+        max((log.created_at for log in project.budget_actual_logs if log.created_at), default=None),
+    ]
+    latest_updated_at = max((dt for dt in candidate_timestamps if dt is not None), default=None)
+    if latest_updated_at is None:
+        return {
+            "is_initial": True,
+            "days_since": None,
+            "display_label": "未更新",
+            "display_sub": "開発開始後、進捗更新はまだありません",
+            "display_meta": "開発開始後",
+            "is_stale": False,
+        }
+
+    updated_jst_date = latest_updated_at.astimezone(ZoneInfo("Asia/Tokyo")).date()
+    days_since = (today - updated_jst_date).days
+    if days_since <= 0:
+        label = "本日"
+    elif days_since == 1:
+        label = "1日前"
+    else:
+        label = f"{days_since}日前"
+    return {
+        "is_initial": False,
+        "days_since": days_since,
+        "display_label": label,
+        "display_sub": f"{format_jst_date(latest_updated_at)} 更新",
+        "display_meta": f"{project.applicant.display_name if project.applicant else '主担当未設定'}・{format_jst_date(latest_updated_at)}",
+        "is_stale": days_since >= 3,
+    }
+
+
+def _get_monitoring_latest_due_date(project: Project) -> date | None:
+    incomplete_due_dates = [task.due_date for task in project.tasks if task.status != "done" and task.due_date]
+    if not incomplete_due_dates:
+        return None
+    return max(incomplete_due_dates)
+
+
+def get_manager_monitoring_sort_key(project: Project):
+    """モニタリング案件一覧の優先順キーを返す。"""
+    today = jst_today()
+    can_complete = is_manager_monitoring_project_complete_ready(project)
+    overdue_metrics = _get_monitoring_overdue_metrics(project, today)
+    budget_metrics = _get_monitoring_budget_metrics(project)
+    last_progress_metrics = _get_monitoring_last_progress_metrics(project, today)
+    latest_due_date = _get_monitoring_latest_due_date(project)
+    return (
+        0 if can_complete else 1,
+        0 if overdue_metrics["overdue_count"] > 0 else 1,
+        0 if budget_metrics["budget_pct"] >= 80 else 1,
+        0 if last_progress_metrics["is_stale"] else 1,
+        latest_due_date or date.max,
+        project.id,
+    )
+
+
+def get_manager_monitoring_projects(department_id: int) -> list[Project]:
+    """部門管理者向けに自部門の開発中案件を優先順で取得する。"""
+    projects = (
+        Project.query.options(
+            joinedload(Project.applicant),
+            joinedload(Project.department),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+        )
+        .filter(
+            Project.department_id == department_id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .all()
+    )
+    return sorted(projects, key=get_manager_monitoring_sort_key)
+
+
+def find_next_manager_monitoring_project(department_id: int, exclude_project_id: int | None = None) -> Project | None:
+    projects = get_manager_monitoring_projects(department_id)
+    for project in projects:
+        if exclude_project_id is None or project.id != exclude_project_id:
+            return project
+    return None
+
+
+def _build_manager_monitoring_task_data(task: Task, today: date) -> dict:
+    status_rank = {"in_progress": 1, "not_started": 2, "done": 3}
+    is_overdue = bool(task.due_date and task.status != "done" and task.due_date < today)
+
+    if is_overdue:
+        overdue_days = (today - task.due_date).days
+        due_display = f"{task.due_date.month}/{task.due_date.day} +{overdue_days}日"
+        due_class = "dl-over"
+    elif task.due_date == today:
+        due_display = f"{task.due_date.month}/{task.due_date.day} 今日"
+        due_class = "dl-today"
+    elif task.due_date == (today + timedelta(days=1)):
+        due_display = f"{task.due_date.month}/{task.due_date.day} 明日"
+        due_class = "dl-today"
+    elif task.due_date:
+        due_display = f"{task.due_date.month}/{task.due_date.day}"
+        due_class = "dl-normal"
+    else:
+        due_display = "未設定"
+        due_class = "dl-normal"
+
+    status_label_map = {"not_started": "未着手", "in_progress": "進行中", "done": "完了"}
+    status_badge_class_map = {"not_started": "sb-notstarted", "in_progress": "sb-progress", "done": "sb-done"}
+
+    progress_rate = int(task.progress_rate or 0)
+    if progress_rate >= 100:
+        progress_fill_class = "tpf-high"
+    elif progress_rate >= 50:
+        progress_fill_class = "tpf-mid"
+    else:
+        progress_fill_class = "tpf-low"
+
+    if is_overdue:
+        row_class = "tr-delay"
+        filter_status = "delay"
+        status_label = "遅延"
+        status_badge_class = "sb-delay"
+    else:
+        row_class = "tr-done" if task.status == "done" else ""
+        filter_status = "done" if task.status == "done" else "progress" if task.status == "in_progress" else "notstarted"
+        status_label = status_label_map.get(task.status, "未着手")
+        status_badge_class = status_badge_class_map.get(task.status, "sb-notstarted")
+
+    return {
+        "id": task.id,
+        "title": task.title,
+        "assignee_name": task.assignee_name,
+        "status": task.status,
+        "status_label": status_label,
+        "status_badge_class": status_badge_class,
+        "row_class": row_class,
+        "filter_status": filter_status,
+        "is_overdue": is_overdue,
+        "due_display": due_display,
+        "due_class": due_class,
+        "progress_rate": progress_rate,
+        "progress_fill_class": progress_fill_class,
+        "is_done": task.status == "done",
+        "sort_rank": (0 if is_overdue else 1, status_rank.get(task.status, 9), task.due_date or date.max, task.id),
+    }
+
+
+def build_manager_monitoring_view_data(project: Project, monitoring_projects: list[Project]) -> dict:
+    """案件モニタリング画面の表示用データを作る。"""
+    today = jst_today()
+    budget_metrics = _get_monitoring_budget_metrics(project)
+    overdue_metrics = _get_monitoring_overdue_metrics(project, today)
+    last_progress_metrics = _get_monitoring_last_progress_metrics(project, today)
+    can_complete = is_manager_monitoring_project_complete_ready(project)
+
+    tasks_data = [_build_manager_monitoring_task_data(task, today) for task in (project.tasks or [])]
+    tasks_data.sort(key=lambda item: item["sort_rank"])
+
+    total_tasks = len(tasks_data)
+    done_tasks = sum(1 for item in tasks_data if item["status"] == "done")
+    avg_progress = round(sum((item["progress_rate"] for item in tasks_data), 0) / total_tasks) if total_tasks else 0
+
+    latest_due_date = _get_monitoring_latest_due_date(project)
+    longest_due_display = "全タスク完了" if latest_due_date is None and total_tasks > 0 else (
+        format_business_date(latest_due_date) if latest_due_date else "未設定"
+    )
+
+    report_month_label = f"{today.year}年{today.month}月分"
+    report_comment = (project.monthly_report_comment or "").strip()
+    report_updated_at = project.monthly_report_updated_at
+    report_submitted = False
+    report_updated_display = "—"
+    if report_updated_at and report_comment:
+        report_jst = report_updated_at.astimezone(ZoneInfo("Asia/Tokyo"))
+        report_submitted = (report_jst.year == today.year and report_jst.month == today.month)
+        report_updated_display = format_jst_date(report_updated_at)
+
+    monitoring_projects_data = []
+    for item in monitoring_projects:
+        item_overdue = _get_monitoring_overdue_metrics(item, today)
+        item_budget = _get_monitoring_budget_metrics(item)
+        monitoring_projects_data.append(
+            {
+                "project_id": item.id,
+                "title": item.title,
+                "is_current": item.id == project.id,
+                "can_complete": is_manager_monitoring_project_complete_ready(item),
+                "has_delay": item_overdue["overdue_count"] > 0,
+                "has_budget_alert": item_budget["budget_pct"] >= 80,
+            }
+        )
+
+    budget_pct = budget_metrics["budget_pct"]
+    budget_gauge_class = "hbs-over" if budget_pct >= 100 else "hbs-warn" if budget_pct >= 80 else "hbs-ok"
+    budget_pct_class = "hbs-pct-over" if budget_pct >= 100 else "hbs-pct-warn" if budget_pct >= 80 else "hbs-pct-ok"
+
+    return {
+        "project_id": project.id,
+        "project_name": project.title,
+        "project_code": project.project_code,
+        "applicant_name": project.applicant.display_name if project.applicant else "未設定",
+        "department_name": project.department.name if project.department else "未設定",
+        "overall_progress_pct": avg_progress,
+        "done_count": done_tasks,
+        "task_count": total_tasks,
+        "budget_actual_display": format_decimal_amount(budget_metrics["actual_total"]),
+        "budget_base_display": format_decimal_amount(budget_metrics["budget_base"]),
+        "budget_pct": budget_pct,
+        "budget_gauge_class": budget_gauge_class,
+        "budget_pct_class": budget_pct_class,
+        "budget_is_warn": 80 <= budget_pct < 100,
+        "budget_is_over": budget_pct >= 100,
+        "overdue_count": overdue_metrics["overdue_count"],
+        "max_overdue_days": overdue_metrics["max_overdue_days"],
+        "last_progress_label": last_progress_metrics["display_label"],
+        "last_progress_sub": last_progress_metrics["display_sub"],
+        "last_progress_meta": last_progress_metrics["display_meta"],
+        "is_progress_stale": last_progress_metrics["is_stale"],
+        "longest_due_display": longest_due_display,
+        "report_month_label": report_month_label,
+        "report_submitted": report_submitted,
+        "report_updated_display": report_updated_display,
+        "report_comment": report_comment,
+        "tasks": tasks_data,
+        "is_overall_progress_complete": avg_progress >= 100,
+        "can_complete": can_complete,
+        "complete_disabled_reason": "" if can_complete else "完了認定できる条件を満たしていません。全タスクが完了しているか確認してください。",
+        "monitoring_projects": monitoring_projects_data,
+    }
+
+
+@app.route("/manager/projects/monitoring")
+@login_required
+def manager_project_monitoring():
+    access_error = require_manager()
+    if access_error:
+        return access_error
+
+    monitoring_projects = get_manager_monitoring_projects(current_user.department_id)
+    if not monitoring_projects:
+        return render_template(
+            "manager_project_monitoring_empty.html",
+            unread_notifications_count=get_unread_notifications_count(),
+        )
+    return redirect(url_for("manager_project_monitoring_detail", project_id=monitoring_projects[0].id))
+
+
+@app.route("/manager/projects/<int:project_id>/monitoring", methods=["GET", "POST"])
+@login_required
+def manager_project_monitoring_detail(project_id: int):
+    access_error = require_manager()
+    if access_error:
+        return access_error
+
+    project = (
+        Project.query.options(
+            joinedload(Project.applicant),
+            joinedload(Project.department),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+        )
+        .filter(Project.id == project_id)
+        .first()
+    )
+
+    if project is None or project.department_id != current_user.department_id:
+        flash("対象の案件が見つかりません。", "danger")
+        return redirect(url_for("manager_top"))
+    if project.status == "completed":
+        flash("完了済み案件は案件モニタリング画面では表示できません。", "danger")
+        return redirect(url_for("manager_project_monitoring"))
+    if project.status != "in_progress" or project.approval_stage != "approved":
+        flash("この画面で確認できる開発中案件ではありません。", "danger")
+        return redirect(url_for("manager_project_monitoring"))
+
+    if request.method == "POST":
+        if (request.form.get("confirm_complete") or "").strip() != "1":
+            flash("完了認定の実行内容が不正です。", "danger")
+            return redirect(url_for("manager_project_monitoring_detail", project_id=project.id))
+
+        if not is_manager_monitoring_project_complete_ready(project):
+            flash("完了認定できる条件を満たしていません。全タスクが完了しているか確認してください。", "danger")
+            return redirect(url_for("manager_project_monitoring_detail", project_id=project.id))
+
+        try:
+            now_utc = utc_now()
+            project.status = "completed"
+            project.completed_at = now_utc
+            project.updated_at = now_utc
+
+            db.session.add(
+                ProjectStatusLog(
+                    project_id=project.id,
+                    actor_id=current_user.id,
+                    from_status="in_progress",
+                    to_status="completed",
+                    action="complete",
+                    comment="部門管理者が案件を完了認定しました。",
+                    acted_at=now_utc,
+                )
+            )
+
+            db.session.add(
+                Notification(
+                    user_id=project.applicant_id,
+                    project_id=project.id,
+                    type="completed",
+                    message=f"担当案件「{project.title}」が部門管理者により完了認定されました。",
+                    is_read=False,
+                    created_at=now_utc,
+                )
+            )
+            db.session.commit()
+            flash(f"「{project.title}」を完了認定し、主担当者へ通知しました。", "success")
+        except SQLAlchemyError:
+            db.session.rollback()
+            flash("完了認定に失敗しました。時間をおいて再度お試しください。", "danger")
+            return redirect(url_for("manager_project_monitoring_detail", project_id=project.id))
+
+        next_project = find_next_manager_monitoring_project(current_user.department_id)
+        if next_project:
+            return redirect(url_for("manager_project_monitoring_detail", project_id=next_project.id))
+        return redirect(url_for("manager_project_monitoring"))
+
+    monitoring_projects = get_manager_monitoring_projects(current_user.department_id)
+    view_data = build_manager_monitoring_view_data(project, monitoring_projects)
+    return render_template(
+        "manager_project_monitoring.html",
+        view_data=view_data,
+        monitoring_projects=view_data["monitoring_projects"],
+        current_project_id=project.id,
+        unread_notifications_count=get_unread_notifications_count(),
+    )
 
 
 # =============================
