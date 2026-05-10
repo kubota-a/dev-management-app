@@ -2056,17 +2056,21 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
     monitoring_projects_data = []
     for item in monitoring_projects:
         item_overdue = _get_monitoring_overdue_metrics(item, today)
+        item_budget = _get_monitoring_budget_metrics(item)
         monitoring_projects_data.append(
             {
                 "project_id": item.id,
                 "title": item.title,
                 "is_current": item.id == project.id,
+                "can_complete": is_manager_monitoring_project_complete_ready(item),
                 "has_delay": item_overdue["overdue_count"] > 0,
+                "has_budget_alert": item_budget["budget_pct"] >= 80,
             }
         )
 
     budget_pct = budget_metrics["budget_pct"]
     budget_gauge_class = "hbs-over" if budget_pct >= 100 else "hbs-warn" if budget_pct >= 80 else "hbs-ok"
+    budget_pct_class = "hbs-pct-over" if budget_pct >= 100 else "hbs-pct-warn" if budget_pct >= 80 else "hbs-pct-ok"
 
     return {
         "project_id": project.id,
@@ -2081,6 +2085,7 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
         "budget_base_display": format_decimal_amount(budget_metrics["budget_base"]),
         "budget_pct": budget_pct,
         "budget_gauge_class": budget_gauge_class,
+        "budget_pct_class": budget_pct_class,
         "budget_is_warn": 80 <= budget_pct < 100,
         "budget_is_over": budget_pct >= 100,
         "overdue_count": overdue_metrics["overdue_count"],
@@ -2095,6 +2100,7 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
         "report_updated_display": report_updated_display,
         "report_comment": report_comment,
         "tasks": tasks_data,
+        "is_overall_progress_complete": avg_progress >= 100,
         "can_complete": can_complete,
         "complete_disabled_reason": "" if can_complete else "完了認定できる条件を満たしていません。全タスクが完了しているか確認してください。",
         "monitoring_projects": monitoring_projects_data,
