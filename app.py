@@ -1017,6 +1017,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "monthly_report_comment": project.monthly_report_comment or "",
         "previous_monthly_report_comment": project.monthly_report_comment or "",
         "report_month_label": f"{today.year}年{today.month}月",
+        "today_iso": today.isoformat(),
         "current_position": current_index + 1 if current_index >= 0 else 0,
         "total_projects": len(progress_projects),
         "prev_project_id": prev_project_id,
