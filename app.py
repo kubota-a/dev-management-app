@@ -1879,9 +1879,13 @@ def _get_monitoring_overdue_metrics(project: Project, today: date) -> dict:
 
 
 def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict:
-    approved_at = project.approved_at
-    updated_at = project.updated_at
-    if approved_at is None or updated_at is None or updated_at <= approved_at:
+    candidate_timestamps = [
+        project.updated_at,
+        project.monthly_report_updated_at,
+        max((log.created_at for log in project.budget_actual_logs if log.created_at), default=None),
+    ]
+    latest_updated_at = max((dt for dt in candidate_timestamps if dt is not None), default=None)
+    if latest_updated_at is None:
         return {
             "is_initial": True,
             "days_since": None,
@@ -1891,7 +1895,7 @@ def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict
             "is_stale": False,
         }
 
-    updated_jst_date = updated_at.astimezone(ZoneInfo("Asia/Tokyo")).date()
+    updated_jst_date = latest_updated_at.astimezone(ZoneInfo("Asia/Tokyo")).date()
     days_since = (today - updated_jst_date).days
     if days_since <= 0:
         label = "本日"
@@ -1903,8 +1907,8 @@ def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict
         "is_initial": False,
         "days_since": days_since,
         "display_label": label,
-        "display_sub": f"{format_jst_date(updated_at)} 更新",
-        "display_meta": f"{project.applicant.display_name if project.applicant else '主担当未設定'} ・ {format_jst_date(updated_at)}",
+        "display_sub": f"{format_jst_date(latest_updated_at)} 更新",
+        "display_meta": f"{project.applicant.display_name if project.applicant else '主担当未設定'}・{format_jst_date(latest_updated_at)}",
         "is_stale": days_since >= 3,
     }
 
