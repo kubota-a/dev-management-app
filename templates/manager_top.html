@@ -52,6 +52,12 @@
 .mock-manager-dashboard .sb-value-budget {
   color: var(--color-status-budget-alert, var(--md-warning));
 }
+.mock-manager-dashboard .summary-band .sb-value-budget {
+  color: var(--color-status-budget-alert, var(--md-warning));
+}
+.mock-manager-dashboard .summary-band-segment.is-delay .sb-value.sb-value-budget {
+  color: var(--color-status-budget-alert, var(--md-warning));
+}
 .mock-manager-dashboard .approval-card, .mock-manager-dashboard .project-list-card, .mock-manager-dashboard .resource-card { background: var(--md-card); border: 1px solid var(--md-border); border-radius: var(--md-radius); overflow: hidden; }
 .mock-manager-dashboard .approval-card { box-shadow: var(--md-shadow-card); }
 .mock-manager-dashboard .project-list-card, .mock-manager-dashboard .resource-card { box-shadow: var(--md-shadow); }
@@ -81,6 +87,11 @@
 .mock-manager-dashboard .bp-urgent, .mock-manager-dashboard .bp-delay { background: var(--md-danger-bg); color: var(--md-danger); border: 1px solid var(--md-danger-mid); }
 .mock-manager-dashboard .bp-prog { background: var(--md-info-bg); color: var(--md-info); border: 1px solid #bfdbfe; }
 .mock-manager-dashboard .bp-done { background: var(--md-success-bg); color: var(--md-success); border: 1px solid var(--md-success-mid); }
+.mock-manager-dashboard .bp-done-outline {
+  background: transparent;
+  color: var(--md-success);
+  border: 1px solid var(--md-success-mid);
+}
 .mock-manager-dashboard .review-btn { padding: 6px 14px; background: var(--md-header); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); white-space: nowrap; transition: background .15s; }
 .mock-manager-dashboard .review-btn:hover { background: var(--md-header-dark); }
 .mock-manager-dashboard .proj-link { font-weight: 700; color: var(--md-text); cursor: pointer; transition: color .15s; }
@@ -111,6 +122,7 @@
 .mock-manager-dashboard .project-list-head > div:last-child { text-align: left; justify-self: end; padding-right: 16px; }
 .mock-manager-dashboard .proj-row { padding: 13px 20px; border-bottom: 1px solid #faf7fb; transition: background .15s; }
 .mock-manager-dashboard .proj-row:last-child { border-bottom: none; }
+.mock-manager-dashboard .proj-row-completed { background: #f7f7f8; }
 .mock-manager-dashboard .proj-row:hover { background: var(--md-purple-light); }
 .mock-manager-dashboard .proj-name { font-size: 13px; font-weight: 700; }
 .mock-manager-dashboard .proj-name-normal { font-weight: 400; }
@@ -281,7 +293,7 @@
             <div class="ac-title">完了認定依頼<span class="ac-action-label">要アクション</span></div>
             <div class="ac-count">1件</div>
           </div>
-          <table class="approval-table">
+          <table class="approval-table completion-request-table">
             <thead>
               <tr>
                 <th>依頼日</th>
@@ -314,7 +326,7 @@
 
         <div class="project-list-card">
           <div class="plc-header">
-            <div class="plc-title">自部門案件一覧（モニタリング）</div>
+            <div class="plc-title">自部門案件一覧</div>
             <div class="plc-filters">
               <button class="filter-btn active" onclick="setManagerDashboardFilter(this,'全て')">全て</button>
               <button class="filter-btn" onclick="setManagerDashboardFilter(this,'進行中')">進行中</button>
@@ -365,8 +377,8 @@
             <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:74%"></div></div><span class="gauge-mini-pct gmp-ok" style="font-size:11px;">予算 74%</span></div></div>
             <div style="text-align:right;"><button class="detail-btn" onclick="showManagerDashboardToast('ログ管理システム 詳細へ')">詳細 →</button></div>
           </div>
-          <div class="proj-row">
-            <div><div class="proj-name proj-name-normal">認証基盤改修</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-done">完了</span></div></div>
+          <div class="proj-row proj-row-completed">
+            <div><div class="proj-name proj-name-normal">認証基盤改修</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;"><span class="badge-primary bp-done bp-done-outline">完了</span></div></div>
             <div class="proj-owner">鈴木 花子</div>
             <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:100%"></div></div><span class="gauge-mini-pct gmp-ok">100%</span></div>
             <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill gmf-ok" style="width:91%"></div></div><span class="gauge-mini-pct gmp-ok" style="font-size:11px;">予算 91%</span></div></div>
