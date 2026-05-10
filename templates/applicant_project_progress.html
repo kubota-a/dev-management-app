@@ -33,6 +33,48 @@
   color: var(--app-prog-text);
 }
 .mock-applicant-project-progress .applicant-progress-content { padding: 24px 28px 120px; }
+.mock-applicant-project-progress-header-after {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.mock-applicant-project-progress .applicant-progress-proj-tabbar {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--app-prog-card);
+  border-bottom: 1px solid var(--app-prog-border);
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.mock-applicant-project-progress .applicant-progress-proj-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-prog-muted);
+  border: 1.5px solid var(--app-prog-border);
+  background: #fff;
+  transition: all .15s;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.mock-applicant-project-progress .applicant-progress-proj-tab:hover { border-color: var(--app-prog-header); color: var(--app-prog-header); }
+.mock-applicant-project-progress .applicant-progress-proj-tab.active { background: var(--app-prog-header); color: #fff; border-color: var(--app-prog-header); font-weight: 700; }
+.mock-applicant-project-progress .apt-delay-badge { background: #fee2e2; color: var(--app-prog-danger); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; }
+.mock-applicant-project-progress .apt-budget-badge { background: #ffedd5; color: var(--app-prog-warning); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; }
+.mock-applicant-project-progress .apt-complete-wait-badge { background: var(--app-prog-success-bg); color: var(--app-prog-success); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; border: 1px solid #a7f3d0; }
 .mock-applicant-project-progress .summary-card, .mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card, .mock-applicant-project-progress .task-card {
   background: var(--app-prog-card); border: 1px solid var(--app-prog-border); border-radius: var(--app-prog-radius);
 }
@@ -73,6 +115,7 @@
 .mock-applicant-project-progress .input-apply-btn { padding: 0 18px; height: 44px; background: #fff; color: var(--app-prog-header); border: 1.5px solid var(--app-prog-header); border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); }
 .mock-applicant-project-progress .input-apply-btn:hover { background: var(--app-prog-teal-light); }
 .mock-applicant-project-progress .preview-box { background: var(--app-prog-teal-light); border: 1px solid var(--app-prog-teal-mid); border-radius: 10px; padding: 12px 14px; }
+.mock-applicant-project-progress .preview-box.is-invalid { background: #f8fafc; border-color: #cbd5e1; }
 .mock-applicant-project-progress .preview-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
 .mock-applicant-project-progress .preview-row + .preview-row { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--app-prog-teal-mid); }
 .mock-applicant-project-progress .preview-key { color: var(--app-prog-muted); }
@@ -80,6 +123,8 @@
 .mock-applicant-project-progress .preview-gauge-wrap { margin-top: 10px; }
 .mock-applicant-project-progress .preview-gauge-track { width: 100%; height: 8px; background: rgba(26,117,133,.15); border-radius: 4px; overflow: hidden; }
 .mock-applicant-project-progress .preview-gauge-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.mock-applicant-project-progress .budget-preview-hint { display: none; margin-top: 8px; font-size: 11px; color: #94a3b8; }
+.mock-applicant-project-progress .preview-box.is-invalid .budget-preview-hint { display: block; }
 .mock-applicant-project-progress .accordion-head { padding: 14px 18px; display: flex; justify-content: space-between; cursor: pointer; user-select: none; }
 .mock-applicant-project-progress .accordion-head:hover { background: var(--app-prog-teal-light); }
 .mock-applicant-project-progress .accordion-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
@@ -235,12 +280,27 @@
 .applicant-progress-footer-update:disabled:hover { background: #9ca3af; }
 @media (max-width: 900px) {
   .mock-applicant-project-progress .applicant-progress-content { padding: 16px 14px 110px; }
+  .mock-applicant-project-progress .applicant-progress-proj-tabbar { width: 100%; max-width: 100%; padding: 10px 14px; }
   .mock-applicant-project-progress .two-col-layout, .mock-applicant-project-progress .summary-kpi-row { grid-template-columns: 1fr; }
   .mock-applicant-project-progress .summary-kpi { border-right: none; border-bottom: 1px solid var(--app-prog-border); }
   .mock-applicant-project-progress .task-meta { flex-direction: column; gap: 4px; }
   .mock-applicant-project-progress .task-assignee { margin-top: 4px; }
   .mock-applicant-project-progress .task-modal-overlay { align-items: flex-start; justify-content: center; padding: 84px 14px 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .mock-applicant-project-progress .task-modal-box { width: 100%; max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); overflow-y: auto; padding: 20px 18px 18px; }
+}
+@media (min-width: 900px) {
+  .mock-applicant-project-progress-header-after {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 690;
+    background: var(--app-prog-card);
+  }
+}
+@media (max-width: 899px) {
+  .mock-applicant-project-progress-header-after {
+    position: static;
+    padding-top: var(--mobile-header-height);
+  }
 }
 @media (max-width: 600px) {
   .mock-applicant-project-progress .budget-current-row { grid-template-columns: 1fr; }
@@ -250,6 +310,28 @@
   .mock-applicant-project-progress .task-modal-btn { width: 100%; }
 }
 </style>
+{% endblock %}
+
+{% block header_after %}
+<div class="mock-applicant-project-progress mock-applicant-project-progress-header-after">
+  <div class="applicant-progress-proj-tabbar">
+    <div style="font-size:12px;color:var(--app-prog-muted);font-weight:700;flex-shrink:0;">案件切替：</div>
+    {% for item in progress_switcher_projects %}
+    <a href="{{ url_for('applicant_project_progress_detail', project_id=item.project_id) }}" class="applicant-progress-proj-tab{% if item.project_id == current_progress_project_id %} active{% endif %}">
+      {{ item.title }}
+      {% if item.has_delay %}
+      <span class="apt-delay-badge">遅延</span>
+      {% endif %}
+      {% if item.has_budget_alert %}
+      <span class="apt-budget-badge">予算</span>
+      {% endif %}
+      {% if item.can_complete_wait %}
+      <span class="apt-complete-wait-badge">完了待ち</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -317,11 +399,12 @@
               <div class="money-input-wrap"><div class="money-prefix">¥</div><input type="number" class="money-input" id="addAmount" placeholder="例：500000" inputmode="numeric" oninput="updateApplicantProgressBudgetPreview()"></div>
               <button type="button" class="input-apply-btn" onclick="applyApplicantProgressBudget()">反映</button>
             </div>
-            <div class="preview-box">
+            <div class="preview-box" id="applicantProgressBudgetPreviewBox">
               <div class="preview-row"><span class="preview-key">現在の累計実績</span><span class="preview-val">{{ view_data.current_actual_display }}</span></div>
               <div class="preview-row"><span class="preview-key">追加後の累計</span><span class="preview-val" id="applicantProgressPreviewTotal" style="color:var(--app-prog-header)">{{ view_data.current_actual_display }}</span></div>
               <div class="preview-row"><span class="preview-key">追加後の消費率</span><span class="preview-val" id="applicantProgressPreviewPct" style="color:{{ view_data.budget_pct_color }}">{{ view_data.budget_pct }}%</span></div>
               <div class="preview-gauge-wrap"><div class="preview-gauge-track"><div class="preview-gauge-fill {{ view_data.budget_gauge_class }}" id="applicantProgressPreviewGaugeFill" style="width:{{ [view_data.budget_pct, 100] | min }}%"></div></div></div>
+              <div class="budget-preview-hint">有効な金額を入力すると反映されます</div>
             </div>
           </div>
         </div>
@@ -638,6 +721,7 @@ function resetApplicantProgressChanges(){
   applicantProgressUnsavedState.report=applicantProgressInitialState.unsavedState.report;
   applicantProgressUnsavedState.task=applicantProgressInitialState.unsavedState.task;
   document.querySelectorAll(".mock-applicant-project-progress .is-unsaved").forEach(function(el){el.classList.remove("is-unsaved");});
+  setApplicantProgressBudgetPreviewInvalid(false);
   recalcApplicantProgressOverall();
   updateApplicantProgressFooterUnsaved();
   showApplicantProgressToast("変更を戻しました");
@@ -721,8 +805,74 @@ function syncApplicantProgressTaskState(idx,type,value){
     if(btns[2])btns[2].classList.add("active-done");
   }
 }
-function updateApplicantProgressBudgetPreview(){const input=getApplicantProgressEl("addAmount");const pt=getApplicantProgressEl("applicantProgressPreviewTotal");const pp=getApplicantProgressEl("applicantProgressPreviewPct");const fill=getApplicantProgressEl("applicantProgressPreviewGaugeFill");if(!input||!pt||!pp||!fill)return;const add=parseInt(input.value,10)||0;const total=applicantProgressCurrentActual+add;const pct=Math.round(total/APPLICANT_PROGRESS_BUDGET*100);pt.textContent="¥"+total.toLocaleString();pp.textContent=pct+"%";fill.style.width=Math.min(pct,100)+"%";if(pct>=100){fill.className="preview-gauge-fill gf-over";pp.style.color="var(--app-prog-danger)";}else if(pct>=80){fill.className="preview-gauge-fill gf-warn";pp.style.color="var(--app-prog-warning)";}else{fill.className="preview-gauge-fill gf-ok";pp.style.color="var(--app-prog-success)";}}
-function applyApplicantProgressBudget(){const input=getApplicantProgressEl("addAmount");if(!input)return;const add=parseInt(input.value,10)||0;if(!add){showApplicantProgressToast("金額を入力してください");return;}const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");applicantProgressCurrentActual+=add;applicantProgressPendingBudgetActualAmount+=add;if(budgetActualInput){budgetActualInput.value=String(applicantProgressPendingBudgetActualAmount);}const pct=Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100);const totalActual=getApplicantProgressEl("applicantProgressTotalActual");const pctDisplay=getApplicantProgressEl("applicantProgressBudgetPctDisplay");const amountDisplay=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");const gauge=getApplicantProgressEl("applicantProgressBudgetGauge");if(totalActual){totalActual.textContent="¥"+applicantProgressCurrentActual.toLocaleString();totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(pctDisplay){pctDisplay.textContent=pct+"%";pctDisplay.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}if(amountDisplay){amountDisplay.textContent="¥"+applicantProgressCurrentActual.toLocaleString()+" / ¥"+APPLICANT_PROGRESS_BUDGET.toLocaleString();}if(gauge){gauge.style.width=Math.min(pct,100)+"%";gauge.className="kpi-gauge-fill "+(pct>=100?"gf-over":pct>=80?"gf-warn":"gf-ok");}input.value="";updateApplicantProgressBudgetPreview();markApplicantProgressUnsaved("budget");showApplicantProgressToast("計算に反映しました");}
+function validateApplicantProgressBudgetInput(rawValue){
+  const raw=String(rawValue||"").trim();
+  if(!raw){return {ok:false,amount:0};}
+  if(!/^[0-9]+$/.test(raw)){return {ok:false,amount:0};}
+  const amount=Number(raw);
+  if(!Number.isInteger(amount)||amount<1||amount>999999999){return {ok:false,amount:0};}
+  return {ok:true,amount:amount};
+}
+function setApplicantProgressBudgetPreviewInvalid(isInvalid){
+  const box=getApplicantProgressEl("applicantProgressBudgetPreviewBox");
+  if(!box){return;}
+  box.classList.toggle("is-invalid",!!isInvalid);
+}
+function updateApplicantProgressBudgetPreviewByTotal(total){
+  const pt=getApplicantProgressEl("applicantProgressPreviewTotal");
+  const pp=getApplicantProgressEl("applicantProgressPreviewPct");
+  const fill=getApplicantProgressEl("applicantProgressPreviewGaugeFill");
+  if(!pt||!pp||!fill){return;}
+  const pct=APPLICANT_PROGRESS_BUDGET>0?Math.round(total/APPLICANT_PROGRESS_BUDGET*100):0;
+  pt.textContent="¥"+total.toLocaleString();
+  pp.textContent=pct+"%";
+  fill.style.width=Math.min(pct,100)+"%";
+  if(pct>=100){fill.className="preview-gauge-fill gf-over";pp.style.color="var(--app-prog-danger)";}
+  else if(pct>=80){fill.className="preview-gauge-fill gf-warn";pp.style.color="var(--app-prog-warning)";}
+  else{fill.className="preview-gauge-fill gf-ok";pp.style.color="var(--app-prog-success)";}
+}
+function updateApplicantProgressBudgetPreview(){
+  const input=getApplicantProgressEl("addAmount");
+  if(!input){return;}
+  const validation=validateApplicantProgressBudgetInput(input.value);
+  if(!validation.ok){
+    setApplicantProgressBudgetPreviewInvalid(String(input.value||"").trim()!=="");
+    updateApplicantProgressBudgetPreviewByTotal(applicantProgressCurrentActual);
+    return;
+  }
+  setApplicantProgressBudgetPreviewInvalid(false);
+  updateApplicantProgressBudgetPreviewByTotal(applicantProgressCurrentActual+validation.amount);
+}
+function applyApplicantProgressBudget(){
+  const input=getApplicantProgressEl("addAmount");
+  if(!input)return;
+  const validation=validateApplicantProgressBudgetInput(input.value);
+  if(!validation.ok){
+    setApplicantProgressBudgetPreviewInvalid(String(input.value||"").trim()!=="");
+    updateApplicantProgressBudgetPreviewByTotal(applicantProgressCurrentActual);
+    showApplicantProgressToast("1円以上の半角数字で入力してください");
+    return;
+  }
+  const add=validation.amount;
+  const budgetActualInput=getApplicantProgressEl("applicantProgressBudgetActualAmount");
+  applicantProgressCurrentActual+=add;
+  applicantProgressPendingBudgetActualAmount+=add;
+  if(budgetActualInput){budgetActualInput.value=String(applicantProgressPendingBudgetActualAmount);}
+  const pct=APPLICANT_PROGRESS_BUDGET>0?Math.round(applicantProgressCurrentActual/APPLICANT_PROGRESS_BUDGET*100):0;
+  const totalActual=getApplicantProgressEl("applicantProgressTotalActual");
+  const pctDisplay=getApplicantProgressEl("applicantProgressBudgetPctDisplay");
+  const amountDisplay=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");
+  const gauge=getApplicantProgressEl("applicantProgressBudgetGauge");
+  if(totalActual){totalActual.textContent="¥"+applicantProgressCurrentActual.toLocaleString();totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}
+  if(pctDisplay){pctDisplay.textContent=pct+"%";pctDisplay.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}
+  if(amountDisplay){amountDisplay.textContent="¥"+applicantProgressCurrentActual.toLocaleString()+" / ¥"+APPLICANT_PROGRESS_BUDGET.toLocaleString();}
+  if(gauge){gauge.style.width=Math.min(pct,100)+"%";gauge.className="kpi-gauge-fill "+(pct>=100?"gf-over":pct>=80?"gf-warn":"gf-ok");}
+  input.value="";
+  setApplicantProgressBudgetPreviewInvalid(false);
+  updateApplicantProgressBudgetPreviewByTotal(applicantProgressCurrentActual);
+  markApplicantProgressUnsaved("budget");
+  showApplicantProgressToast("計算に反映しました");
+}
 function updateApplicantProgressSlider(el,pctId){
   if(!el)return;
   const idx=Number(String(pctId).replace("pct",""));

@@ -868,7 +868,11 @@ def applicant_project_progress():
 def get_applicant_progress_projects(user_id: int) -> list[Project]:
     """申請者本人の開発中案件一覧を表示順で取得する。"""
     return (
-        Project.query.options(joinedload(Project.department))
+        Project.query.options(
+            joinedload(Project.department),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+        )
         .filter(
             Project.applicant_id == user_id,
             Project.status == "in_progress",
@@ -1028,6 +1032,56 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
     }
 
 
+def build_applicant_progress_switcher_data(projects: list[Project], current_project_id: int) -> list[dict]:
+    """申請者向け案件切替サブヘッダーの表示データを作る。"""
+    today = jst_today()
+    items: list[dict] = []
+
+    for project in projects:
+        tasks = list(project.tasks or [])
+        has_delay = any(task.status != "done" and task.due_date and task.due_date < today for task in tasks)
+
+        base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
+        budget_base = Decimal(base_budget or 0)
+        budget_actual = sum((Decimal(log.amount or 0) for log in project.budget_actual_logs), Decimal("0"))
+        has_budget_alert = bool(budget_base > 0 and ((budget_actual / budget_base) * Decimal("100")) >= Decimal("80"))
+
+        can_complete_wait = bool(
+            tasks
+            and project.status == "in_progress"
+            and project.approval_stage == "approved"
+            and all(task.status == "done" and int(task.progress_rate or 0) == 100 for task in tasks)
+        )
+
+        nearest_due_date = min(
+            (task.due_date for task in tasks if task.status != "done" and task.due_date),
+            default=date.max,
+        )
+
+        items.append(
+            {
+                "project_id": project.id,
+                "title": project.title,
+                "has_delay": has_delay,
+                "has_budget_alert": has_budget_alert,
+                "can_complete_wait": can_complete_wait,
+                "nearest_due_date": nearest_due_date,
+                "is_current": project.id == current_project_id,
+            }
+        )
+
+    items.sort(
+        key=lambda item: (
+            0 if item["has_delay"] else 1,
+            0 if item["has_budget_alert"] else 1,
+            item["nearest_due_date"],
+            1 if item["can_complete_wait"] else 0,
+            item["project_id"],
+        )
+    )
+    return items
+
+
 def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[str], dict]:
     """案件進捗管理画面のPOST値を検証する。"""
     errors: list[str] = []
@@ -1048,7 +1102,7 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     budget_raw = (form_data.get("budget_actual_amount") or "").strip()
     if budget_raw:
         if not re.fullmatch(r"[0-9]+", budget_raw):
-            errors.append("予算実績額は半角数字で入力してください。")
+            errors.append("予算実績額は1円以上の半角数字で入力してください。")
             return errors, payload
         budget_value = int(budget_raw)
         if budget_value < 1 or budget_value > 999_999_999:
@@ -1370,10 +1424,13 @@ def applicant_project_progress_detail(project_id):
         return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
+    progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
     login_success_toast = session.pop("login_success_toast", None)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
+        progress_switcher_projects=progress_switcher_projects,
+        current_progress_project_id=project.id,
         login_success_toast=login_success_toast,
         unread_notifications_count=get_unread_notifications_count(),
     )
