@@ -22,7 +22,7 @@ from models import (
 
 
 # 実行モード: "fixed" または "relative"
-SEED_MODE = "fixed"
+SEED_MODE = "relative"
 
 JST = ZoneInfo("Asia/Tokyo")
 
