@@ -52,6 +52,8 @@ csrf = CSRFProtect(app)
 
 # 未ログイン時に飛ばすログイン画面のURL
 login_manager.login_view = "login"
+login_manager.login_message = "このページを表示するにはログインしてください。"
+login_manager.login_message_category = "warning"
 
 
 @login_manager.user_loader
@@ -97,7 +99,12 @@ def login():
                 inline_error = field.errors[0]
                 break
 
-    return render_template("login.html", form=form, inline_error=inline_error)
+    return render_template(
+        "login.html",
+        form=form,
+        inline_error=inline_error,
+        login_toast_message=session.pop("login_toast_message", None),
+    )
 
 
 def redirect_by_role(role: str):
@@ -541,7 +548,7 @@ def generate_project_code() -> str:
 def logout():
     """ログアウト処理。"""
     logout_user()
-    flash("ログアウトしました。", "success")
+    session["login_toast_message"] = "ログアウトしました。"
     return redirect(url_for("login"))
 
 
