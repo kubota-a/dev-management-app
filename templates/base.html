@@ -25,6 +25,7 @@
                 {% block header_after %}{% endblock %}
 
                 <main class="app-content {{ content_width_class|default('app-content-wide') }} section-stack">
+                    {% include "partials/_flash.html" %}
                     {% block content %}{% endblock %}
                 </main>
                 {% block content_footer %}{% endblock %}
@@ -35,6 +36,7 @@
     </div>
 
     {% include "partials/_mobile_drawer.html" %}
+    {% include "partials/_toast.html" %}
 
     <script src="/static/js/app.js"></script>
     {% block script_extra %}{% endblock %}

@@ -117,6 +117,18 @@ def redirect_by_role(role: str):
     return url_for("index")
 
 
+@app.context_processor
+def inject_global_toast_messages():
+    """共通トースト表示用のメッセージを全テンプレートへ渡す。"""
+    messages = []
+
+    login_success_toast = session.pop("login_success_toast", None)
+    if login_success_toast:
+        messages.append({"category": "success", "message": login_success_toast})
+
+    return {"global_toast_messages": messages}
+
+
 def require_applicant():
     """申請者ロールのみ通す。権限外はロール別トップへ戻す。"""
     if current_user.role != "applicant":
@@ -1434,13 +1446,12 @@ def applicant_project_progress_detail(project_id):
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
     progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
-    login_success_toast = session.pop("login_success_toast", None)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
         progress_switcher_projects=progress_switcher_projects,
         current_progress_project_id=project.id,
-        login_success_toast=login_success_toast,
+        login_success_toast=None,
         unread_notifications_count=get_unread_notifications_count(),
     )
 
