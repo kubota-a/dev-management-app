@@ -117,6 +117,18 @@ def redirect_by_role(role: str):
     return url_for("index")
 
 
+@app.context_processor
+def inject_global_toast_messages():
+    """共通トースト表示用のメッセージを全テンプレートへ渡す。"""
+    messages = []
+
+    login_success_toast = session.pop("login_success_toast", None)
+    if login_success_toast:
+        messages.append({"category": "success", "message": login_success_toast})
+
+    return {"global_toast_messages": messages}
+
+
 def require_applicant():
     """申請者ロールのみ通す。権限外はロール別トップへ戻す。"""
     if current_user.role != "applicant":
@@ -208,6 +220,11 @@ def format_percent_value(value: Decimal | None) -> str:
     if text.endswith(".0"):
         text = text[:-2]
     return text
+
+
+def get_fiscal_year(target_date: date) -> int:
+    """Date型（業務日付）から日本の年度を返す。"""
+    return target_date.year if target_date.month >= 4 else target_date.year - 1
 
 
 def get_latest_rejection_log(project: Project) -> ProjectStatusLog | None:
@@ -1429,13 +1446,12 @@ def applicant_project_progress_detail(project_id):
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
     progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
-    login_success_toast = session.pop("login_success_toast", None)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
         progress_switcher_projects=progress_switcher_projects,
         current_progress_project_id=project.id,
-        login_success_toast=login_success_toast,
+        login_success_toast=None,
         unread_notifications_count=get_unread_notifications_count(),
     )
 
@@ -1446,17 +1462,436 @@ def applicant_project_progress_detail(project_id):
 @app.route("/top/manager")
 @login_required
 def manager_top():
-    return render_template("manager_top.html", demo_role="manager")
+    access_error = require_manager()
+    if access_error:
+        return access_error
+
+    view_data = build_manager_top_view_data(current_user.department_id)
+    return render_template(
+        "manager_top.html",
+        view_data=view_data,
+        unread_notifications_count=get_unread_notifications_count(),
+    )
+
+
+def _jst_date_from_datetime(dt: datetime | None) -> date | None:
+    """UTC保存の日時をJST日付へ変換して返す。"""
+    if dt is None:
+        return None
+    return dt.astimezone(ZoneInfo("Asia/Tokyo")).date()
+
+
+def _get_latest_action_datetime(project: Project, action: str) -> datetime | None:
+    """案件ログから指定actionの最新日時を返す。"""
+    acted_ats = [log.acted_at for log in project.project_status_logs if log.action == action and log.acted_at is not None]
+    return max(acted_ats) if acted_ats else None
+
+
+def _build_manager_empty_top_view_data() -> dict:
+    return {
+        "summary": {
+            "project_total": 0,
+            "project_meta": "進行中0/完了0/申請中0",
+            "approval_total": 0,
+            "approval_wait3_total": 0,
+            "completion_total": 0,
+            "completion_wait3_total": 0,
+            "high_load_total": 0,
+            "over_load_total": 0,
+            "load_total": 0,
+            "delay_total": 0,
+            "max_delay_days": 0,
+            "budget_caution_total": 0,
+            "budget_over_total": 0,
+        },
+        "review_requests": [],
+        "completion_requests": [],
+        "project_items": [],
+        "resource_items": [],
+        "resource_has_tasks": False,
+        "budget": {
+            "is_empty": True,
+            "usage_percent": Decimal("0"),
+            "usage_percent_value": 0.0,
+            "used_arc_percent": 0.0,
+            "over_arc_percent": 0.0,
+            "usage_percent_display": "0%",
+            "usage_class": "normal",
+            "annual_budget_display": format_decimal_amount(Decimal("0")),
+            "actual_display": format_decimal_amount(Decimal("0")),
+            "over_display": format_decimal_amount(Decimal("0")),
+            "remaining_display": format_decimal_amount(Decimal("0")),
+        },
+    }
+
+
+def build_manager_top_view_data(department_id: int | None) -> dict:
+    """部門管理者トップ画面の表示データをまとめて作成する。"""
+    if not department_id:
+        return _build_manager_empty_top_view_data()
+
+    today = jst_today()
+    fiscal_year = get_fiscal_year(today)
+    fiscal_start = date(fiscal_year, 4, 1)
+    fiscal_end = date(fiscal_year + 1, 3, 31)
+
+    projects = (
+        Project.query.options(
+            joinedload(Project.tasks),
+            joinedload(Project.applicant),
+            joinedload(Project.budget_actual_logs),
+            joinedload(Project.project_status_logs),
+        )
+        .filter(
+            Project.department_id == department_id,
+            Project.status != "rejected",
+        )
+        .all()
+    )
+
+    project_ids = [p.id for p in projects]
+    manager_user_ids = [
+        uid
+        for (uid,) in db.session.query(User.id).filter(
+            User.department_id == department_id,
+            User.role == "manager",
+        )
+    ]
+
+    completion_notifs = []
+    if project_ids and manager_user_ids:
+        completion_notifs = (
+            Notification.query.filter(
+                Notification.user_id.in_(manager_user_ids),
+                Notification.project_id.in_(project_ids),
+                Notification.type == "completed",
+            )
+            .all()
+        )
+    latest_completion_notif_by_project: dict[int, datetime] = {}
+    for notif in completion_notifs:
+        if notif.project_id is None or notif.created_at is None:
+            continue
+        prev = latest_completion_notif_by_project.get(notif.project_id)
+        if prev is None or notif.created_at > prev:
+            latest_completion_notif_by_project[notif.project_id] = notif.created_at
+
+    in_progress_projects = [p for p in projects if p.status == "in_progress"]
+    completed_projects = [p for p in projects if p.status == "completed"]
+    pending_projects = [p for p in projects if p.status in {"department_pending", "hq_pending"}]
+
+    review_requests = []
+    approval_wait3_total = 0
+    for p in projects:
+        if not (p.status == "department_pending" and p.approval_stage == "department_pending"):
+            continue
+        submitted_at = _get_latest_action_datetime(p, "submit") or p.created_at
+        submitted_jst_date = _jst_date_from_datetime(submitted_at)
+        wait_days = (today - submitted_jst_date).days if submitted_jst_date else 0
+        if wait_days >= 3:
+            approval_wait3_total += 1
+        review_requests.append(
+            {
+                "project_id": p.id,
+                "submitted_date": format_jst_date(submitted_at, "%m/%d") if submitted_at else "—",
+                "submitted_sort_key": submitted_at or p.created_at,
+                "project_name": p.title,
+                "applicant_name": p.applicant.display_name if p.applicant else "—",
+                "budget_display": format_decimal_amount(Decimal(p.estimated_budget_amount or 0)),
+                "is_waiting_long": wait_days >= 3,
+                "status_label": f"{wait_days}日待機" if wait_days >= 3 else "部門承認待ち",
+            }
+        )
+    review_requests.sort(key=lambda item: (item["submitted_sort_key"], item["project_id"]))
+    for item in review_requests:
+        item.pop("submitted_sort_key", None)
+
+    completion_requests = []
+    completion_wait3_total = 0
+    for p in in_progress_projects:
+        task_total = len(p.tasks)
+        done_count = sum(1 for task in p.tasks if task.status == "done")
+        if task_total == 0 or done_count != task_total:
+            continue
+        request_at = latest_completion_notif_by_project.get(p.id) or p.updated_at
+        request_jst_date = _jst_date_from_datetime(request_at)
+        wait_days = (today - request_jst_date).days if request_jst_date else 0
+        if wait_days >= 3:
+            completion_wait3_total += 1
+        budget_rate = p.budget_consumption_rate or Decimal("0")
+        completion_requests.append(
+            {
+                "project_id": p.id,
+                "request_date": format_jst_date(request_at, "%m/%d") if request_at else "—",
+                "request_sort_key": request_at or p.updated_at or p.created_at,
+                "project_name": p.title,
+                "owner_name": p.applicant.display_name if p.applicant else "—",
+                "budget_rate_value": float(budget_rate),
+                "budget_rate_display": f"{format_percent_value(budget_rate)}%",
+            }
+        )
+    # 完了認定依頼も、待機が長いものから確認できるよう依頼日が古い順に並べる
+    completion_requests.sort(key=lambda item: (item["request_sort_key"], item["project_id"]))
+    for item in completion_requests:
+        item.pop("request_sort_key", None)
+
+    delay_project_ids: set[int] = set()
+    max_delay_days = 0
+    for p in in_progress_projects:
+        has_delay = False
+        for task in p.tasks:
+            if task.due_date and task.status != "done" and task.due_date < today:
+                has_delay = True
+                max_delay_days = max(max_delay_days, (today - task.due_date).days)
+        if has_delay:
+            delay_project_ids.add(p.id)
+
+    budget_caution_total = 0
+    budget_over_total = 0
+    budget_state_by_project: dict[int, str] = {}
+    for p in in_progress_projects:
+        rate = p.budget_consumption_rate or Decimal("0")
+        if rate >= Decimal("100"):
+            budget_over_total += 1
+            budget_state_by_project[p.id] = "over"
+        elif rate >= Decimal("80"):
+            budget_caution_total += 1
+            budget_state_by_project[p.id] = "warn"
+        else:
+            budget_state_by_project[p.id] = "ok"
+
+    project_items = []
+    for p in projects:
+        if p.status not in {"in_progress", "completed"} or p.approval_stage != "approved":
+            continue
+        total_tasks = len(p.tasks)
+        done_tasks = sum(1 for task in p.tasks if task.status == "done")
+        progress_pct = int((done_tasks / total_tasks) * 100) if total_tasks else 0
+        progress_width = min(max(progress_pct, 0), 100)
+        budget_rate = p.budget_consumption_rate or Decimal("0")
+        budget_pct = float(budget_rate)
+        budget_width = min(max(budget_pct, 0), 100)
+        is_completion_waiting = p.status == "in_progress" and total_tasks > 0 and done_tasks == total_tasks
+        is_delayed = p.id in delay_project_ids
+        budget_state = budget_state_by_project.get(p.id, "ok")
+
+        status_labels = []
+        if p.status == "completed":
+            status_labels.append({"label": "完了", "class": "bp-done bp-done-outline"})
+        else:
+            if is_completion_waiting:
+                status_labels.append({"label": "完了認定待ち", "class": "bp-done"})
+            if is_delayed:
+                status_labels.append({"label": "遅延", "class": "bp-delay"})
+            if budget_state == "over":
+                status_labels.append({"label": "予算超過", "class": "bp-delay"})
+            elif budget_state == "warn":
+                status_labels.append({"label": "予算注意", "class": "bp-budget"})
+            if not status_labels:
+                status_labels.append({"label": "進行中", "class": "bp-prog"})
+
+        if p.status == "completed" or is_completion_waiting or progress_pct >= 100:
+            progress_class = "gmf-ok"
+            progress_text_class = "gmp-ok"
+        elif is_delayed:
+            progress_class = "gmf-danger"
+            progress_text_class = "gmp-danger"
+        else:
+            progress_class = "gmf-purple"
+            progress_text_class = "gmp-purple"
+
+        if budget_pct >= 100:
+            budget_class = "gmf-danger"
+            budget_text_class = "gmp-danger"
+        elif budget_pct >= 80:
+            budget_class = "gmf-warn"
+            budget_text_class = "gmp-warn"
+        else:
+            budget_class = "gmf-ok"
+            budget_text_class = "gmp-ok"
+
+        if p.status == "completed":
+            sort_priority = 5
+        elif is_completion_waiting:
+            sort_priority = 0
+        elif is_delayed:
+            sort_priority = 1
+        elif budget_state == "over":
+            sort_priority = 2
+        elif budget_state == "warn":
+            sort_priority = 3
+        else:
+            sort_priority = 4
+
+        project_items.append(
+            {
+                "project_id": p.id,
+                "project_name": p.title,
+                "owner_name": p.applicant.display_name if p.applicant else "—",
+                "status": p.status,
+                "is_completed": p.status == "completed",
+                "status_labels": status_labels,
+                "progress_pct": progress_pct,
+                "progress_width": progress_width,
+                "progress_class": progress_class,
+                "progress_text_class": progress_text_class,
+                "budget_pct": budget_pct,
+                "budget_display": f"{format_percent_value(budget_rate)}%",
+                "budget_width": budget_width,
+                "budget_class": budget_class,
+                "budget_text_class": budget_text_class,
+                "is_delayed": is_delayed,
+                "sort_priority": sort_priority,
+                "updated_at": p.updated_at or p.created_at,
+            }
+        )
+
+    project_items.sort(
+        key=lambda item: (
+            item["sort_priority"],
+            -(item["updated_at"].timestamp() if item["updated_at"] else 0),
+            -item["project_id"],
+        )
+    )
+
+    applicants = (
+        User.query.filter(
+            User.department_id == department_id,
+            User.role == "applicant",
+            User.is_active.is_(True),
+        )
+        .order_by(User.id.asc())
+        .all()
+    )
+    active_applicant_names = {u.display_name for u in applicants}
+    resource_map: dict[str, dict] = {
+        u.display_name: {
+            "user_id": u.id,
+            "member_name": u.display_name,
+            "not_done_count": 0,
+            "in_progress_count": 0,
+            "delayed_count": 0,
+            "not_started_count": 0,
+        }
+        for u in applicants
+    }
+    for p in in_progress_projects:
+        for t in p.tasks:
+            if t.status == "done" or t.assignee_name not in active_applicant_names:
+                continue
+            row = resource_map[t.assignee_name]
+            row["not_done_count"] += 1
+            is_delayed_task = bool(t.due_date and t.status != "done" and t.due_date < today)
+            if is_delayed_task:
+                row["delayed_count"] += 1
+            elif t.status == "not_started":
+                row["not_started_count"] += 1
+            elif t.status == "in_progress":
+                row["in_progress_count"] += 1
+
+    resource_items = []
+    high_load_total = 0
+    over_load_total = 0
+    for name, row in resource_map.items():
+        count = row["not_done_count"]
+        if count >= 9:
+            load_class = "mbf-over"
+            load_label = "過負荷"
+            over_load_total += 1
+        elif count >= 6:
+            load_class = "mbf-high"
+            load_label = "高負荷"
+            high_load_total += 1
+        elif count >= 3:
+            load_class = "mbf-mid"
+            load_label = "適正"
+        else:
+            load_class = "mbf-low"
+            load_label = "余裕あり"
+        load_width = min((count / 9) * 100, 100) if count > 0 else 0
+        resource_items.append(
+            {
+                "user_id": row["user_id"],
+                "member_name": name,
+                "not_done_count": count,
+                "load_label": load_label,
+                "load_class": load_class,
+                "load_width": load_width,
+                "in_progress_count": row["in_progress_count"],
+                "delayed_count": row["delayed_count"],
+                "not_started_count": row["not_started_count"],
+            }
+        )
+    resource_items.sort(key=lambda item: (-item["not_done_count"], -item["delayed_count"], item["user_id"]))
+    resource_has_tasks = any(item["not_done_count"] > 0 for item in resource_items)
+
+    yearly_budget = (
+        DepartmentYearlyBudget.query.filter(
+            DepartmentYearlyBudget.department_id == department_id,
+            DepartmentYearlyBudget.fiscal_year == fiscal_year,
+        )
+        .first()
+    )
+    annual_budget = Decimal(yearly_budget.annual_budget_amount or 0) if yearly_budget else Decimal("0")
+    actual_sum = (
+        db.session.query(func.coalesce(func.sum(BudgetActualLog.amount), 0))
+        .join(Project, Project.id == BudgetActualLog.project_id)
+        .filter(
+            Project.department_id == department_id,
+            BudgetActualLog.recorded_on >= fiscal_start,
+            BudgetActualLog.recorded_on <= fiscal_end,
+        )
+        .scalar()
+    )
+    actual_amount = Decimal(actual_sum or 0)
+    usage_percent = ((actual_amount / annual_budget) * Decimal("100")) if annual_budget > 0 else Decimal("0")
+    over_amount = max(actual_amount - annual_budget, Decimal("0")) if annual_budget > 0 else Decimal("0")
+    remaining_amount = max(annual_budget - actual_amount, Decimal("0")) if annual_budget > 0 else Decimal("0")
+    usage_class = "danger" if usage_percent >= Decimal("100") else ("warn" if usage_percent >= Decimal("80") else "normal")
+    usage_percent_value = float(max(usage_percent, Decimal("0")))
+    used_arc_percent = float(min(max(usage_percent, Decimal("0")), Decimal("100")))
+    over_arc_percent = float(min(max(usage_percent - Decimal("100"), Decimal("0")), Decimal("100")))
+
+    return {
+        "summary": {
+            "project_total": len(projects),
+            "project_meta": f"進行中{len(in_progress_projects)}/完了{len(completed_projects)}/申請中{len(pending_projects)}",
+            "approval_total": len(review_requests),
+            "approval_wait3_total": approval_wait3_total,
+            "completion_total": len(completion_requests),
+            "completion_wait3_total": completion_wait3_total,
+            "high_load_total": high_load_total,
+            "over_load_total": over_load_total,
+            "load_total": high_load_total + over_load_total,
+            "delay_total": len(delay_project_ids),
+            "max_delay_days": max_delay_days,
+            "budget_caution_total": budget_caution_total,
+            "budget_over_total": budget_over_total,
+        },
+        "review_requests": review_requests,
+        "completion_requests": completion_requests,
+        "project_items": project_items,
+        "resource_items": resource_items,
+        "resource_has_tasks": resource_has_tasks,
+        "budget": {
+            "is_empty": annual_budget <= 0,
+            "usage_percent": usage_percent,
+            "usage_percent_value": usage_percent_value,
+            "used_arc_percent": used_arc_percent,
+            "over_arc_percent": over_arc_percent,
+            "usage_percent_display": f"{format_percent_value(usage_percent)}%",
+            "usage_class": usage_class,
+            "annual_budget_display": format_decimal_amount(annual_budget),
+            "actual_display": format_decimal_amount(actual_amount),
+            "over_display": format_decimal_amount(over_amount),
+            "remaining_display": format_decimal_amount(remaining_amount),
+        },
+    }
 
 
 # =============================
 # ■ 部門管理者：承認審査画面
 # =============================
-def get_fiscal_year(target_date: date) -> int:
-    """Date型（業務日付）から日本の年度を返す。"""
-    return target_date.year if target_date.month >= 4 else target_date.year - 1
-
-
 def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
     db.session.add(
         Notification(

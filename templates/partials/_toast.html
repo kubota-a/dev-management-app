@@ -1,1 +1,54 @@
-<div id="globalToastRegion" class="toast-region" aria-live="polite"></div>
+<div id="globalToast" class="global-toast" aria-live="polite"></div>
+<style>
+.global-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: #1e1624;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: all .3s;
+  pointer-events: none;
+  z-index: 600;
+  white-space: nowrap;
+}
+.global-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+<script>
+window.globalToastMessages = {{ global_toast_messages|default([])|tojson }};
+
+(function () {
+  const toast = document.getElementById("globalToast");
+  const messages = window.globalToastMessages || [];
+  if (!toast || !messages.length) return;
+
+  let index = 0;
+
+  function showNextToast() {
+    const item = messages[index];
+    if (!item || !item.message) return;
+
+    toast.textContent = item.message;
+    toast.classList.add("show");
+
+    setTimeout(function () {
+      toast.classList.remove("show");
+      index += 1;
+
+      if (index < messages.length) {
+        setTimeout(showNextToast, 350);
+      }
+    }, 2400);
+  }
+
+  showNextToast();
+})();
+</script>

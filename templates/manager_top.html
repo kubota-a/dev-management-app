@@ -1,9 +1,687 @@
 {% extends "base.html" %}
 
-{% block title %}部門管理者トップ（仮）{% endblock %}
+{% set page_role = "manager" %}
+{% set active_menu = "manager_dashboard" %}
+{% set header_title = "ダッシュボード" %}
+{% set header_meta = "自部門の要対応項目と案件状況を確認します" %}
+{% set content_width_class = "app-content-wide" %}
+
+{% block title %}ダッシュボード{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-manager-dashboard,
+.mock-manager-dashboard * {
+  box-sizing: border-box;
+}
+.mock-manager-dashboard {
+  --md-sidebar: #6b4c6e;
+  --md-header: #3d2040;
+  --md-header-dark: #2e1830;
+  --md-purple-light: #f3eef4;
+  --md-purple-mid: #c9aecf;
+  --md-purple-soft: #e8dcea;
+  --md-bg: #f4f1f5;
+  --md-card: #ffffff;
+  --md-border: #e0d4e3;
+  --md-text: #1e1624;
+  --md-muted: #7a6480;
+  --md-danger: #dc3545;
+  --md-danger-bg: #fff0f0;
+  --md-danger-mid: #fecaca;
+  --md-warning: #d97706;
+  --md-warning-bg: #fff8ec;
+  --md-success: #0d9469;
+  --md-success-bg: #edfaf4;
+  --md-success-mid: #a7f3d0;
+  --md-info: #2563eb;
+  --md-info-bg: #eff6ff;
+  --md-radius: 12px;
+  --md-shadow: 0 2px 12px rgba(61, 32, 64, .09);
+  --md-shadow-card: 0 4px 20px rgba(61, 32, 64, .10);
+  font-family: var(--font-family-base);
+  color: var(--md-text);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+.mock-manager-dashboard .manager-dashboard-content { padding: 24px 28px 40px; width: 100%; max-width: 100%; min-width: 0; }
+.mock-manager-dashboard .dashboard-grid { display: grid; grid-template-columns: 1fr 300px; gap: 22px; align-items: start; }
+.mock-manager-dashboard .col-main { display: flex; flex-direction: column; gap: 22px; min-width: 0; max-width: 100%; }
+.mock-manager-dashboard .col-right { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 80px; min-width: 0; max-width: 100%; }
+.mock-manager-dashboard .summary-band { margin-bottom: 24px; }
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-normal .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-normal .sb-unit {
+  color: var(--md-purple-light) !important;
+}
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-yellow .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-yellow .sb-unit {
+  color: #fef08a !important;
+}
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-orange .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-orange .sb-unit {
+  color: #fdba74 !important;
+}
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-red .sb-value,
+.mock-manager-dashboard .summary-band .sb-number-row.sb-number-red .sb-unit {
+  color: #ff8aa0 !important;
+}
+.mock-manager-dashboard .approval-card, .mock-manager-dashboard .project-list-card, .mock-manager-dashboard .resource-card { background: var(--md-card); border: 1px solid var(--md-border); border-radius: var(--md-radius); overflow: hidden; min-width: 0; max-width: 100%; }
+.mock-manager-dashboard .approval-card { box-shadow: var(--md-shadow-card); }
+.mock-manager-dashboard .project-list-card, .mock-manager-dashboard .resource-card { box-shadow: var(--md-shadow); }
+.mock-manager-dashboard .ac-header { padding: 14px 20px; border-bottom: 1px solid var(--md-border); background: #543656; display: flex; align-items: center; justify-content: space-between; }
+.mock-manager-dashboard .ac-title { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 14px; }
+.mock-manager-dashboard .ac-head-right { display: flex; align-items: center; gap: 10px; }
+.mock-manager-dashboard .ac-count { background: rgba(255, 255, 255, .22); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+.mock-manager-dashboard .ac-arrow {
+  display: none;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .75);
+  transition: transform .25s;
+  flex-shrink: 0;
+}
+.mock-manager-dashboard .ac-arrow.open { transform: rotate(180deg); }
+.mock-manager-dashboard .ac-action-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 9px;
+  border-radius: 8px;
+  background: var(--md-warning-bg);
+  color: var(--md-warning);
+  border: 1px solid #fed7aa;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.mock-manager-dashboard .approval-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.mock-manager-dashboard table.approval-table { width: 100%; min-width: 720px; border-collapse: collapse; }
+.mock-manager-dashboard .approval-table th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--md-muted); background: #faf7fb; padding: 10px 18px; text-align: left; border-bottom: 1px solid var(--md-border); }
+.mock-manager-dashboard .approval-table td { padding: 13px 18px; font-size: 13px; border-bottom: 1px solid #faf7fb; }
+.mock-manager-dashboard .approval-table th,
+.mock-manager-dashboard .approval-table td { white-space: nowrap; }
+.mock-manager-dashboard .approval-table tr:last-child td { border-bottom: none; }
+.mock-manager-dashboard .approval-table tr:hover td { background: var(--md-purple-light); }
+.mock-manager-dashboard .badge-primary { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.mock-manager-dashboard .bp-wait, .mock-manager-dashboard .bp-budget { background: var(--md-warning-bg); color: var(--md-warning); border: 1px solid #fed7aa; }
+.mock-manager-dashboard .bp-urgent, .mock-manager-dashboard .bp-delay { background: var(--md-danger-bg); color: var(--md-danger); border: 1px solid var(--md-danger-mid); }
+.mock-manager-dashboard .bp-prog { background: var(--md-info-bg); color: var(--md-info); border: 1px solid #bfdbfe; }
+.mock-manager-dashboard .bp-done { background: var(--md-success-bg); color: var(--md-success); border: 1px solid var(--md-success-mid); }
+.mock-manager-dashboard .bp-done-outline {
+  background: transparent;
+  color: var(--md-success);
+  border: 1px solid var(--md-success-mid);
+}
+.mock-manager-dashboard .review-btn { padding: 6px 14px; background: var(--md-header); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); white-space: nowrap; transition: background .15s; }
+.mock-manager-dashboard .review-btn:hover { background: var(--md-header-dark); }
+.mock-manager-dashboard .proj-link { font-weight: 700; color: var(--md-text); cursor: pointer; transition: color .15s; }
+.mock-manager-dashboard .proj-link:hover { color: var(--md-sidebar); text-decoration: underline; }
+.mock-manager-dashboard .plc-header { padding: 14px 20px; border-bottom: 1px solid var(--md-border); display: flex; align-items: center; justify-content: space-between; }
+.mock-manager-dashboard .plc-title { font-size: 14px; font-weight: 700; }
+.mock-manager-dashboard .plc-filters { display: flex; gap: 6px; }
+.mock-manager-dashboard .filter-btn { padding: 4px 12px; border: 1.5px solid var(--md-border); border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; background: #fff; color: var(--md-muted); font-family: var(--font-family-base); transition: all .15s; }
+.mock-manager-dashboard .filter-btn.active { background: var(--md-sidebar); color: #fff; border-color: var(--md-sidebar); }
+.mock-manager-dashboard .filter-btn:hover:not(.active) { border-color: var(--md-purple-mid); color: var(--md-sidebar); }
+.mock-manager-dashboard .project-list-head,
+.mock-manager-dashboard .proj-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.6fr) minmax(96px, 0.55fr) minmax(110px, 0.65fr) minmax(130px, 0.75fr) minmax(84px, auto);
+  align-items: center;
+  column-gap: 16px;
+}
+.mock-manager-dashboard .project-list-head {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--md-border);
+  background: #faf7fb;
+  color: var(--md-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.mock-manager-dashboard .project-list-head > div:last-child { text-align: left; justify-self: end; padding-right: 16px; }
+.mock-manager-dashboard .project-list-head > div:nth-child(2),
+.mock-manager-dashboard .proj-row > div:nth-child(2) { justify-self: start; }
+.mock-manager-dashboard .project-list-head > div:nth-child(3),
+.mock-manager-dashboard .project-list-head > div:nth-child(4),
+.mock-manager-dashboard .proj-row > div:nth-child(3),
+.mock-manager-dashboard .proj-row > div:nth-child(4) { justify-self: center; }
+.mock-manager-dashboard .project-list-head > div:nth-child(5),
+.mock-manager-dashboard .proj-row > div:nth-child(5) { justify-self: end; }
+.mock-manager-dashboard .proj-row { padding: 13px 20px; border-bottom: 1px solid #faf7fb; transition: background .15s; }
+.mock-manager-dashboard .proj-row:last-child { border-bottom: none; }
+.mock-manager-dashboard .proj-row-completed { background: #f7f7f8; }
+.mock-manager-dashboard .proj-row:hover { background: var(--md-purple-light); }
+.mock-manager-dashboard .proj-name { font-size: 13px; font-weight: 700; }
+.mock-manager-dashboard .proj-name-normal { font-weight: 400; }
+.mock-manager-dashboard .proj-owner { font-size: 12px; color: var(--md-muted); display: flex; align-items: center; gap: 5px; }
+.mock-manager-dashboard .gauge-mini-wrap { display: flex; align-items: center; gap: 7px; }
+.mock-manager-dashboard .gauge-mini-track { width: 60px; height: 7px; background: #e8e0eb; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+.mock-manager-dashboard .gauge-mini-fill { height: 100%; border-radius: 4px; }
+.mock-manager-dashboard .gmf-ok { background: var(--md-success); }
+.mock-manager-dashboard .gmf-warn { background: var(--md-warning); }
+.mock-manager-dashboard .gmf-danger { background: var(--md-danger); }
+.mock-manager-dashboard .gmf-purple { background: var(--md-sidebar); }
+.mock-manager-dashboard .gauge-mini-pct { font-size: 12px; font-weight: 700; min-width: 32px; }
+.mock-manager-dashboard .gmp-ok { color: var(--md-success); }
+.mock-manager-dashboard .gmp-warn { color: var(--md-warning); }
+.mock-manager-dashboard .gmp-danger { color: var(--md-danger); }
+.mock-manager-dashboard .gmp-purple { color: var(--md-sidebar); }
+.mock-manager-dashboard .detail-btn { padding: 5px 12px; background: var(--md-purple-light); color: var(--md-sidebar); border: 1.5px solid var(--md-purple-mid); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font-family-base); white-space: nowrap; transition: all .15s; }
+.mock-manager-dashboard .detail-btn:hover { background: var(--md-sidebar); color: #fff; }
+.mock-manager-dashboard .rc-head { padding: 13px 18px; border-bottom: 1px solid var(--md-border); background: var(--md-purple-light); }
+.mock-manager-dashboard .rc-title { font-size: 13px; font-weight: 800; color: var(--md-header); display: flex; align-items: center; gap: 7px; }
+.mock-manager-dashboard .rc-body { padding: 16px 18px; }
+.mock-manager-dashboard .member-bar-row { margin-bottom: 14px; }
+.mock-manager-dashboard .member-bar-row:last-child { margin-bottom: 0; }
+.mock-manager-dashboard .mbr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.mock-manager-dashboard .mbr-name { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
+.mock-manager-dashboard .mbr-meta { font-size: 11px; color: var(--md-muted); display: flex; align-items: center; gap: 6px; }
+.mock-manager-dashboard .mbr-bar-track { width: 100%; height: 10px; background: #e8e0eb; border-radius: 5px; overflow: hidden; }
+.mock-manager-dashboard .mbr-bar-fill { height: 100%; border-radius: 5px; transition: width .6s ease; }
+.mock-manager-dashboard .mbf-low { background: #3ebf8f; }
+.mock-manager-dashboard .mbf-mid { background: #9a7d9e; }
+.mock-manager-dashboard .mbf-high { background: #ebb015; }
+.mock-manager-dashboard .mbf-over { background: #ea5358; }
+.mock-manager-dashboard .mbr-tasks { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.mock-manager-dashboard .task-mini-chip { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+.mock-manager-dashboard .tmc-prog { background: var(--md-info-bg); color: var(--md-info); }
+.mock-manager-dashboard .tmc-delay { background: var(--md-danger-bg); color: var(--md-danger); }
+.mock-manager-dashboard .tmc-not-started { background: #f1eef3; color: var(--md-muted); }
+.mock-manager-dashboard .resource-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--md-border); }
+.mock-manager-dashboard .rl-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--md-muted); }
+.mock-manager-dashboard .rl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.mock-manager-dashboard .donut-body { display: flex; flex-direction: column; gap: 14px; }
+.mock-manager-dashboard .donut-svg-wrap { position: relative; width: 176px; max-width: 100%; margin: 0 auto; }
+.mock-manager-dashboard .donut-svg-wrap svg { width: 100%; height: auto; display: block; transform: rotate(-90deg); }
+.mock-manager-dashboard .donut-center-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.mock-manager-dashboard .donut-pct { font-size: 30px; line-height: 1; font-weight: 900; color: var(--md-sidebar); letter-spacing: -.01em; }
+.mock-manager-dashboard .donut-pct.dp-warn { color: var(--md-warning); }
+.mock-manager-dashboard .donut-pct.dp-danger { color: var(--md-danger); }
+.mock-manager-dashboard .donut-unit { margin-top: 4px; font-size: 12px; color: var(--md-muted); font-weight: 700; }
+.mock-manager-dashboard .donut-legend { border-top: 1px solid var(--md-border); padding-top: 10px; }
+.mock-manager-dashboard .dl-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-top: 6px; }
+.mock-manager-dashboard .dl-row:first-child { margin-top: 0; }
+.mock-manager-dashboard .dl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.mock-manager-dashboard .dl-key { font-size: 12px; color: var(--md-muted); }
+.mock-manager-dashboard .dl-val { font-size: 12px; color: var(--md-text); font-weight: 700; }
+.mock-manager-dashboard .table-empty-main { font-weight: 700; color: var(--md-text); }
+.mock-manager-dashboard .table-empty-sub { margin-top: 4px; color: var(--md-muted); font-size: 12px; }
+.mock-manager-dashboard .project-empty-row { display: block; grid-column: 1 / -1; text-align: center; padding: 24px 12px; }
+.mock-manager-dashboard .card-empty { text-align: center; padding: 28px 12px; }
+.mock-manager-dashboard .card-empty .table-empty-main { display: block; }
+.mock-manager-dashboard .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--md-text); color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
+.mock-manager-dashboard .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (max-width: 1100px) {
+  .mock-manager-dashboard .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+  .mock-manager-dashboard .col-right { position: static; width: 100%; max-width: 100%; }
+}
+@media (max-width: 820px) {
+  .mock-manager-dashboard .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    width: 100%;
+    max-width: 100%;
+  }
+  .mock-manager-dashboard .col-main,
+  .mock-manager-dashboard .col-right {
+    display: contents;
+  }
+  .mock-manager-dashboard .col-main .approval-card:nth-of-type(1) {
+    order: 1;
+  }
+  .mock-manager-dashboard .col-main .approval-card:nth-of-type(2) {
+    order: 2;
+  }
+  .mock-manager-dashboard .col-right .resource-card:nth-of-type(1) {
+    order: 3;
+  }
+  .mock-manager-dashboard .col-right .resource-card:nth-of-type(2) {
+    order: 4;
+  }
+  .mock-manager-dashboard .project-list-card {
+    order: 5;
+  }
+  .mock-manager-dashboard .dashboard-accordion-head {
+    cursor: pointer;
+    user-select: none;
+  }
+  .mock-manager-dashboard .dashboard-accordion-head:hover {
+    background: #543656;
+  }
+  .mock-manager-dashboard .ac-arrow {
+    display: block;
+  }
+  .mock-manager-dashboard .dashboard-accordion-body {
+    display: none;
+  }
+  .mock-manager-dashboard .dashboard-accordion-body.open {
+    display: block;
+  }
+  .mock-manager-dashboard .manager-dashboard-content { padding: 16px 12px 32px; }
+  .mock-manager-dashboard .project-list-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .mock-manager-dashboard .approval-card,
+  .mock-manager-dashboard .resource-card,
+  .mock-manager-dashboard .project-list-card {
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+  }
+  .mock-manager-dashboard .col-right .resource-card {
+    width: 100%;
+    max-width: 100%;
+  }
+  .mock-manager-dashboard .plc-header {
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .mock-manager-dashboard .plc-filters {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .mock-manager-dashboard .filter-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .mock-manager-dashboard .project-list-head { display: none; }
+  .mock-manager-dashboard .proj-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 22px;
+  }
+  .mock-manager-dashboard .proj-row > div:nth-child(2),
+  .mock-manager-dashboard .proj-row > div:nth-child(3),
+  .mock-manager-dashboard .proj-row > div:nth-child(4) {
+    display: none;
+  }
+  .mock-manager-dashboard .proj-row > div:first-child { min-width: 0; }
+  .mock-manager-dashboard .proj-row > div:last-child {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    text-align: right;
+  }
+  .mock-manager-dashboard .proj-name {
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .mock-manager-dashboard .detail-btn {
+    white-space: nowrap;
+    padding: 7px 14px;
+  }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="card">
-    <h1 class="card-title">部門管理者トップ（仮）</h1>
-</section>
+<div class="mock-manager-dashboard">
+  <div class="manager-dashboard-content">
+    <section class="summary-band" aria-label="件数サマリー">
+      <div class="summary-band-inner">
+        <div class="summary-band-segment sb-accent-blue">
+          <div class="sb-number-row sb-number-normal"><span class="sb-value">{{ view_data.summary.project_total }}</span><span class="sb-unit">件</span></div>
+          <span class="sb-label">部門案件</span>
+          <span class="sb-meta">{{ view_data.summary.project_meta }}</span>
+        </div>
+        <div class="summary-band-segment sb-accent-amber is-warning">
+          <div class="sb-number-row {{ 'sb-number-yellow' if view_data.summary.approval_wait3_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.approval_total }}</span><span class="sb-unit">件</span></div>
+          <span class="sb-label">承認依頼</span>
+          <span class="sb-meta">3日以上待機 {% if view_data.summary.approval_wait3_total > 0 %}{{ view_data.summary.approval_wait3_total }}件{% else %}なし{% endif %}</span>
+        </div>
+        <div class="summary-band-segment sb-accent-teal">
+          <div class="sb-number-row {{ 'sb-number-yellow' if view_data.summary.completion_wait3_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.completion_total }}</span><span class="sb-unit">件</span></div>
+          <span class="sb-label">完了認定依頼</span>
+          <span class="sb-meta">3日以上待機 {% if view_data.summary.completion_wait3_total > 0 %}{{ view_data.summary.completion_wait3_total }}件{% else %}なし{% endif %}</span>
+        </div>
+        <div class="summary-band-segment sb-accent-green">
+          <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.load_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.load_total }}</span><span class="sb-unit">名</span></div>
+          <span class="sb-label">負荷集中担当者</span>
+          <span class="sb-meta">過負荷{{ view_data.summary.over_load_total }}/高負荷{{ view_data.summary.high_load_total }}</span>
+        </div>
+        <div class="summary-band-segment sb-accent-red is-delay">
+          <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.delay_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.delay_total }}</span><span class="sb-unit">件</span></div>
+          <span class="sb-label">遅延案件</span>
+          <span class="sb-meta">{% if view_data.summary.delay_total > 0 %}最長遅延{{ view_data.summary.max_delay_days }}日{% else %}最長遅延なし{% endif %}</span>
+        </div>
+        <div class="summary-band-segment sb-accent-orange is-budget-alert">
+          <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.budget_over_total > 0 else ('sb-number-orange' if view_data.summary.budget_caution_total > 0 else 'sb-number-normal') }}"><span class="sb-value">{{ view_data.summary.budget_caution_total + view_data.summary.budget_over_total }}</span><span class="sb-unit">件</span></div>
+          <span class="sb-label">予算注意</span>
+          <span class="sb-meta">注意{{ view_data.summary.budget_caution_total }}/超過{{ view_data.summary.budget_over_total }}</span>
+        </div>
+      </div>
+    </section>
+    <div class="dashboard-grid">
+      <div class="col-main">
+        <div class="approval-card dashboard-accordion-card">
+          <div class="ac-header dashboard-accordion-head" onclick="toggleManagerDashboardAccordion(this)">
+            <div class="ac-title">承認依頼<span class="ac-action-label">要アクション</span></div>
+            <div class="ac-head-right">
+              <div class="ac-count">{{ view_data.summary.approval_total }}件</div>
+              <div class="ac-arrow open">▼</div>
+            </div>
+          </div>
+          <div class="approval-table-wrap dashboard-accordion-body open">
+            <table class="approval-table">
+              <thead>
+                <tr>
+                  <th>申請日</th>
+                  <th>案件名</th>
+                  <th>申請者</th>
+                  <th>概算予算</th>
+                  <th>状態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if view_data.review_requests %}
+                  {% for item in view_data.review_requests %}
+                    <tr>
+                      <td{% if item.is_waiting_long %} style="color:var(--md-danger);font-weight:700;"{% endif %}>{{ item.submitted_date }}</td>
+                      <td><a class="proj-link" href="{{ url_for('manager_project_review', project_id=item.project_id) }}">{{ item.project_name }}</a></td>
+                      <td>{{ item.applicant_name }}</td>
+                      <td style="font-weight:700;">{{ item.budget_display }}</td>
+                      <td><span class="badge-primary {{ 'bp-urgent' if item.is_waiting_long else 'bp-wait' }}">{{ item.status_label }}</span></td>
+                      <td><a class="review-btn" style="display:inline-block;text-decoration:none;" href="{{ url_for('manager_project_review', project_id=item.project_id) }}">審査へ →</a></td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" style="text-align:center;">
+                      <div class="table-empty-sub">現在、部門承認が必要な申請はありません。</div>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="approval-card dashboard-accordion-card">
+          <div class="ac-header dashboard-accordion-head" onclick="toggleManagerDashboardAccordion(this)">
+            <div class="ac-title">完了認定依頼<span class="ac-action-label">要アクション</span></div>
+            <div class="ac-head-right">
+              <div class="ac-count">{{ view_data.summary.completion_total }}件</div>
+              <div class="ac-arrow open">▼</div>
+            </div>
+          </div>
+          <div class="approval-table-wrap dashboard-accordion-body open">
+            <table class="approval-table completion-request-table">
+              <thead>
+                <tr>
+                  <th>依頼日</th>
+                  <th>案件名</th>
+                  <th>主担当</th>
+                  <th>予算執行率</th>
+                  <th>状態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if view_data.completion_requests %}
+                  {% for item in view_data.completion_requests %}
+                    <tr>
+                      <td>{{ item.request_date }}</td>
+                      <td><a class="proj-link" href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}">{{ item.project_name }}</a></td>
+                      <td>{{ item.owner_name }}</td>
+                      <td>
+                        <div class="gauge-mini-wrap">
+                          <div class="gauge-mini-track">
+                            <div class="gauge-mini-fill {{ 'gmf-danger' if item.budget_rate_value >= 100 else ('gmf-warn' if item.budget_rate_value >= 80 else 'gmf-ok') }}" style="width:{{ 100 if item.budget_rate_value > 100 else item.budget_rate_value }}%"></div>
+                          </div>
+                          <span class="gauge-mini-pct {{ 'gmp-danger' if item.budget_rate_value >= 100 else ('gmp-warn' if item.budget_rate_value >= 80 else 'gmp-ok') }}" style="font-size:11px;">{{ item.budget_rate_display }}</span>
+                        </div>
+                      </td>
+                      <td><span class="badge-primary bp-done">完了認定待ち</span></td>
+                      <td><a class="review-btn" style="display:inline-block;text-decoration:none;" href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}">完了認定へ →</a></td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" style="text-align:center;">
+                      <div class="table-empty-sub">現在、完了認定が必要な案件はありません。</div>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="project-list-card">
+          <div class="plc-header">
+            <div class="plc-title">自部門案件一覧</div>
+            <div class="plc-filters">
+              <button class="filter-btn active" onclick="setManagerDashboardFilter(this,'all')">全て</button>
+              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'in_progress')">進行中</button>
+              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'delay')">遅延</button>
+              <button class="filter-btn" onclick="setManagerDashboardFilter(this,'completed')">完了</button>
+            </div>
+          </div>
+          <div class="project-list-head">
+            <div>案件名と状態</div>
+            <div>主担当</div>
+            <div>進捗率</div>
+            <div>予算執行率</div>
+            <div>操作</div>
+          </div>
+
+          {% for item in view_data.project_items %}
+            <div class="proj-row{% if item.is_completed %} proj-row-completed{% endif %}" data-filter-status="{{ 'completed' if item.is_completed else 'in_progress' }}" data-filter-delay="{{ '1' if item.is_delayed else '0' }}">
+              <div><div class="proj-name{% if item.is_completed %} proj-name-normal{% endif %}">{{ item.project_name }}</div><div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;">{% for label in item.status_labels %}<span class="badge-primary {{ label.class }}">{{ label.label }}</span>{% endfor %}</div></div>
+              <div class="proj-owner">{{ item.owner_name }}</div>
+              <div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill {{ item.progress_class }}" style="width:{{ item.progress_width }}%"></div></div><span class="gauge-mini-pct {{ item.progress_text_class }}">{{ item.progress_pct }}%</span></div>
+              <div><div class="gauge-mini-wrap"><div class="gauge-mini-track"><div class="gauge-mini-fill {{ item.budget_class }}" style="width:{{ item.budget_width }}%"></div></div><span class="gauge-mini-pct {{ item.budget_text_class }}" style="font-size:11px;">{{ item.budget_display }}</span></div></div>
+              <div style="text-align:right;">{% if item.is_completed %}<button class="detail-btn" onclick="showManagerDashboardToast('完了済み案件の詳細ページは未実装')">詳細 →</button>{% else %}<a class="detail-btn" style="display:inline-block;text-decoration:none;" href="{{ url_for('manager_project_monitoring_detail', project_id=item.project_id) }}">詳細 →</a>{% endif %}</div>
+            </div>
+          {% endfor %}
+          <div id="managerDashboardProjectEmpty" class="proj-row project-empty-row" style="{% if view_data.project_items %}display:none;{% endif %}">
+            <div class="table-empty-sub">現在、表示できる自部門の開発中・完了案件はありません。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="resource-card">
+          <div class="rc-head"><div class="rc-title">担当者別の負荷・リソース状況</div></div>
+          <div class="rc-body">
+            {% if view_data.resource_has_tasks %}
+              {% for item in view_data.resource_items %}
+                <div class="member-bar-row"{% if loop.last %} style="margin-bottom:0"{% endif %}>
+                  <div class="mbr-top"><div class="mbr-name">{{ item.member_name }}</div><div class="mbr-meta"><span>未完了タスク {{ item.not_done_count }}件</span></div></div>
+                  <div class="mbr-bar-track"><div class="mbr-bar-fill {{ item.load_class }}" style="width:{{ item.load_width }}%"></div></div>
+                  <div class="mbr-tasks"><span class="task-mini-chip tmc-prog">進行中 {{ item.in_progress_count }}</span>{% if item.delayed_count > 0 %}<span class="task-mini-chip tmc-delay">遅延 {{ item.delayed_count }}</span>{% endif %}{% if item.not_started_count > 0 %}<span class="task-mini-chip tmc-not-started">未着手 {{ item.not_started_count }}</span>{% endif %}</div>
+                </div>
+              {% endfor %}
+              <div class="resource-legend">
+                <div class="rl-item"><div class="rl-dot" style="background:#3ebf8f"></div>余裕あり</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#9a7d9e"></div>適正</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#ebb015"></div>高負荷</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#ea5358"></div>過負荷</div>
+              </div>
+            {% else %}
+              <div class="card-empty">
+                <div class="table-empty-main">データがまだありません</div>
+                <div class="table-empty-sub">現在、表示できる未完了タスクはありません。</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="resource-card">
+          <div class="rc-head"><div class="rc-title">部門年間予算 執行率</div></div>
+          <div class="rc-body">
+            {% if view_data.budget.is_empty %}
+              <div class="card-empty">
+                <div class="table-empty-main">年間予算が未登録です</div>
+                <div class="table-empty-sub">部門年間予算が登録されると、執行率が表示されます。</div>
+              </div>
+            {% else %}
+              <div class="donut-body">
+                <div class="donut-svg-wrap">
+                  <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e0eb" stroke-width="4"></circle>
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="var(--md-purple-mid)" stroke-width="4" stroke-dasharray="87.96 0" stroke-dashoffset="0"></circle>
+                    <circle id="managerBudgetDonutMain" cx="18" cy="18" r="14" fill="none" stroke="var(--md-sidebar)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" data-used-pct="{{ view_data.budget.used_arc_percent }}" style="transition: stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)"></circle>
+                    <circle id="managerBudgetDonutOver" cx="18" cy="18" r="14" fill="none" stroke="var(--md-danger)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" stroke-dashoffset="0" data-over-pct="{{ view_data.budget.over_arc_percent }}" style="transition: stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1)"></circle>
+                  </svg>
+                  <div class="donut-center-text">
+                    <div class="donut-pct{% if view_data.budget.usage_class == 'danger' %} dp-danger{% elif view_data.budget.usage_class == 'warn' %} dp-warn{% endif %}" id="managerBudgetDonutPct">{{ view_data.budget.usage_percent_display }}</div>
+                    <div class="donut-unit">執行率</div>
+                  </div>
+                </div>
+                <div class="donut-legend">
+                  <div class="dl-row">
+                    <div class="dl-dot" style="background:var(--md-sidebar)"></div>
+                    <div class="dl-key">執行済</div>
+                    <div class="dl-val">{{ view_data.budget.actual_display }}</div>
+                  </div>
+                  <div class="dl-row">
+                    <div class="dl-dot" style="background:var(--md-danger)"></div>
+                    <div class="dl-key">超過分</div>
+                    <div class="dl-val" style="color:var(--md-danger)">{{ view_data.budget.over_display }}</div>
+                  </div>
+                  <div class="dl-row">
+                    <div class="dl-dot" style="background:#e8e0eb"></div>
+                    <div class="dl-key">残余</div>
+                    <div class="dl-val" style="color:var(--md-muted)">{{ view_data.budget.remaining_display }}</div>
+                  </div>
+                  <div class="dl-row" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--md-border);">
+                    <div class="dl-key" style="font-weight:700;color:var(--md-text);">年間予算</div>
+                    <div class="dl-val" style="color:var(--md-header)">{{ view_data.budget.annual_budget_display }}</div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="managerDashboardToast"></div>
+
+</div>
+{% endblock %}
+
+{% block script_extra %}
+<script>
+function getManagerDashboardEl(id) { return document.getElementById(id); }
+function escapeManagerDashboardMockHtml(value) {
+  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function showManagerDashboardToast(msg) {
+  const toast = getManagerDashboardEl("managerDashboardToast");
+  if (!toast) return;
+  toast.textContent = escapeManagerDashboardMockHtml(msg);
+  toast.classList.add("show");
+  setTimeout(function () { toast.classList.remove("show"); }, 2400);
+}
+function setManagerDashboardFilter(btn, filterKey) {
+  if (!btn) return;
+  const buttons = document.querySelectorAll(".mock-manager-dashboard .filter-btn");
+  buttons.forEach(function (b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+  const rows = document.querySelectorAll(".mock-manager-dashboard .project-list-card .proj-row[data-filter-status]");
+  rows.forEach(function (row) {
+    const status = row.getAttribute("data-filter-status");
+    const isDelay = row.getAttribute("data-filter-delay") === "1";
+    let visible = false;
+    if (filterKey === "all") visible = true;
+    if (filterKey === "in_progress") visible = status === "in_progress";
+    if (filterKey === "completed") visible = status === "completed";
+    if (filterKey === "delay") visible = status === "in_progress" && isDelay;
+    row.style.display = visible ? "" : "none";
+  });
+  const emptyRow = getManagerDashboardEl("managerDashboardProjectEmpty");
+  const hasProjectRows = rows.length > 0;
+  if (emptyRow) {
+    emptyRow.style.display = hasProjectRows ? "none" : "";
+  }
+}
+function initManagerBudgetDonut() {
+  var mainArc = getManagerDashboardEl("managerBudgetDonutMain");
+  var overArc = getManagerDashboardEl("managerBudgetDonutOver");
+  var pctEl = getManagerDashboardEl("managerBudgetDonutPct");
+  if (!mainArc || !overArc || !pctEl) return;
+  var circle = 87.96;
+  var usedPct = Number(mainArc.getAttribute("data-used-pct") || "0");
+  var overPct = Number(overArc.getAttribute("data-over-pct") || "0");
+  var usedDash = circle * Math.min(Math.max(usedPct, 0), 100) / 100;
+  var overDash = circle * Math.min(Math.max(overPct, 0), 100) / 100;
+
+  if (overPct <= 0) {
+    overArc.style.opacity = "0";
+  } else {
+    overArc.style.opacity = "1";
+  }
+
+  requestAnimationFrame(function () {
+    setTimeout(function () {
+      mainArc.setAttribute("stroke-dasharray", usedDash.toFixed(2) + " " + (circle - usedDash).toFixed(2));
+      overArc.setAttribute("stroke-dasharray", overDash.toFixed(2) + " " + (circle - overDash).toFixed(2));
+      overArc.setAttribute("stroke-dashoffset", String(-usedDash));
+      pctEl.textContent = "{{ view_data.budget.usage_percent_display }}";
+    }, 90);
+  });
+}
+function toggleManagerDashboardAccordion(head) {
+  if (!head) return;
+  var isSmall = window.matchMedia("(max-width: 820px)").matches;
+  if (!isSmall) return;
+  var body = head.nextElementSibling;
+  var arrow = head.querySelector(".ac-arrow");
+  if (!body) return;
+  var isOpen = body.classList.toggle("open");
+  if (arrow) arrow.classList.toggle("open", isOpen);
+}
+function initManagerDashboardResponsiveAccordions() {
+  var isSmall = window.matchMedia("(max-width: 820px)").matches;
+  var bodies = document.querySelectorAll(".mock-manager-dashboard .dashboard-accordion-body");
+  var arrows = document.querySelectorAll(".mock-manager-dashboard .ac-arrow");
+  bodies.forEach(function (body) {
+    if (isSmall) {
+      body.classList.remove("open");
+    } else {
+      body.classList.add("open");
+    }
+  });
+  arrows.forEach(function (arrow) {
+    if (isSmall) {
+      arrow.classList.remove("open");
+    } else {
+      arrow.classList.add("open");
+    }
+  });
+}
+var managerDashboardAccordionIsSmall = window.matchMedia("(max-width: 820px)").matches;
+
+initManagerBudgetDonut();
+initManagerDashboardResponsiveAccordions();
+window.addEventListener("resize", function () {
+  var currentIsSmall = window.matchMedia("(max-width: 820px)").matches;
+  if (currentIsSmall === managerDashboardAccordionIsSmall) {
+    return;
+  }
+  managerDashboardAccordionIsSmall = currentIsSmall;
+  initManagerDashboardResponsiveAccordions();
+});
+</script>
 {% endblock %}
