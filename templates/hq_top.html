@@ -1,9 +1,427 @@
 {% extends "base.html" %}
 
-{% block title %}本部管理者トップ（仮）{% endblock %}
+{% set page_role = "hq" %}
+{% set active_menu = "hq_dashboard" %}
+{% set header_title = "ダッシュボード" %}
+{% set header_meta = "要対応項目と全社の予算・案件状況を確認します" %}
+{% set content_width_class = "app-content-wide" %}
+
+{% block title %}ダッシュボード{% endblock %}
+
+{% block head_extra %}
+<style>
+.mock-hq-dashboard {
+  --hqdb-sidebar: #1e6a9a;
+  --hqdb-sidebar-dk: #175580;
+  --hqdb-header: #0f3a5c;
+  --hqdb-header-dk: #0a2b45;
+  --hqdb-blue-light: #e6f2fb;
+  --hqdb-blue-mid: #93c5e8;
+  --hqdb-bg: #eef4f9;
+  --hqdb-card: #ffffff;
+  --hqdb-border: #cde1ef;
+  --hqdb-text: #0d1f2d;
+  --hqdb-muted: #4a7291;
+  --hqdb-font: var(--font-family-base);
+  --hqdb-radius: 12px;
+  --hqdb-shadow: 0 2px 12px rgba(15, 58, 92, 0.09);
+  --hqdb-shadow-card: 0 4px 20px rgba(15, 58, 92, 0.11);
+  --hqdb-danger: #dc3545;
+  --hqdb-danger-bg: #fff0f0;
+  --hqdb-danger-mid: #fecaca;
+  --hqdb-warning: #d97706;
+  --hqdb-warning-bg: #fff8ec;
+  --hqdb-success: #0d9469;
+  --hqdb-success-bg: #edfaf4;
+  --hqdb-success-mid: #a7f3d0;
+  --hqdb-gold: #b45309;
+  --hqdb-gold-bg: #fef3c7;
+  font-family: var(--hqdb-font);
+  color: var(--hqdb-text);
+  font-size: 14px;
+  background: transparent;
+  padding: 22px 26px 40px;
+}
+.mock-hq-dashboard .page-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+.mock-hq-dashboard .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.mock-hq-dashboard .kpi-card { background: var(--hqdb-card); border: 1px solid var(--hqdb-border); border-radius: var(--hqdb-radius); padding: 16px 18px; box-shadow: var(--hqdb-shadow); position: relative; overflow: hidden; transition: transform .15s, box-shadow .15s; }
+.mock-hq-dashboard .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--hqdb-shadow-card); }
+.mock-hq-dashboard .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.mock-hq-dashboard .kc-total::before { background: #5998c1; }
+.mock-hq-dashboard .kc-approve::before { background: #d88a17; }
+.mock-hq-dashboard .kc-alert::before { background: #ea535b; }
+.mock-hq-dashboard .kc-budget::before { background: #eba31a; }
+.mock-hq-dashboard .kc-done::before { background: #21b483; }
+.mock-hq-dashboard .kpi-lbl { font-size: 11px; color: var(--hqdb-muted); font-weight: 600; margin-bottom: 6px; }
+.mock-hq-dashboard .kpi-val { font-size: 30px; font-weight: 900; line-height: 1; }
+.mock-hq-dashboard .kv-blue { color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .kv-gold { color: var(--hqdb-gold); }
+.mock-hq-dashboard .kv-red { color: var(--hqdb-danger); }
+.mock-hq-dashboard .kv-warn { color: var(--hqdb-warning); }
+.mock-hq-dashboard .kv-green { color: var(--hqdb-success); }
+.mock-hq-dashboard .kpi-sub { font-size: 11px; color: var(--hqdb-muted); margin-top: 5px; }
+.mock-hq-dashboard .kpi-badge { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.mock-hq-dashboard .kb-act { background: var(--hqdb-gold-bg); color: var(--hqdb-gold); border: 1px solid #fde68a; }
+.mock-hq-dashboard .kb-warn { background: var(--hqdb-danger-bg); color: var(--hqdb-danger); border: 1px solid var(--hqdb-danger-mid); }
+.mock-hq-dashboard .viz-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .8fr) minmax(0, 1fr); gap: 18px; margin-bottom: 20px; }
+.mock-hq-dashboard .chart-card,
+.mock-hq-dashboard .approval-card,
+.mock-hq-dashboard .matrix-card { background: var(--hqdb-card); border: 1px solid var(--hqdb-border); border-radius: var(--hqdb-radius); box-shadow: var(--hqdb-shadow); overflow: hidden; }
+.mock-hq-dashboard .cc-head { padding: 13px 18px; border-bottom: 1px solid var(--hqdb-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mock-hq-dashboard .cc-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.mock-hq-dashboard .cc-sub { font-size: 11px; color: var(--hqdb-muted); }
+.mock-hq-dashboard .cc-body { padding: 16px 18px; }
+.mock-hq-dashboard .dept-bar-list { display: flex; flex-direction: column; gap: 14px; }
+.mock-hq-dashboard .dbl-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; gap: 8px; }
+.mock-hq-dashboard .dbl-name { font-size: 13px; font-weight: 700; color: var(--hqdb-text); display: flex; align-items: center; gap: 6px; }
+.mock-hq-dashboard .dbl-right { display: flex; align-items: center; gap: 10px; }
+.mock-hq-dashboard .dbl-pct { font-size: 12px; font-weight: 800; min-width: 36px; text-align: right; }
+.mock-hq-dashboard .dbl-amt { font-size: 11px; color: var(--hqdb-muted); }
+.mock-hq-dashboard .dbl-track { height: 12px; background: #e2eef5; border-radius: 6px; overflow: hidden; }
+.mock-hq-dashboard .dbl-fill { height: 100%; border-radius: 6px; transition: width 1s cubic-bezier(.4,0,.2,1), opacity .2s; }
+.mock-hq-dashboard .dbf-ok { background: #3f87cb; }
+.mock-hq-dashboard .dbf-warn { background: #eba31a; }
+.mock-hq-dashboard .dbf-over { background: #ea535b; }
+.mock-hq-dashboard .dbl-tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.mock-hq-dashboard .dbt { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; }
+.mock-hq-dashboard .donut-wrap { display: flex; align-items: center; gap: 20px; }
+.mock-hq-dashboard .donut-svg-box { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+.mock-hq-dashboard .donut-svg-box svg { width: 140px; height: 140px; transform: rotate(-90deg); }
+.mock-hq-dashboard .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.mock-hq-dashboard .dc-num { font-size: 26px; font-weight: 900; color: var(--hqdb-text); line-height: 1; }
+.mock-hq-dashboard .dc-label { font-size: 11px; color: var(--hqdb-muted); margin-top: 2px; }
+.mock-hq-dashboard .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.mock-hq-dashboard .phase-donut-body { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+.mock-hq-dashboard .phase-donut-body .donut-svg-box { margin: 0 auto; }
+.mock-hq-dashboard .phase-donut-legend { border-top: 1px solid var(--hqdb-border); padding-top: 10px; }
+.mock-hq-dashboard .phase-dl-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-top: 6px; }
+.mock-hq-dashboard .phase-dl-row:first-child { margin-top: 0; }
+.mock-hq-dashboard .phase-dl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.mock-hq-dashboard .phase-dl-main { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.mock-hq-dashboard .phase-dl-name { font-size: 12px; color: var(--hqdb-muted); }
+.mock-hq-dashboard .phase-dl-count { font-size: 12px; font-weight: 700; color: var(--hqdb-text); white-space: nowrap; }
+.mock-hq-dashboard .phase-dl-pct { font-size: 12px; color: var(--hqdb-muted); text-align: right; white-space: nowrap; }
+.mock-hq-dashboard .hq-budget-donut-card .donut-body { display: flex; flex-direction: column; gap: 14px; }
+.mock-hq-dashboard .hq-budget-donut-card .donut-svg-wrap { position: relative; width: 140px; max-width: 100%; margin: 0 auto; }
+.mock-hq-dashboard .hq-budget-donut-card .donut-svg-wrap svg { width: 100%; height: auto; display: block; transform: rotate(-90deg); }
+.mock-hq-dashboard .hq-budget-donut-card .donut-center-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.mock-hq-dashboard .hq-budget-donut-card .donut-pct { font-size: 26px; line-height: 1; font-weight: 900; color: var(--hqdb-sidebar); letter-spacing: -.01em; }
+.mock-hq-dashboard .hq-budget-donut-card .donut-pct.dp-warn { color: var(--hqdb-warning); }
+.mock-hq-dashboard .hq-budget-donut-card .donut-unit { margin-top: 2px; font-size: 11px; color: var(--hqdb-muted); font-weight: 700; }
+.mock-hq-dashboard .hq-budget-donut-card .hq-budget-donut-legend { border-top: 1px solid var(--hqdb-border); padding-top: 10px; }
+.mock-hq-dashboard .hq-budget-donut-card .budget-dl-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-top: 6px; }
+.mock-hq-dashboard .hq-budget-donut-card .budget-dl-row:first-child { margin-top: 0; }
+.mock-hq-dashboard .hq-budget-donut-card .budget-dl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.mock-hq-dashboard .hq-budget-donut-card .budget-dl-key { font-size: 12px; color: var(--hqdb-muted); }
+.mock-hq-dashboard .hq-budget-donut-card .budget-dl-val { font-size: 12px; color: var(--hqdb-text); font-weight: 700; }
+.mock-hq-dashboard .approval-card { box-shadow: var(--hqdb-shadow-card); margin-bottom: 20px; }
+.mock-hq-dashboard .apc-head { padding: 13px 20px; border-bottom: 1px solid var(--hqdb-border); background: #16527b; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mock-hq-dashboard .apc-title { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.mock-hq-dashboard .apc-count { background: rgba(255,255,255,.22); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+.mock-hq-dashboard table.ap-tbl, .mock-hq-dashboard table.matrix-tbl { width: 100%; border-collapse: collapse; }
+.mock-hq-dashboard .ap-tbl th, .mock-hq-dashboard .matrix-tbl th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--hqdb-muted); background: #f5f9fd; padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--hqdb-border); white-space: nowrap; }
+.mock-hq-dashboard .ap-tbl td, .mock-hq-dashboard .matrix-tbl td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f5f9fd; vertical-align: middle; }
+.mock-hq-dashboard .ap-tbl tr:last-child td, .mock-hq-dashboard .matrix-tbl tr:last-child td { border-bottom: none; }
+.mock-hq-dashboard .ap-tbl tr:hover td, .mock-hq-dashboard .matrix-tbl tr:hover td { background: var(--hqdb-blue-light); }
+.mock-hq-dashboard .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.mock-hq-dashboard .b-wait { background: var(--hqdb-gold-bg); color: var(--hqdb-gold); border: 1px solid #fde68a; }
+.mock-hq-dashboard .b-dept { background: var(--hqdb-blue-light); color: var(--hqdb-sidebar); border: 1px solid var(--hqdb-blue-mid); }
+.mock-hq-dashboard .b-prog { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.mock-hq-dashboard .b-delay { background: var(--hqdb-danger-bg); color: var(--hqdb-danger); border: 1px solid var(--hqdb-danger-mid); }
+.mock-hq-dashboard .b-done { background: var(--hqdb-success-bg); color: var(--hqdb-success); border: 1px solid var(--hqdb-success-mid); }
+.mock-hq-dashboard .go-btn { padding: 6px 14px; background: var(--hqdb-header); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--hqdb-font); transition: background .15s; white-space: nowrap; }
+.mock-hq-dashboard .go-btn:hover { background: var(--hqdb-header-dk); }
+.mock-hq-dashboard .urgent-cell { color: var(--hqdb-danger); font-weight: 700; }
+.mock-hq-dashboard .matrix-toolbar { padding: 12px 18px; border-bottom: 1px solid var(--hqdb-border); background: #f5f9fd; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mock-hq-dashboard .search-wrap { flex: 1; min-width: 180px; position: relative; }
+.mock-hq-dashboard .search-input { width: 100%; height: 36px; border: 1.5px solid var(--hqdb-border); border-radius: 8px; padding: 0 12px 0 34px; font-size: 13px; font-family: var(--hqdb-font); color: var(--hqdb-text); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%234a7291' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='6' cy='6' r='4'/%3E%3Cpath d='M10 10l3 3'/%3E%3C/svg%3E") no-repeat 11px center; outline: none; transition: border-color .15s; }
+.mock-hq-dashboard .search-input:focus { border-color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .filter-sel { height: 36px; border: 1.5px solid var(--hqdb-border); border-radius: 8px; padding: 0 30px 0 12px; font-size: 13px; font-family: var(--hqdb-font); color: var(--hqdb-text); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%234a7291' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; appearance: none; outline: none; cursor: pointer; }
+.mock-hq-dashboard .f-chip-group { display: flex; gap: 5px; flex-wrap: wrap; }
+.mock-hq-dashboard .f-chip { padding: 4px 12px; border: 1.5px solid var(--hqdb-border); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; background: #fff; color: var(--hqdb-muted); font-family: var(--hqdb-font); transition: all .15s; white-space: nowrap; }
+.mock-hq-dashboard .f-chip.active { background: var(--hqdb-sidebar); color: #fff; border-color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .f-chip:hover:not(.active) { border-color: var(--hqdb-blue-mid); color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .f-chip.fc-delay.active { background: var(--hqdb-danger); border-color: var(--hqdb-danger); }
+.mock-hq-dashboard .matrix-tbl th { cursor: pointer; user-select: none; }
+.mock-hq-dashboard .matrix-tbl th:hover { background: var(--hqdb-blue-light); color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .matrix-tbl tr.tr-delay td { background: #fffbfb; }
+.mock-hq-dashboard .matrix-tbl tr.tr-delay:hover td { background: #fff0f0; }
+.mock-hq-dashboard .mg-wrap { display: flex; align-items: center; gap: 6px; }
+.mock-hq-dashboard .mg-track { width: 56px; height: 6px; background: #dce8f0; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.mock-hq-dashboard .mg-fill { height: 100%; border-radius: 3px; }
+.mock-hq-dashboard .mf-ok { background: var(--hqdb-sidebar); }
+.mock-hq-dashboard .mf-warn { background: var(--hqdb-warning); }
+.mock-hq-dashboard .mf-over { background: var(--hqdb-danger); }
+.mock-hq-dashboard .mf-prog { background: var(--hqdb-success); }
+.mock-hq-dashboard .mg-pct { font-size: 12px; font-weight: 700; min-width: 32px; }
+.mock-hq-dashboard .mp-ok { color: var(--hqdb-success); }
+.mock-hq-dashboard .mp-warn { color: var(--hqdb-warning); }
+.mock-hq-dashboard .mp-over { color: var(--hqdb-danger); }
+.mock-hq-dashboard .mp-blue { color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .expand-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--hqdb-border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--hqdb-muted); transition: all .15s; flex-shrink: 0; }
+.mock-hq-dashboard .expand-btn.open { background: var(--hqdb-sidebar); color: #fff; border-color: var(--hqdb-sidebar); }
+.mock-hq-dashboard .matrix-row-detail { display: none; background: #f0f6fb !important; }
+.mock-hq-dashboard .matrix-row-detail.show { display: table-row; }
+.mock-hq-dashboard .mrd-inner { padding: 10px 14px; }
+.mock-hq-dashboard .mrd-label { font-size: 10px; font-weight: 700; color: var(--hqdb-sidebar); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+.mock-hq-dashboard .mrd-text { font-size: 12px; line-height: 1.8; color: var(--hqdb-text); border-left: 3px solid var(--hqdb-sidebar); padding-left: 10px; }
+.hq-dashboard-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: #0d1f2d; color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
+.hq-dashboard-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (max-width: 1200px) { .mock-hq-dashboard .kpi-row { grid-template-columns: repeat(3, 1fr); } .mock-hq-dashboard .viz-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .mock-hq-dashboard { padding: 14px 12px 32px; } .mock-hq-dashboard .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) { .mock-hq-dashboard .kpi-row { grid-template-columns: 1fr 1fr; } .mock-hq-dashboard .matrix-toolbar { gap: 6px; } .mock-hq-dashboard .ap-tbl th:nth-child(3), .mock-hq-dashboard .ap-tbl td:nth-child(3), .mock-hq-dashboard .ap-tbl th:nth-child(4), .mock-hq-dashboard .ap-tbl td:nth-child(4) { display: none; } }
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="card">
-    <h1 class="card-title">本部管理者トップ（仮）</h1>
-</section>
+<div class="mock-hq-dashboard">
+  <div class="page-head">
+  </div>
+  <div class="kpi-row">
+    <div class="kpi-card kc-total"><div class="kpi-lbl">全案件数（全社）</div><div class="kpi-val kv-blue">36</div><div class="kpi-sub">3部門合計</div></div>
+    <div class="kpi-card kc-approve"><div class="kpi-badge kb-act">要決裁</div><div class="kpi-lbl">最終承認待ち</div><div class="kpi-val kv-gold">3</div><div class="kpi-sub">最長 3日待機中</div></div>
+    <div class="kpi-card kc-alert"><div class="kpi-badge kb-warn">要対応</div><div class="kpi-lbl">遅延・警告案件</div><div class="kpi-val kv-red">7</div><div class="kpi-sub">遅延 4 ／ 予算超過 3</div></div>
+    <div class="kpi-card kc-budget"><div class="kpi-lbl">全社予算執行率</div><div class="kpi-val kv-warn">74%</div><div class="kpi-sub">¥ 370M / ¥500M</div></div>
+    <div class="kpi-card kc-done"><div class="kpi-lbl">完了案件数</div><div class="kpi-val kv-green">9</div><div class="kpi-sub">今年度累計</div></div>
+  </div>
+  <div class="viz-row">
+    <div class="chart-card">
+      <div class="cc-head"><div class="cc-title">部門別予算執行率</div></div>
+      <div class="cc-body">
+        <div class="dept-bar-list">
+          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">第一開発部</div><div class="dbl-right"><div class="dbl-amt">¥156M / ¥200M</div><div class="dbl-pct" style="color:var(--hqdb-warning)">78%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-warn" id="hqdbar1" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 12件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 2</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">予算超過 2</span></div></div>
+          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">第二開発部</div><div class="dbl-right"><div class="dbl-amt">¥124M / ¥160M</div><div class="dbl-pct" style="color:var(--hqdb-danger)">103%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-over" id="hqdbar2" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 10件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 1</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">予算超過 1</span></div></div>
+          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">第三開発部</div><div class="dbl-right"><div class="dbl-amt">¥90M / ¥140M</div><div class="dbl-pct" style="color:var(--hqdb-success)">64%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-ok" id="hqdbar3" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 14件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 1</span><span class="dbt" style="background:var(--hqdb-success-bg);color:var(--hqdb-success);">予算健全</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card hq-budget-donut-card">
+      <div class="cc-head">
+        <div class="cc-title">部門年間予算 執行率</div>
+      </div>
+      <div class="cc-body">
+        <div class="donut-body">
+          <div class="donut-svg-wrap">
+            <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e0eb" stroke-width="4"></circle>
+              <circle cx="18" cy="18" r="14" fill="none" stroke="var(--hqdb-blue-mid)" stroke-width="4" stroke-dasharray="87.96 0" stroke-dashoffset="0"></circle>
+              <circle id="hqBudgetDonutMain" cx="18" cy="18" r="14" fill="none" stroke="var(--hqdb-sidebar)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" style="transition: stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)"></circle>
+              <circle id="hqBudgetDonutOver" cx="18" cy="18" r="14" fill="none" stroke="var(--hqdb-danger)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" stroke-dashoffset="-68.6" style="transition: stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1)"></circle>
+            </svg>
+            <div class="donut-center-text">
+              <div class="donut-pct dp-warn" id="hqBudgetDonutPct">78%</div>
+              <div class="donut-unit">執行率</div>
+            </div>
+          </div>
+          <div class="donut-legend hq-budget-donut-legend">
+            <div class="budget-dl-row">
+              <div class="budget-dl-dot" style="background:var(--hqdb-sidebar)"></div>
+              <div class="budget-dl-key">執行済</div>
+              <div class="budget-dl-val">156,000,000円</div>
+            </div>
+            <div class="budget-dl-row">
+              <div class="budget-dl-dot" style="background:var(--hqdb-danger)"></div>
+              <div class="budget-dl-key">超過分</div>
+              <div class="budget-dl-val" style="color:var(--hqdb-danger)">4,500,000円</div>
+            </div>
+            <div class="budget-dl-row">
+              <div class="budget-dl-dot" style="background:#e8e0eb"></div>
+              <div class="budget-dl-key">残余</div>
+              <div class="budget-dl-val" style="color:var(--hqdb-muted)">44,000,000円</div>
+            </div>
+            <div class="budget-dl-row" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--hqdb-border);">
+              <div class="budget-dl-key" style="font-weight:700;color:var(--hqdb-text);">年間予算</div>
+              <div class="budget-dl-val" style="color:var(--hqdb-header)">200,000,000円</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="cc-head"><div class="cc-title">全案件 フェーズ分布</div></div>
+      <div class="cc-body">
+        <div class="donut-wrap phase-donut-body">
+          <div class="donut-svg-box"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="18" r="14" fill="none" stroke="#e2eef5" stroke-width="4"/><circle id="hqds1" cx="18" cy="18" r="14" fill="none" stroke="#0d9469" stroke-width="4" stroke-dasharray="0 87.96" stroke-dashoffset="0" style="transition:stroke-dasharray 1.1s ease"/><circle id="hqds2" cx="18" cy="18" r="14" fill="none" stroke="#1e6a9a" stroke-width="4" stroke-dasharray="0 87.96" stroke-dashoffset="-22" style="transition:stroke-dasharray 1.2s ease"/><circle id="hqds3" cx="18" cy="18" r="14" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="0 87.96" stroke-dashoffset="-66" style="transition:stroke-dasharray 1.3s ease"/><circle id="hqds4" cx="18" cy="18" r="14" fill="none" stroke="#dc3545" stroke-width="4" stroke-dasharray="0 87.96" stroke-dashoffset="-73.1" style="transition:stroke-dasharray 1.4s ease"/><circle id="hqds5" cx="18" cy="18" r="14" fill="none" stroke="#9ca3af" stroke-width="4" stroke-dasharray="0 87.96" stroke-dashoffset="-82.8" style="transition:stroke-dasharray 1.5s ease"/></svg><div class="donut-center"><div class="dc-num">36</div><div class="dc-label">全案件</div></div></div>
+          <div class="donut-legend phase-donut-legend">
+            <div class="phase-dl-row">
+              <div class="phase-dl-dot" style="background:#0d9469"></div>
+              <div class="phase-dl-main">
+                <span class="phase-dl-name">完了</span>
+                <span class="phase-dl-count">9件</span>
+              </div>
+              <div class="phase-dl-pct">25%</div>
+            </div>
+
+            <div class="phase-dl-row">
+              <div class="phase-dl-dot" style="background:#1e6a9a"></div>
+              <div class="phase-dl-main">
+                <span class="phase-dl-name">開発進行中</span>
+                <span class="phase-dl-count">18件</span>
+              </div>
+              <div class="phase-dl-pct">50%</div>
+            </div>
+
+            <div class="phase-dl-row">
+              <div class="phase-dl-dot" style="background:#d97706"></div>
+              <div class="phase-dl-main">
+                <span class="phase-dl-name">承認待ち</span>
+                <span class="phase-dl-count">3件</span>
+              </div>
+              <div class="phase-dl-pct">8%</div>
+            </div>
+
+            <div class="phase-dl-row">
+              <div class="phase-dl-dot" style="background:#dc3545"></div>
+              <div class="phase-dl-main">
+                <span class="phase-dl-name">遅延中</span>
+                <span class="phase-dl-count">4件</span>
+              </div>
+              <div class="phase-dl-pct">11%</div>
+            </div>
+
+            <div class="phase-dl-row">
+              <div class="phase-dl-dot" style="background:#9ca3af"></div>
+              <div class="phase-dl-main">
+                <span class="phase-dl-name">却下</span>
+                <span class="phase-dl-count">2件</span>
+              </div>
+              <div class="phase-dl-pct">6%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="approval-card">
+    <div class="apc-head"><div class="apc-title">最終承認依頼</div><div class="apc-count">3件</div></div>
+    <table class="ap-tbl"><thead><tr><th>申請日</th><th>部門</th><th>案件名</th><th>確定予算</th><th>状態</th><th>操作</th></tr></thead><tbody><tr><td class="urgent-cell">5/13<br><small>3日待機</small></td><td><span class="badge b-dept">第一開発部</span></td><td><strong>基幹システム刷新PJ</strong></td><td style="font-weight:800;">¥12,000,000</td><td><span class="badge b-prog">部門承認済</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「基幹システム刷新PJ」の審査画面へ')">審査へ →</button></td></tr><tr><td>5/14</td><td><span class="badge b-dept">第二開発部</span></td><td><strong>BI基盤整備</strong></td><td style="font-weight:800;">¥5,500,000</td><td><span class="badge b-prog">部門承認済</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「BI基盤整備」の審査画面へ')">審査へ →</button></td></tr><tr><td>5/15</td><td><span class="badge b-dept">第一開発部</span></td><td><strong>モバイルアプリ開発</strong></td><td style="font-weight:800;">¥8,200,000</td><td><span class="badge b-prog">部門承認済</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「モバイルアプリ開発」の審査画面へ')">審査へ →</button></td></tr></tbody></table>
+  </div>
+  <div class="matrix-card">
+    <div class="matrix-toolbar">
+      <div class="search-wrap"><input class="search-input" type="text" placeholder="案件名・部門・担当者・月次報告で検索…" id="searchBox" oninput="filterHqDashboardMatrix()"></div>
+      <select class="filter-sel" id="deptSel" onchange="filterHqDashboardMatrix()"><option value="all">全部門</option><option value="第一開発部">第一開発部</option><option value="第二開発部">第二開発部</option><option value="第三開発部">第三開発部</option></select>
+      <div class="f-chip-group"><button class="f-chip active" id="fcAll" onclick="setHqDashboardChip(this,'all')">全て</button><button class="f-chip fc-delay" id="fcDelay" onclick="setHqDashboardChip(this,'delay')">遅延</button><button class="f-chip" id="fcProg" onclick="setHqDashboardChip(this,'progress')">進行中</button><button class="f-chip" id="fcWait" onclick="setHqDashboardChip(this,'wait')">承認待ち</button><button class="f-chip" id="fcDone" onclick="setHqDashboardChip(this,'done')">完了</button></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="matrix-tbl">
+        <thead><tr><th></th><th onclick="showHqDashboardToast('案件名でソート')">案件名 ↕</th><th onclick="showHqDashboardToast('部門でソート')">部門 ↕</th><th>主担当</th><th onclick="showHqDashboardToast('ステータスでソート')">ステータス ↕</th><th onclick="showHqDashboardToast('進捗でソート')">進捗 ↕</th><th onclick="showHqDashboardToast('予算でソート')">予算消費 ↕</th><th>月次報告</th></tr></thead>
+        <tbody id="matrixTbody">
+          <tr data-dept="第一開発部" data-status="progress" data-search="クラウド移行PJ 田中 移行計画"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>クラウド移行PJ</strong></td><td><span class="badge b-dept">第一開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">田中 太郎</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:58%"></div></div><span class="mg-pct mp-blue">58%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:62%"></div></div><span class="mg-pct mp-blue">62%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">5/13 更新</span></td></tr>
+          <tr class="matrix-row-detail" id="det_0"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">移行計画の最終確認が完了し、ステージング環境での動作検証を開始しました。DBスキーマ変換ツールはコードレビュー待ちです。マイグレーションスクリプトの速度問題に対応中。</div></div></td></tr>
+          <tr class="tr-delay" data-dept="第一開発部" data-status="delay" data-search="顧客管理システム刷新 鈴木 遅延"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong style="color:var(--hqdb-danger);">顧客管理システム刷新</strong></td><td><span class="badge b-dept">第一開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">鈴木 花子</div></td><td><span class="badge b-delay">遅延</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-over" style="width:44%"></div></div><span class="mg-pct mp-over">44%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-warn" style="width:88%"></div></div><span class="mg-pct mp-warn">88%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-danger);">4/24 更新</span></td></tr>
+          <tr class="matrix-row-detail" id="det_1"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">DBスキーマ設計のレビューが長引いており、全体進捗が予定より遅れています。テスト環境構築も遅延しています。来週中に挽回計画を提出します。</div></div></td></tr>
+          <tr data-dept="第一開発部" data-status="progress" data-search="API Gateway整備 佐藤"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>API Gateway整備</strong></td><td><span class="badge b-dept">第一開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">佐藤 次郎</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:72%"></div></div><span class="mg-pct mp-blue">72%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-over" style="width:100%"></div></div><span class="mg-pct mp-over">103%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-warning);">5/10 更新</span></td></tr>
+          <tr class="matrix-row-detail" id="det_2"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">APIゲートウェイの基本設計が完了。外部連携テストを開始しました。予算超過が発生しており、追加工数の申請を検討中です。</div></div></td></tr>
+          <tr data-dept="第二開発部" data-status="progress" data-search="データ基盤刷新 高橋"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>データ基盤刷新PJ</strong></td><td><span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">第二開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">高橋 良介</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:65%"></div></div><span class="mg-pct mp-blue">65%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:70%"></div></div><span class="mg-pct mp-blue">70%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">5/15 更新</span></td></tr>
+          <tr class="matrix-row-detail" id="det_3"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">DWHの設計レビューが完了、ETLパイプラインの実装フェーズへ移行しました。スケジュールは概ね順調です。</div></div></td></tr>
+          <tr data-dept="第二開発部" data-status="wait" data-search="BI基盤整備 中村 承認待ち"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>BI基盤整備</strong></td><td><span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">第二開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">中村 美咲</div></td><td><span class="badge b-wait">本部承認待ち</span></td><td><div style="font-size:12px;color:var(--hqdb-muted);">未着手</div></td><td><div style="font-size:12px;color:var(--hqdb-muted);">申請中</div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">—</span></td></tr>
+          <tr class="matrix-row-detail" id="det_4"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">申請概要</div><div class="mrd-text">全社KPIをリアルタイム可視化するBI基盤の構築。月次レポート作成工数を80%削減することを目標。承認待ちのため詳細月次報告なし。</div></div></td></tr>
+          <tr data-dept="第三開発部" data-status="done" data-search="認証基盤改修 山本 完了"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><span style="opacity:.6;"><strong>認証基盤改修</strong></span></td><td><span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;">第三開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">山本 健太</div></td><td><span class="badge b-done">完了</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:100%"></div></div><span class="mg-pct mp-ok">100%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:91%"></div></div><span class="mg-pct mp-blue">91%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-success);">完了報告済</span></td></tr>
+          <tr class="matrix-row-detail" id="det_5"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最終報告（完了報告）</div><div class="mrd-text">認証基盤の全面改修が完了しました。SSO対応・多要素認証の実装を予定工期内に達成。予算は確定予算の91%で完遂しました。</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="hq-dashboard-toast" id="hqDashboardToast"></div>
+{% endblock %}
+
+{% block script_extra %}
+<script>
+(function initHqDashboard() {
+  requestAnimationFrame(function () {
+    setTimeout(function () {
+      [["hqdbar1", 78], ["hqdbar2", 100], ["hqdbar3", 64]].forEach(function (item) {
+        var el = document.getElementById(item[0]);
+        if (el) { el.style.width = Math.min(item[1], 100) + "%"; }
+      });
+      var CIRCUM = 87.96;
+      [["hqds1", 22, 0], ["hqds2", 44, -22], ["hqds3", 7.3, -66], ["hqds4", 9.8, -73.3], ["hqds5", 4.9, -83.1]].forEach(function (seg) {
+        var el = document.getElementById(seg[0]);
+        if (!el) { return; }
+        el.setAttribute("stroke-dasharray", seg[1] + " " + (CIRCUM - seg[1]));
+        el.setAttribute("stroke-dashoffset", String(seg[2]));
+      });
+    }, 250);
+  });
+})();
+function initHqBudgetDonut() {
+  var mainArc = document.getElementById("hqBudgetDonutMain");
+  var overArc = document.getElementById("hqBudgetDonutOver");
+  var pctEl = document.getElementById("hqBudgetDonutPct");
+  if (!mainArc || !overArc || !pctEl) return;
+
+  var circle = 87.96;
+  var usedPct = 78;
+  var overPct = 4.5 / 200 * 100;
+  var usedDash = circle * usedPct / 100;
+  var overDash = circle * overPct / 100;
+
+  requestAnimationFrame(function () {
+    setTimeout(function () {
+      mainArc.setAttribute("stroke-dasharray", usedDash.toFixed(2) + " " + (circle - usedDash).toFixed(2));
+      overArc.setAttribute("stroke-dasharray", overDash.toFixed(2) + " " + (circle - overDash).toFixed(2));
+      overArc.setAttribute("stroke-dashoffset", String(-usedDash));
+      pctEl.textContent = usedPct + "%";
+    }, 90);
+  });
+}
+initHqBudgetDonut();
+var hqDashboardActiveChip = "all";
+function setHqDashboardChip(btn, type) {
+  hqDashboardActiveChip = type;
+  ["fcAll", "fcDelay", "fcProg", "fcWait", "fcDone"].forEach(function (id) {
+    var chip = document.getElementById(id);
+    if (chip) { chip.classList.remove("active"); }
+  });
+  if (btn) { btn.classList.add("active"); }
+  filterHqDashboardMatrix();
+}
+function filterHqDashboardMatrix() {
+  var searchBox = document.getElementById("searchBox");
+  var deptSel = document.getElementById("deptSel");
+  var tbody = document.getElementById("matrixTbody");
+  if (!searchBox || !deptSel || !tbody) { return; }
+  var kw = searchBox.value.trim().toLowerCase();
+  var dept = deptSel.value;
+  var rows = Array.from(tbody.querySelectorAll("tr:not(.matrix-row-detail)"));
+  rows.forEach(function (row, i) {
+    var rowDept = row.getAttribute("data-dept") || "";
+    var rowStatus = row.getAttribute("data-status") || "";
+    var rowSearch = row.getAttribute("data-search") || "";
+    var deptOk = dept === "all" || rowDept === dept;
+    var chipOk = hqDashboardActiveChip === "all"
+      || (hqDashboardActiveChip === "delay" && rowStatus === "delay")
+      || (hqDashboardActiveChip === "progress" && rowStatus === "progress")
+      || (hqDashboardActiveChip === "wait" && rowStatus === "wait")
+      || (hqDashboardActiveChip === "done" && rowStatus === "done");
+    var searchOk = !kw || rowSearch.toLowerCase().indexOf(kw) !== -1;
+    var show = deptOk && chipOk && searchOk;
+    row.style.display = show ? "" : "none";
+    var detail = document.getElementById("det_" + i);
+    if (detail && !show) { detail.classList.remove("show"); }
+  });
+}
+function toggleHqDashboardRow(btn) {
+  if (!btn) { return; }
+  var tr = btn.closest("tr");
+  var tbody = document.getElementById("matrixTbody");
+  if (!tr || !tbody) { return; }
+  var rows = Array.from(tbody.querySelectorAll("tr:not(.matrix-row-detail)"));
+  var idx = rows.indexOf(tr);
+  if (idx < 0) { return; }
+  var detail = document.getElementById("det_" + idx);
+  if (!detail) { return; }
+  var isOpen = detail.classList.toggle("show");
+  btn.classList.toggle("open", isOpen);
+  btn.textContent = isOpen ? "−" : "＋";
+}
+function showHqDashboardToast(msg) {
+  var t = document.getElementById("hqDashboardToast");
+  if (!t) { return; }
+  t.textContent = String(msg || "");
+  t.classList.add("show");
+  setTimeout(function () { t.classList.remove("show"); }, 2500);
+}
+</script>
 {% endblock %}
