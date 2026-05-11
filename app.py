@@ -210,6 +210,11 @@ def format_percent_value(value: Decimal | None) -> str:
     return text
 
 
+def get_fiscal_year(target_date: date) -> int:
+    """Date型（業務日付）から日本の年度を返す。"""
+    return target_date.year if target_date.month >= 4 else target_date.year - 1
+
+
 def get_latest_rejection_log(project: Project) -> ProjectStatusLog | None:
     """案件の最新却下ログを返す。"""
     reject_logs = [
@@ -1614,6 +1619,7 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
                 "budget_rate_display": f"{format_percent_value(budget_rate)}%",
             }
         )
+    # 完了認定依頼も、待機が長いものから確認できるよう依頼日が古い順に並べる
     completion_requests.sort(key=lambda item: (item["request_sort_key"], item["project_id"]))
     for item in completion_requests:
         item.pop("request_sort_key", None)
@@ -1623,7 +1629,7 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
     for p in in_progress_projects:
         has_delay = False
         for task in p.tasks:
-            if task.status != "done" and task.due_date < today:
+            if task.due_date and task.status != "done" and task.due_date < today:
                 has_delay = True
                 max_delay_days = max(max_delay_days, (today - task.due_date).days)
         if has_delay:
@@ -1764,7 +1770,7 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
                 continue
             row = resource_map[t.assignee_name]
             row["not_done_count"] += 1
-            is_delayed_task = t.due_date < today
+            is_delayed_task = bool(t.due_date and t.status != "done" and t.due_date < today)
             if is_delayed_task:
                 row["delayed_count"] += 1
             elif t.status == "not_started":
@@ -1875,11 +1881,6 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
 # =============================
 # ■ 部門管理者：承認審査画面
 # =============================
-def get_fiscal_year(target_date: date) -> int:
-    """Date型（業務日付）から日本の年度を返す。"""
-    return target_date.year if target_date.month >= 4 else target_date.year - 1
-
-
 def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
     db.session.add(
         Notification(

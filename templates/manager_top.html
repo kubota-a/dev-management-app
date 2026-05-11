@@ -347,7 +347,7 @@
         </div>
         <div class="summary-band-segment sb-accent-green">
           <div class="sb-number-row {{ 'sb-number-red' if view_data.summary.load_total > 0 else 'sb-number-normal' }}"><span class="sb-value">{{ view_data.summary.load_total }}</span><span class="sb-unit">名</span></div>
-          <span class="sb-label">負荷集中メンバー</span>
+          <span class="sb-label">負荷集中担当者</span>
           <span class="sb-meta">過負荷{{ view_data.summary.over_load_total }}/高負荷{{ view_data.summary.high_load_total }}</span>
         </div>
         <div class="summary-band-segment sb-accent-red is-delay">
@@ -500,7 +500,7 @@
 
       <div class="col-right">
         <div class="resource-card">
-          <div class="rc-head"><div class="rc-title">メンバー負荷・リソース状況</div></div>
+          <div class="rc-head"><div class="rc-title">担当者別の負荷・リソース状況</div></div>
           <div class="rc-body">
             {% if view_data.resource_has_tasks %}
               {% for item in view_data.resource_items %}
@@ -511,10 +511,10 @@
                 </div>
               {% endfor %}
               <div class="resource-legend">
-                <div class="rl-item"><div class="rl-dot" style="background:var(--md-success)"></div>余裕あり</div>
-                <div class="rl-item"><div class="rl-dot" style="background:var(--md-sidebar)"></div>適正</div>
-                <div class="rl-item"><div class="rl-dot" style="background:var(--md-warning)"></div>高負荷</div>
-                <div class="rl-item"><div class="rl-dot" style="background:var(--md-danger)"></div>過負荷</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#3ebf8f"></div>余裕あり</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#9a7d9e"></div>適正</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#ebb015"></div>高負荷</div>
+                <div class="rl-item"><div class="rl-dot" style="background:#ea5358"></div>過負荷</div>
               </div>
             {% else %}
               <div class="card-empty">
