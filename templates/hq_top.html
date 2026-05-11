@@ -43,26 +43,15 @@
   padding: 22px 26px 40px;
 }
 .mock-hq-dashboard .page-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
-.mock-hq-dashboard .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
-.mock-hq-dashboard .kpi-card { background: var(--hqdb-card); border: 1px solid var(--hqdb-border); border-radius: var(--hqdb-radius); padding: 16px 18px; box-shadow: var(--hqdb-shadow); position: relative; overflow: hidden; transition: transform .15s, box-shadow .15s; }
-.mock-hq-dashboard .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--hqdb-shadow-card); }
-.mock-hq-dashboard .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
-.mock-hq-dashboard .kc-total::before { background: #5998c1; }
-.mock-hq-dashboard .kc-approve::before { background: #d88a17; }
-.mock-hq-dashboard .kc-alert::before { background: #ea535b; }
-.mock-hq-dashboard .kc-budget::before { background: #eba31a; }
-.mock-hq-dashboard .kc-done::before { background: #21b483; }
-.mock-hq-dashboard .kpi-lbl { font-size: 11px; color: var(--hqdb-muted); font-weight: 600; margin-bottom: 6px; }
-.mock-hq-dashboard .kpi-val { font-size: 30px; font-weight: 900; line-height: 1; }
-.mock-hq-dashboard .kv-blue { color: var(--hqdb-sidebar); }
-.mock-hq-dashboard .kv-gold { color: var(--hqdb-gold); }
-.mock-hq-dashboard .kv-red { color: var(--hqdb-danger); }
-.mock-hq-dashboard .kv-warn { color: var(--hqdb-warning); }
-.mock-hq-dashboard .kv-green { color: var(--hqdb-success); }
-.mock-hq-dashboard .kpi-sub { font-size: 11px; color: var(--hqdb-muted); margin-top: 5px; }
-.mock-hq-dashboard .kpi-badge { position: absolute; top: 14px; right: 14px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
-.mock-hq-dashboard .kb-act { background: var(--hqdb-gold-bg); color: var(--hqdb-gold); border: 1px solid #fde68a; }
-.mock-hq-dashboard .kb-warn { background: var(--hqdb-danger-bg); color: var(--hqdb-danger); border: 1px solid var(--hqdb-danger-mid); }
+.mock-hq-dashboard .summary-band { margin-bottom: 24px; }
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-normal .sb-value,
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-normal .sb-unit { color: #ffffff !important; }
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-yellow .sb-value,
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-yellow .sb-unit { color: #fef08a !important; }
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-orange .sb-value,
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-orange .sb-unit { color: #fdba74 !important; }
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-red .sb-value,
+.mock-hq-dashboard .summary-band .sb-number-row.sb-number-red .sb-unit { color: #ff8aa0 !important; }
 .mock-hq-dashboard .viz-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .8fr) minmax(0, 1fr); gap: 18px; margin-bottom: 20px; }
 .mock-hq-dashboard .chart-card,
 .mock-hq-dashboard .approval-card,
@@ -167,9 +156,9 @@
 .mock-hq-dashboard .mrd-text { font-size: 12px; line-height: 1.8; color: var(--hqdb-text); border-left: 3px solid var(--hqdb-sidebar); padding-left: 10px; }
 .hq-dashboard-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: #0d1f2d; color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 600; white-space: nowrap; }
 .hq-dashboard-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-@media (max-width: 1200px) { .mock-hq-dashboard .kpi-row { grid-template-columns: repeat(3, 1fr); } .mock-hq-dashboard .viz-row { grid-template-columns: 1fr; } }
-@media (max-width: 900px) { .mock-hq-dashboard { padding: 14px 12px 32px; } .mock-hq-dashboard .kpi-row { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 540px) { .mock-hq-dashboard .kpi-row { grid-template-columns: 1fr 1fr; } .mock-hq-dashboard .matrix-toolbar { gap: 6px; } .mock-hq-dashboard .ap-tbl th:nth-child(3), .mock-hq-dashboard .ap-tbl td:nth-child(3), .mock-hq-dashboard .ap-tbl th:nth-child(4), .mock-hq-dashboard .ap-tbl td:nth-child(4) { display: none; } }
+@media (max-width: 1200px) { .mock-hq-dashboard .viz-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .mock-hq-dashboard { padding: 14px 12px 32px; } }
+@media (max-width: 540px) { .mock-hq-dashboard .matrix-toolbar { gap: 6px; } .mock-hq-dashboard .ap-tbl th:nth-child(3), .mock-hq-dashboard .ap-tbl td:nth-child(3), .mock-hq-dashboard .ap-tbl th:nth-child(4), .mock-hq-dashboard .ap-tbl td:nth-child(4) { display: none; } }
 </style>
 {% endblock %}
 
@@ -177,13 +166,52 @@
 <div class="mock-hq-dashboard">
   <div class="page-head">
   </div>
-  <div class="kpi-row">
-    <div class="kpi-card kc-total"><div class="kpi-lbl">全案件数（全社）</div><div class="kpi-val kv-blue">36</div><div class="kpi-sub">3部門合計</div></div>
-    <div class="kpi-card kc-approve"><div class="kpi-badge kb-act">要決裁</div><div class="kpi-lbl">最終承認待ち</div><div class="kpi-val kv-gold">3</div><div class="kpi-sub">最長 3日待機中</div></div>
-    <div class="kpi-card kc-alert"><div class="kpi-badge kb-warn">要対応</div><div class="kpi-lbl">遅延・警告案件</div><div class="kpi-val kv-red">7</div><div class="kpi-sub">遅延 4 ／ 予算超過 3</div></div>
-    <div class="kpi-card kc-budget"><div class="kpi-lbl">全社予算執行率</div><div class="kpi-val kv-warn">74%</div><div class="kpi-sub">¥ 370M / ¥500M</div></div>
-    <div class="kpi-card kc-done"><div class="kpi-lbl">完了案件数</div><div class="kpi-val kv-green">9</div><div class="kpi-sub">今年度累計</div></div>
-  </div>
+  <section class="summary-band" aria-label="件数サマリー">
+    <div class="summary-band-inner">
+      <div class="summary-band-segment sb-accent-blue">
+        <div class="sb-number-row sb-number-normal">
+          <span class="sb-value">36</span><span class="sb-unit">件</span>
+        </div>
+        <span class="sb-label">部門案件</span>
+        <span class="sb-meta">3部門合計</span>
+      </div>
+      <div class="summary-band-segment sb-accent-amber is-warning">
+        <div class="sb-number-row sb-number-yellow">
+          <span class="sb-value">3</span><span class="sb-unit">件</span>
+        </div>
+        <span class="sb-label">最終承認依頼</span>
+        <span class="sb-meta">最長 3日待機中</span>
+      </div>
+      <div class="summary-band-segment sb-accent-teal">
+        <div class="sb-number-row sb-number-normal">
+          <span class="sb-value">1</span><span class="sb-unit">件</span>
+        </div>
+        <span class="sb-label">予算注意部門</span>
+        <span class="sb-meta">注意0/超過1</span>
+      </div>
+      <div class="summary-band-segment sb-accent-green">
+        <div class="sb-number-row sb-number-normal">
+          <span class="sb-value">74</span><span class="sb-unit">%</span>
+        </div>
+        <span class="sb-label">全社予算執行率</span>
+        <span class="sb-meta">¥370M/¥500M</span>
+      </div>
+      <div class="summary-band-segment sb-accent-red is-delay">
+        <div class="sb-number-row sb-number-red">
+          <span class="sb-value">4</span><span class="sb-unit">件</span>
+        </div>
+        <span class="sb-label">遅延案件</span>
+        <span class="sb-meta">最長遅延4日</span>
+      </div>
+      <div class="summary-band-segment sb-accent-orange is-budget-alert">
+        <div class="sb-number-row sb-number-orange">
+          <span class="sb-value">3</span><span class="sb-unit">件</span>
+        </div>
+        <span class="sb-label">予算注意案件</span>
+        <span class="sb-meta">注意0/超過3</span>
+      </div>
+    </div>
+  </section>
   <div class="viz-row">
     <div class="chart-card">
       <div class="cc-head"><div class="cc-title">部門別予算執行率</div></div>
