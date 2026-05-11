@@ -52,12 +52,18 @@
 .mock-hq-dashboard .summary-band .sb-number-row.sb-number-orange .sb-unit { color: #fdba74 !important; }
 .mock-hq-dashboard .summary-band .sb-number-row.sb-number-red .sb-value,
 .mock-hq-dashboard .summary-band .sb-number-row.sb-number-red .sb-unit { color: #ff8aa0 !important; }
-.mock-hq-dashboard .viz-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .8fr) minmax(0, 1fr); gap: 18px; margin-bottom: 20px; }
+.mock-hq-dashboard .viz-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-bottom: 20px; }
 .mock-hq-dashboard .chart-card,
 .mock-hq-dashboard .approval-card,
 .mock-hq-dashboard .matrix-card { background: var(--hqdb-card); border: 1px solid var(--hqdb-border); border-radius: var(--hqdb-radius); box-shadow: var(--hqdb-shadow); overflow: hidden; }
 .mock-hq-dashboard .cc-head { padding: 13px 18px; border-bottom: 1px solid var(--hqdb-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .mock-hq-dashboard .cc-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.mock-hq-dashboard .hq-dept-budget-card .cc-head,
+.mock-hq-dashboard .hq-budget-donut-card .cc-head,
+.mock-hq-dashboard .hq-phase-donut-card .cc-head { background: var(--hqdb-blue-light); border-bottom: 1px solid var(--hqdb-border); }
+.mock-hq-dashboard .hq-dept-budget-card .cc-title,
+.mock-hq-dashboard .hq-budget-donut-card .cc-title,
+.mock-hq-dashboard .hq-phase-donut-card .cc-title { color: var(--hqdb-header); font-weight: 800; }
 .mock-hq-dashboard .cc-sub { font-size: 11px; color: var(--hqdb-muted); }
 .mock-hq-dashboard .cc-body { padding: 16px 18px; }
 .mock-hq-dashboard .dept-bar-list { display: flex; flex-direction: column; gap: 14px; }
@@ -69,6 +75,7 @@
 .mock-hq-dashboard .dbl-track { height: 12px; background: #e2eef5; border-radius: 6px; overflow: hidden; }
 .mock-hq-dashboard .dbl-fill { height: 100%; border-radius: 6px; transition: width 1s cubic-bezier(.4,0,.2,1), opacity .2s; }
 .mock-hq-dashboard .dbf-ok { background: #3f87cb; }
+.mock-hq-dashboard .dbf-success { background: var(--hqdb-success); }
 .mock-hq-dashboard .dbf-warn { background: #eba31a; }
 .mock-hq-dashboard .dbf-over { background: #ea535b; }
 .mock-hq-dashboard .dbl-tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
@@ -103,15 +110,24 @@
 .mock-hq-dashboard .hq-budget-donut-card .budget-dl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .mock-hq-dashboard .hq-budget-donut-card .budget-dl-key { font-size: 12px; color: var(--hqdb-muted); }
 .mock-hq-dashboard .hq-budget-donut-card .budget-dl-val { font-size: 12px; color: var(--hqdb-text); font-weight: 700; }
+.mock-hq-dashboard .hq-phase-donut-card .dc-label { margin-top: 2px; font-size: 11px; color: var(--hqdb-muted); font-weight: 700; }
+.mock-hq-dashboard .hq-phase-donut-card .dc-num { font-size: 26px; line-height: 1; font-weight: 900; }
 .mock-hq-dashboard .approval-card { box-shadow: var(--hqdb-shadow-card); margin-bottom: 20px; }
 .mock-hq-dashboard .apc-head { padding: 13px 20px; border-bottom: 1px solid var(--hqdb-border); background: #16527b; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.mock-hq-dashboard .apc-title { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.mock-hq-dashboard .apc-title { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 14px; }
 .mock-hq-dashboard .apc-count { background: rgba(255,255,255,.22); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+.mock-hq-dashboard .apc-head-right { display: flex; align-items: center; gap: 10px; }
+.mock-hq-dashboard .apc-arrow { display: none; font-size: 12px; color: rgba(255, 255, 255, .75); transition: transform .25s; flex-shrink: 0; }
+.mock-hq-dashboard .apc-arrow.open { transform: rotate(180deg); }
+.mock-hq-dashboard .apc-action-label { display: inline-flex; align-items: center; min-height: 20px; padding: 2px 9px; border-radius: 8px; background: var(--hqdb-warning-bg); color: var(--hqdb-warning); border: 1px solid #fed7aa; font-size: 10px; font-weight: 700; line-height: 1; }
+.mock-hq-dashboard .ap-table-wrap { width: 100%; max-width: 100%; }
 .mock-hq-dashboard table.ap-tbl, .mock-hq-dashboard table.matrix-tbl { width: 100%; border-collapse: collapse; }
 .mock-hq-dashboard .ap-tbl th, .mock-hq-dashboard .matrix-tbl th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--hqdb-muted); background: #f5f9fd; padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--hqdb-border); white-space: nowrap; }
 .mock-hq-dashboard .ap-tbl td, .mock-hq-dashboard .matrix-tbl td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f5f9fd; vertical-align: middle; }
 .mock-hq-dashboard .ap-tbl tr:last-child td, .mock-hq-dashboard .matrix-tbl tr:last-child td { border-bottom: none; }
 .mock-hq-dashboard .ap-tbl tr:hover td, .mock-hq-dashboard .matrix-tbl tr:hover td { background: var(--hqdb-blue-light); }
+.mock-hq-dashboard .badge-primary { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.mock-hq-dashboard .bp-urgent { background: var(--hqdb-danger-bg); color: var(--hqdb-danger); border: 1px solid var(--hqdb-danger-mid); }
 .mock-hq-dashboard .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .mock-hq-dashboard .b-wait { background: var(--hqdb-gold-bg); color: var(--hqdb-gold); border: 1px solid #fde68a; }
 .mock-hq-dashboard .b-dept { background: var(--hqdb-blue-light); color: var(--hqdb-sidebar); border: 1px solid var(--hqdb-blue-mid); }
@@ -158,7 +174,59 @@
 .hq-dashboard-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 @media (max-width: 1200px) { .mock-hq-dashboard .viz-row { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .mock-hq-dashboard { padding: 14px 12px 32px; } }
-@media (max-width: 540px) { .mock-hq-dashboard .matrix-toolbar { gap: 6px; } .mock-hq-dashboard .ap-tbl th:nth-child(3), .mock-hq-dashboard .ap-tbl td:nth-child(3), .mock-hq-dashboard .ap-tbl th:nth-child(4), .mock-hq-dashboard .ap-tbl td:nth-child(4) { display: none; } }
+@media (max-width: 820px) {
+  .mock-hq-dashboard .hq-dashboard-accordion-head { cursor: pointer; user-select: none; }
+  .mock-hq-dashboard .hq-dashboard-accordion-head:hover { background: #16527b; }
+  .mock-hq-dashboard .apc-arrow { display: block; }
+  .mock-hq-dashboard .hq-dashboard-accordion-body { display: none; }
+  .mock-hq-dashboard .hq-dashboard-accordion-body.open { display: block; }
+  .mock-hq-dashboard .ap-table-wrap { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  .mock-hq-dashboard table.ap-tbl { min-width: 720px; }
+  .mock-hq-dashboard .ap-tbl th,
+  .mock-hq-dashboard .ap-tbl td { white-space: nowrap; }
+}
+@media (max-width: 540px) { .mock-hq-dashboard .matrix-toolbar { gap: 6px; } }
+@media (min-width: 1201px) {
+  .mock-hq-dashboard .hq-budget-donut-card .donut-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .mock-hq-dashboard .hq-budget-donut-card .donut-svg-wrap {
+    flex: 0 0 128px;
+    width: 128px;
+  }
+  .mock-hq-dashboard .hq-budget-donut-card .hq-budget-donut-legend {
+    flex: 1;
+    min-width: 0;
+    border-top: none;
+    border-left: 1px solid var(--hqdb-border);
+    padding-top: 0;
+    padding-left: 14px;
+  }
+  .mock-hq-dashboard .hq-phase-donut-card .phase-donut-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .mock-hq-dashboard .hq-phase-donut-card .donut-svg-box {
+    flex: 0 0 128px;
+    width: 128px;
+    height: 128px;
+  }
+  .mock-hq-dashboard .hq-phase-donut-card .donut-svg-box svg {
+    width: 128px;
+    height: 128px;
+  }
+  .mock-hq-dashboard .hq-phase-donut-card .phase-donut-legend {
+    flex: 1;
+    min-width: 0;
+    border-top: none;
+    border-left: 1px solid var(--hqdb-border);
+    padding-top: 0;
+    padding-left: 14px;
+  }
+}
 </style>
 {% endblock %}
 
@@ -213,31 +281,31 @@
     </div>
   </section>
   <div class="viz-row">
-    <div class="chart-card">
+    <div class="chart-card hq-dept-budget-card">
       <div class="cc-head"><div class="cc-title">部門別予算執行率</div></div>
       <div class="cc-body">
         <div class="dept-bar-list">
-          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">第一開発部</div><div class="dbl-right"><div class="dbl-amt">¥156M / ¥200M</div><div class="dbl-pct" style="color:var(--hqdb-warning)">78%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-warn" id="hqdbar1" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 12件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 2</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">予算超過 2</span></div></div>
-          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">第二開発部</div><div class="dbl-right"><div class="dbl-amt">¥124M / ¥160M</div><div class="dbl-pct" style="color:var(--hqdb-danger)">103%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-over" id="hqdbar2" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 10件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 1</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">予算超過 1</span></div></div>
-          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">第三開発部</div><div class="dbl-right"><div class="dbl-amt">¥90M / ¥140M</div><div class="dbl-pct" style="color:var(--hqdb-success)">64%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-ok" id="hqdbar3" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 14件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 1</span><span class="dbt" style="background:var(--hqdb-success-bg);color:var(--hqdb-success);">予算健全</span></div></div>
+          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">システム開発部</div><div class="dbl-right"><div class="dbl-amt">156,000,000円 / 200,000,000円</div><div class="dbl-pct" style="color:var(--hqdb-warning)">80%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-warn" id="hqdbar1" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 12件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 2</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">予算超過 2</span></div></div>
+          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">情報基盤部</div><div class="dbl-right"><div class="dbl-amt">124,000,000円 / 160,000,000円</div><div class="dbl-pct" style="color:var(--hqdb-danger)">103%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-over" id="hqdbar2" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 10件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 1</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">予算超過 1</span></div></div>
+          <div class="dbl-item"><div class="dbl-top"><div class="dbl-name">業務改革推進部</div><div class="dbl-right"><div class="dbl-amt">90,000,000円 / 140,000,000円</div><div class="dbl-pct" style="color:var(--hqdb-success)">64%</div></div></div><div class="dbl-track"><div class="dbl-fill dbf-success" id="hqdbar3" style="width:0%"></div></div><div class="dbl-tags"><span class="dbt" style="background:#fef3c7;color:#92400e;">案件 14件</span><span class="dbt" style="background:var(--hqdb-danger-bg);color:var(--hqdb-danger);">遅延 1</span><span class="dbt" style="background:var(--hqdb-success-bg);color:var(--hqdb-success);">予算健全</span></div></div>
         </div>
       </div>
     </div>
     <div class="chart-card hq-budget-donut-card">
       <div class="cc-head">
-        <div class="cc-title">部門年間予算 執行率</div>
+        <div class="cc-title">全社年間予算 執行率</div>
       </div>
       <div class="cc-body">
         <div class="donut-body">
           <div class="donut-svg-wrap">
             <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
               <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e0eb" stroke-width="4"></circle>
-              <circle cx="18" cy="18" r="14" fill="none" stroke="var(--hqdb-blue-mid)" stroke-width="4" stroke-dasharray="87.96 0" stroke-dashoffset="0"></circle>
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#c8d5df" stroke-width="4" stroke-dasharray="87.96 0" stroke-dashoffset="0"></circle>
               <circle id="hqBudgetDonutMain" cx="18" cy="18" r="14" fill="none" stroke="var(--hqdb-sidebar)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" style="transition: stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)"></circle>
               <circle id="hqBudgetDonutOver" cx="18" cy="18" r="14" fill="none" stroke="var(--hqdb-danger)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 87.96" stroke-dashoffset="-68.6" style="transition: stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1)"></circle>
             </svg>
             <div class="donut-center-text">
-              <div class="donut-pct dp-warn" id="hqBudgetDonutPct">78%</div>
+              <div class="donut-pct" id="hqBudgetDonutPct">78%</div>
               <div class="donut-unit">執行率</div>
             </div>
           </div>
@@ -253,9 +321,9 @@
               <div class="budget-dl-val" style="color:var(--hqdb-danger)">4,500,000円</div>
             </div>
             <div class="budget-dl-row">
-              <div class="budget-dl-dot" style="background:#e8e0eb"></div>
+              <div class="budget-dl-dot" style="background:#c8d5df"></div>
               <div class="budget-dl-key">残余</div>
-              <div class="budget-dl-val" style="color:var(--hqdb-muted)">44,000,000円</div>
+              <div class="budget-dl-val" style="color:#6f8494">44,000,000円</div>
             </div>
             <div class="budget-dl-row" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--hqdb-border);">
               <div class="budget-dl-key" style="font-weight:700;color:var(--hqdb-text);">年間予算</div>
@@ -265,7 +333,7 @@
         </div>
       </div>
     </div>
-    <div class="chart-card">
+    <div class="chart-card hq-phase-donut-card">
       <div class="cc-head"><div class="cc-title">全案件 フェーズ分布</div></div>
       <div class="cc-body">
         <div class="donut-wrap phase-donut-body">
@@ -320,32 +388,43 @@
       </div>
     </div>
   </div>
-  <div class="approval-card">
-    <div class="apc-head"><div class="apc-title">最終承認依頼</div><div class="apc-count">3件</div></div>
-    <table class="ap-tbl"><thead><tr><th>申請日</th><th>部門</th><th>案件名</th><th>確定予算</th><th>状態</th><th>操作</th></tr></thead><tbody><tr><td class="urgent-cell">5/13<br><small>3日待機</small></td><td><span class="badge b-dept">第一開発部</span></td><td><strong>基幹システム刷新PJ</strong></td><td style="font-weight:800;">¥12,000,000</td><td><span class="badge b-prog">部門承認済</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「基幹システム刷新PJ」の審査画面へ')">審査へ →</button></td></tr><tr><td>5/14</td><td><span class="badge b-dept">第二開発部</span></td><td><strong>BI基盤整備</strong></td><td style="font-weight:800;">¥5,500,000</td><td><span class="badge b-prog">部門承認済</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「BI基盤整備」の審査画面へ')">審査へ →</button></td></tr><tr><td>5/15</td><td><span class="badge b-dept">第一開発部</span></td><td><strong>モバイルアプリ開発</strong></td><td style="font-weight:800;">¥8,200,000</td><td><span class="badge b-prog">部門承認済</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「モバイルアプリ開発」の審査画面へ')">審査へ →</button></td></tr></tbody></table>
+  <div class="approval-card hq-dashboard-accordion-card">
+    <div class="apc-head hq-dashboard-accordion-head" onclick="toggleHqDashboardAccordion(this)">
+      <div class="apc-title">
+        最終承認依頼
+        <span class="apc-action-label">要アクション</span>
+      </div>
+      <div class="apc-head-right">
+        <div class="apc-count">3件</div>
+        <div class="apc-arrow open">▼</div>
+      </div>
+    </div>
+    <div class="ap-table-wrap hq-dashboard-accordion-body open">
+      <table class="ap-tbl"><thead><tr><th>部門承認日</th><th>部門</th><th>案件名</th><th>確定予算</th><th>状態</th><th>操作</th></tr></thead><tbody><tr><td class="urgent-cell">5/13</td><td><span class="badge badge-dept-system">システム開発部</span></td><td><strong>基幹システム刷新PJ</strong></td><td style="font-weight:800;">¥12,000,000</td><td><span class="badge-primary bp-urgent">3日待機</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「基幹システム刷新PJ」の審査画面へ')">審査へ →</button></td></tr><tr><td>5/14</td><td><span class="badge badge-dept-infra">情報基盤部</span></td><td><strong>BI基盤整備</strong></td><td style="font-weight:800;">¥5,500,000</td><td><span class="badge badge-approval-hq">本部承認待ち</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「BI基盤整備」の審査画面へ')">審査へ →</button></td></tr><tr><td>5/15</td><td><span class="badge badge-dept-system">システム開発部</span></td><td><strong>モバイルアプリ開発</strong></td><td style="font-weight:800;">¥8,200,000</td><td><span class="badge badge-approval-hq">本部承認待ち</span></td><td><button class="go-btn" onclick="showHqDashboardToast('「モバイルアプリ開発」の審査画面へ')">審査へ →</button></td></tr></tbody></table>
+    </div>
   </div>
   <div class="matrix-card">
     <div class="matrix-toolbar">
       <div class="search-wrap"><input class="search-input" type="text" placeholder="案件名・部門・担当者・月次報告で検索…" id="searchBox" oninput="filterHqDashboardMatrix()"></div>
-      <select class="filter-sel" id="deptSel" onchange="filterHqDashboardMatrix()"><option value="all">全部門</option><option value="第一開発部">第一開発部</option><option value="第二開発部">第二開発部</option><option value="第三開発部">第三開発部</option></select>
+      <select class="filter-sel" id="deptSel" onchange="filterHqDashboardMatrix()"><option value="all">全部門</option><option value="システム開発部">システム開発部</option><option value="情報基盤部">情報基盤部</option><option value="業務改革推進部">業務改革推進部</option></select>
       <div class="f-chip-group"><button class="f-chip active" id="fcAll" onclick="setHqDashboardChip(this,'all')">全て</button><button class="f-chip fc-delay" id="fcDelay" onclick="setHqDashboardChip(this,'delay')">遅延</button><button class="f-chip" id="fcProg" onclick="setHqDashboardChip(this,'progress')">進行中</button><button class="f-chip" id="fcWait" onclick="setHqDashboardChip(this,'wait')">承認待ち</button><button class="f-chip" id="fcDone" onclick="setHqDashboardChip(this,'done')">完了</button></div>
     </div>
     <div style="overflow-x:auto;">
       <table class="matrix-tbl">
         <thead><tr><th></th><th onclick="showHqDashboardToast('案件名でソート')">案件名 ↕</th><th onclick="showHqDashboardToast('部門でソート')">部門 ↕</th><th>主担当</th><th onclick="showHqDashboardToast('ステータスでソート')">ステータス ↕</th><th onclick="showHqDashboardToast('進捗でソート')">進捗 ↕</th><th onclick="showHqDashboardToast('予算でソート')">予算消費 ↕</th><th>月次報告</th></tr></thead>
         <tbody id="matrixTbody">
-          <tr data-dept="第一開発部" data-status="progress" data-search="クラウド移行PJ 田中 移行計画"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>クラウド移行PJ</strong></td><td><span class="badge b-dept">第一開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">田中 太郎</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:58%"></div></div><span class="mg-pct mp-blue">58%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:62%"></div></div><span class="mg-pct mp-blue">62%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">5/13 更新</span></td></tr>
+          <tr data-dept="システム開発部" data-status="progress" data-search="クラウド移行PJ システム開発部 田中 移行計画"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>クラウド移行PJ</strong></td><td><span class="badge badge-dept-system">システム開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">田中 太郎</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:58%"></div></div><span class="mg-pct mp-blue">58%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:62%"></div></div><span class="mg-pct mp-blue">62%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">5/13 更新</span></td></tr>
           <tr class="matrix-row-detail" id="det_0"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">移行計画の最終確認が完了し、ステージング環境での動作検証を開始しました。DBスキーマ変換ツールはコードレビュー待ちです。マイグレーションスクリプトの速度問題に対応中。</div></div></td></tr>
-          <tr class="tr-delay" data-dept="第一開発部" data-status="delay" data-search="顧客管理システム刷新 鈴木 遅延"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong style="color:var(--hqdb-danger);">顧客管理システム刷新</strong></td><td><span class="badge b-dept">第一開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">鈴木 花子</div></td><td><span class="badge b-delay">遅延</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-over" style="width:44%"></div></div><span class="mg-pct mp-over">44%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-warn" style="width:88%"></div></div><span class="mg-pct mp-warn">88%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-danger);">4/24 更新</span></td></tr>
-          <tr class="matrix-row-detail" id="det_1"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">DBスキーマ設計のレビューが長引いており、全体進捗が予定より遅れています。テスト環境構築も遅延しています。来週中に挽回計画を提出します。</div></div></td></tr>
-          <tr data-dept="第一開発部" data-status="progress" data-search="API Gateway整備 佐藤"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>API Gateway整備</strong></td><td><span class="badge b-dept">第一開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">佐藤 次郎</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:72%"></div></div><span class="mg-pct mp-blue">72%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-over" style="width:100%"></div></div><span class="mg-pct mp-over">103%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-warning);">5/10 更新</span></td></tr>
+          <tr data-dept="システム開発部" data-status="delay" data-search="顧客管理システム刷新 システム開発部 鈴木 遅延"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong style="color:var(--hqdb-danger);">顧客管理システム刷新</strong></td><td><span class="badge badge-dept-system">システム開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">鈴木 花子</div></td><td><span class="badge b-delay">遅延</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-over" style="width:44%"></div></div><span class="mg-pct mp-over">44%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-warn" style="width:88%"></div></div><span class="mg-pct mp-warn">88%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-danger);">4/24 更新</span></td></tr>
+          <tr class="matrix-row-detail" id="det_1"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年4月）</div><div class="mrd-text">DBスキーマ設計のレビューが長引いており、全体進捗が予定より遅れています。テスト環境構築も遅延しています。来週中に挽回計画を提出します。</div></div></td></tr>
+          <tr data-dept="システム開発部" data-status="progress" data-search="API Gateway整備 システム開発部 佐藤"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>API Gateway整備</strong></td><td><span class="badge badge-dept-system">システム開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">佐藤 次郎</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:72%"></div></div><span class="mg-pct mp-blue">72%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-over" style="width:100%"></div></div><span class="mg-pct mp-over">103%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-warning);">5/10 更新</span></td></tr>
           <tr class="matrix-row-detail" id="det_2"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">APIゲートウェイの基本設計が完了。外部連携テストを開始しました。予算超過が発生しており、追加工数の申請を検討中です。</div></div></td></tr>
-          <tr data-dept="第二開発部" data-status="progress" data-search="データ基盤刷新 高橋"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>データ基盤刷新PJ</strong></td><td><span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">第二開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">高橋 良介</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:65%"></div></div><span class="mg-pct mp-blue">65%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:70%"></div></div><span class="mg-pct mp-blue">70%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">5/15 更新</span></td></tr>
+          <tr data-dept="情報基盤部" data-status="progress" data-search="データ基盤刷新 情報基盤部 高橋"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>データ基盤刷新PJ</strong></td><td><span class="badge badge-dept-infra">情報基盤部</span></td><td><div style="display:flex;align-items:center;gap:5px;">高橋 良介</div></td><td><span class="badge b-prog">進行中</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-prog" style="width:65%"></div></div><span class="mg-pct mp-blue">65%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:70%"></div></div><span class="mg-pct mp-blue">70%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">5/15 更新</span></td></tr>
           <tr class="matrix-row-detail" id="det_3"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最新月次報告（2025年5月）</div><div class="mrd-text">DWHの設計レビューが完了、ETLパイプラインの実装フェーズへ移行しました。スケジュールは概ね順調です。</div></div></td></tr>
-          <tr data-dept="第二開発部" data-status="wait" data-search="BI基盤整備 中村 承認待ち"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>BI基盤整備</strong></td><td><span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">第二開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">中村 美咲</div></td><td><span class="badge b-wait">本部承認待ち</span></td><td><div style="font-size:12px;color:var(--hqdb-muted);">未着手</div></td><td><div style="font-size:12px;color:var(--hqdb-muted);">申請中</div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">—</span></td></tr>
+          <tr data-dept="情報基盤部" data-status="wait" data-search="BI基盤整備 情報基盤部 中村 承認待ち"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><strong>BI基盤整備</strong></td><td><span class="badge badge-dept-infra">情報基盤部</span></td><td><div style="display:flex;align-items:center;gap:5px;">中村 美咲</div></td><td><span class="badge badge-approval-hq">本部承認待ち</span></td><td><div style="font-size:12px;color:var(--hqdb-muted);">未着手</div></td><td><div style="font-size:12px;color:var(--hqdb-muted);">申請中</div></td><td><span style="font-size:11px;color:var(--hqdb-muted);">—</span></td></tr>
           <tr class="matrix-row-detail" id="det_4"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">申請概要</div><div class="mrd-text">全社KPIをリアルタイム可視化するBI基盤の構築。月次レポート作成工数を80%削減することを目標。承認待ちのため詳細月次報告なし。</div></div></td></tr>
-          <tr data-dept="第三開発部" data-status="done" data-search="認証基盤改修 山本 完了"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><span style="opacity:.6;"><strong>認証基盤改修</strong></span></td><td><span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;">第三開発部</span></td><td><div style="display:flex;align-items:center;gap:5px;">山本 健太</div></td><td><span class="badge b-done">完了</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:100%"></div></div><span class="mg-pct mp-ok">100%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:91%"></div></div><span class="mg-pct mp-blue">91%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-success);">完了報告済</span></td></tr>
-          <tr class="matrix-row-detail" id="det_5"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最終報告（完了報告）</div><div class="mrd-text">認証基盤の全面改修が完了しました。SSO対応・多要素認証の実装を予定工期内に達成。予算は確定予算の91%で完遂しました。</div></div></td></tr>
+          <tr data-dept="業務改革推進部" data-status="done" data-search="認証基盤改修 業務改革推進部 山本 完了"><td><button class="expand-btn" onclick="toggleHqDashboardRow(this)">＋</button></td><td><span style="opacity:.6;"><strong>認証基盤改修</strong></span></td><td><span class="badge badge-dept-reform">業務改革推進部</span></td><td><div style="display:flex;align-items:center;gap:5px;">山本 健太</div></td><td><span class="badge b-done">完了</span></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:100%"></div></div><span class="mg-pct mp-ok">100%</span></div></td><td><div class="mg-wrap"><div class="mg-track"><div class="mg-fill mf-ok" style="width:91%"></div></div><span class="mg-pct mp-blue">91%</span></div></td><td><span style="font-size:11px;color:var(--hqdb-success);">完了報告済</span></td></tr>
+          <tr class="matrix-row-detail" id="det_5"><td colspan="8"><div class="mrd-inner"><div class="mrd-label">最終報告（2025年3月）</div><div class="mrd-text">認証基盤の全面改修が完了しました。SSO対応・多要素認証の実装を予定工期内に達成。予算は確定予算の91%で完遂しました。</div></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -359,7 +438,7 @@
 (function initHqDashboard() {
   requestAnimationFrame(function () {
     setTimeout(function () {
-      [["hqdbar1", 78], ["hqdbar2", 100], ["hqdbar3", 64]].forEach(function (item) {
+      [["hqdbar1", 80], ["hqdbar2", 100], ["hqdbar3", 64]].forEach(function (item) {
         var el = document.getElementById(item[0]);
         if (el) { el.style.width = Math.min(item[1], 100) + "%"; }
       });
@@ -395,6 +474,51 @@ function initHqBudgetDonut() {
   });
 }
 initHqBudgetDonut();
+function toggleHqDashboardAccordion(head) {
+  if (!head) return;
+  var isSmall = window.matchMedia("(max-width: 820px)").matches;
+  if (!isSmall) return;
+
+  var body = head.nextElementSibling;
+  var arrow = head.querySelector(".apc-arrow");
+  if (!body) return;
+
+  var isOpen = body.classList.toggle("open");
+  if (arrow) {
+    arrow.classList.toggle("open", isOpen);
+  }
+}
+function initHqDashboardResponsiveAccordions() {
+  var isSmall = window.matchMedia("(max-width: 820px)").matches;
+  var bodies = document.querySelectorAll(".mock-hq-dashboard .hq-dashboard-accordion-body");
+  var arrows = document.querySelectorAll(".mock-hq-dashboard .apc-arrow");
+
+  bodies.forEach(function (body) {
+    if (isSmall) {
+      body.classList.remove("open");
+    } else {
+      body.classList.add("open");
+    }
+  });
+
+  arrows.forEach(function (arrow) {
+    if (isSmall) {
+      arrow.classList.remove("open");
+    } else {
+      arrow.classList.add("open");
+    }
+  });
+}
+var hqDashboardAccordionIsSmall = window.matchMedia("(max-width: 820px)").matches;
+initHqDashboardResponsiveAccordions();
+window.addEventListener("resize", function () {
+  var currentIsSmall = window.matchMedia("(max-width: 820px)").matches;
+  if (currentIsSmall === hqDashboardAccordionIsSmall) {
+    return;
+  }
+  hqDashboardAccordionIsSmall = currentIsSmall;
+  initHqDashboardResponsiveAccordions();
+});
 var hqDashboardActiveChip = "all";
 function setHqDashboardChip(btn, type) {
   hqDashboardActiveChip = type;
