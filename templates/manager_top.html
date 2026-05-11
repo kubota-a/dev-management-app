@@ -131,9 +131,9 @@
 .mock-manager-dashboard .project-list-head,
 .mock-manager-dashboard .proj-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(90px, auto) minmax(90px, auto) minmax(120px, auto) minmax(80px, auto);
+  grid-template-columns: minmax(260px, 1.6fr) minmax(96px, 0.55fr) minmax(110px, 0.65fr) minmax(130px, 0.75fr) minmax(84px, auto);
   align-items: center;
-  gap: 14px;
+  column-gap: 16px;
 }
 .mock-manager-dashboard .project-list-head {
   padding: 10px 20px;
@@ -146,6 +146,14 @@
   letter-spacing: .07em;
 }
 .mock-manager-dashboard .project-list-head > div:last-child { text-align: left; justify-self: end; padding-right: 16px; }
+.mock-manager-dashboard .project-list-head > div:nth-child(2),
+.mock-manager-dashboard .proj-row > div:nth-child(2) { justify-self: start; }
+.mock-manager-dashboard .project-list-head > div:nth-child(3),
+.mock-manager-dashboard .project-list-head > div:nth-child(4),
+.mock-manager-dashboard .proj-row > div:nth-child(3),
+.mock-manager-dashboard .proj-row > div:nth-child(4) { justify-self: center; }
+.mock-manager-dashboard .project-list-head > div:nth-child(5),
+.mock-manager-dashboard .proj-row > div:nth-child(5) { justify-self: end; }
 .mock-manager-dashboard .proj-row { padding: 13px 20px; border-bottom: 1px solid #faf7fb; transition: background .15s; }
 .mock-manager-dashboard .proj-row:last-child { border-bottom: none; }
 .mock-manager-dashboard .proj-row-completed { background: #f7f7f8; }
@@ -399,7 +407,6 @@
                 {% else %}
                   <tr>
                     <td colspan="6" style="text-align:center;">
-                      <div class="table-empty-main">データがまだありません</div>
                       <div class="table-empty-sub">現在、部門承認が必要な申請はありません。</div>
                     </td>
                   </tr>
@@ -450,7 +457,6 @@
                 {% else %}
                   <tr>
                     <td colspan="6" style="text-align:center;">
-                      <div class="table-empty-main">データがまだありません</div>
                       <div class="table-empty-sub">現在、完了認定が必要な案件はありません。</div>
                     </td>
                   </tr>
@@ -488,12 +494,7 @@
             </div>
           {% endfor %}
           <div id="managerDashboardProjectEmpty" class="proj-row project-empty-row" style="{% if view_data.project_items %}display:none;{% endif %}">
-            <div class="table-empty-main">データがまだありません</div>
             <div class="table-empty-sub">現在、表示できる自部門の開発中・完了案件はありません。</div>
-          </div>
-          <div id="managerDashboardProjectFilterEmpty" class="proj-row project-empty-row" style="display:none;">
-            <div class="table-empty-main">データがまだありません</div>
-            <div class="table-empty-sub">選択中の条件に該当する案件はありません。</div>
           </div>
         </div>
       </div>
@@ -599,7 +600,6 @@ function setManagerDashboardFilter(btn, filterKey) {
   buttons.forEach(function (b) { b.classList.remove("active"); });
   btn.classList.add("active");
   const rows = document.querySelectorAll(".mock-manager-dashboard .project-list-card .proj-row[data-filter-status]");
-  let visibleCount = 0;
   rows.forEach(function (row) {
     const status = row.getAttribute("data-filter-status");
     const isDelay = row.getAttribute("data-filter-delay") === "1";
@@ -609,16 +609,11 @@ function setManagerDashboardFilter(btn, filterKey) {
     if (filterKey === "completed") visible = status === "completed";
     if (filterKey === "delay") visible = status === "in_progress" && isDelay;
     row.style.display = visible ? "" : "none";
-    if (visible) visibleCount += 1;
   });
   const emptyRow = getManagerDashboardEl("managerDashboardProjectEmpty");
-  const filterEmptyRow = getManagerDashboardEl("managerDashboardProjectFilterEmpty");
   const hasProjectRows = rows.length > 0;
   if (emptyRow) {
     emptyRow.style.display = hasProjectRows ? "none" : "";
-  }
-  if (filterEmptyRow) {
-    filterEmptyRow.style.display = (hasProjectRows && visibleCount === 0) ? "" : "none";
   }
 }
 function initManagerBudgetDonut() {
