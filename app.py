@@ -2715,10 +2715,542 @@ def manager_project_monitoring_detail(project_id: int):
 # =============================
 # ■ 本部管理者：トップ画面
 # =============================
+def _build_hq_top_empty_view_data() -> dict:
+    """本部管理者トップ画面の空表示用データ。"""
+    return {
+        "summary": {
+            "department_projects": {"value": 0, "unit": "件", "meta": "0部門合計", "number_class": "sb-number-normal"},
+            "final_approval_requests": {"value": 0, "unit": "件", "meta": "待機中なし", "number_class": "sb-number-normal"},
+            "budget_alert_departments": {"value": 0, "unit": "部門", "meta": "注意0/超過0", "number_class": "sb-number-normal"},
+            "company_budget_rate": {"value": 0, "unit": "%", "meta": "¥0/¥0", "number_class": "sb-number-normal"},
+            "delayed_projects": {"value": 0, "unit": "件", "meta": "最長遅延なし", "number_class": "sb-number-normal"},
+            "budget_alert_projects": {"value": 0, "unit": "件", "meta": "注意0/超過0", "number_class": "sb-number-normal"},
+        },
+        "department_budgets": [],
+        "company_budget": {"show_empty": True},
+        "phase_distribution": {"total_count": 0, "segments": []},
+        "final_approval_requests": [],
+        "project_matrix": [],
+        "departments": [],
+    }
+
+
+def _get_hq_status_view(project: Project, today: date) -> dict:
+    """案件の表示用ステータス情報を返す。"""
+    has_delay = any(task.due_date and task.status != "done" and task.due_date < today for task in project.tasks)
+
+    if project.status == "department_pending":
+        return {"key": "pending", "text": "部門承認待ち", "badge_class": "badge b-wait", "is_delay": False}
+    if project.status == "hq_pending":
+        return {"key": "pending", "text": "本部承認待ち", "badge_class": "badge badge-approval-hq", "is_delay": False}
+    if project.status == "completed":
+        return {"key": "completed", "text": "完了", "badge_class": "badge b-done", "is_delay": False}
+    if project.status == "rejected":
+        return {"key": "rejected", "text": "却下", "badge_class": "badge b-rejected", "is_delay": False}
+    if has_delay:
+        return {"key": "delay", "text": "遅延", "badge_class": "badge b-delay", "is_delay": True}
+    return {"key": "in_progress", "text": "進行中", "badge_class": "badge b-prog", "is_delay": False}
+
+
+def _get_hq_department_badge_class(department_name: str | None) -> str:
+    """HQトップ画面用の部門バッジclass（badgeプレフィックスなし）。"""
+    mapping = {
+        "システム開発部": "badge-dept-system",
+        "情報基盤部": "badge-dept-infra",
+        "業務改革推進部": "badge-dept-reform",
+    }
+    return mapping.get(department_name or "", "badge-dept-muted")
+
+
+def _normalize_single_line(text: str | None) -> str:
+    """改行や連続空白を除去して1行テキストへ整形する。"""
+    return " ".join((text or "").split())
+
+
+def _truncate_with_ellipsis(text: str, limit: int) -> str:
+    """指定文字数を超える場合のみ末尾を省略する。"""
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}…"
+
+
+def _format_summary_amount_short(value: Decimal) -> str:
+    """サマリー用の金額を短縮表記に整形する。"""
+    amount = int(value or 0)
+    if amount == 0:
+        return "¥0"
+    million = amount // 1_000_000
+    if million > 0:
+        return f"¥{million:,}M"
+    return f"¥{amount:,}"
+
+
+def build_hq_top_view_data() -> dict:
+    """本部管理者トップ画面の表示用データを作る。"""
+    today = jst_today()
+    fiscal_year = get_fiscal_year(today)
+    fiscal_start = date(fiscal_year, 4, 1)
+    fiscal_end = date(fiscal_year + 1, 3, 31)
+
+    departments = Department.query.order_by(Department.id.asc()).all()
+    projects = (
+        Project.query.options(
+            joinedload(Project.department),
+            joinedload(Project.applicant),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+            joinedload(Project.project_status_logs),
+        )
+        .order_by(Project.updated_at.desc(), Project.id.desc())
+        .all()
+    )
+    if not departments and not projects:
+        return _build_hq_top_empty_view_data()
+
+    actual_rows = (
+        db.session.query(
+            Project.department_id,
+            func.coalesce(func.sum(BudgetActualLog.amount), 0),
+        )
+        .join(Project, Project.id == BudgetActualLog.project_id)
+        .filter(
+            BudgetActualLog.recorded_on >= fiscal_start,
+            BudgetActualLog.recorded_on <= fiscal_end,
+        )
+        .group_by(Project.department_id)
+        .all()
+    )
+    actual_by_department = {int(dept_id): Decimal(amount or 0) for dept_id, amount in actual_rows if dept_id is not None}
+
+    budget_rows = (
+        DepartmentYearlyBudget.query.options(joinedload(DepartmentYearlyBudget.department))
+        .filter(DepartmentYearlyBudget.fiscal_year == fiscal_year)
+        .order_by(DepartmentYearlyBudget.department_id.asc())
+        .all()
+    )
+    yearly_budget_by_department = {int(row.department_id): Decimal(row.annual_budget_amount or 0) for row in budget_rows}
+
+    department_items: list[dict] = []
+    department_caution = 0
+    department_over = 0
+    department_projects_count: dict[int, int] = {}
+    delay_count_by_dept: dict[int, int] = {}
+    project_budget_over_by_dept: dict[int, int] = {}
+
+    delayed_project_ids: set[int] = set()
+    project_budget_state: dict[int, str] = {}
+    final_approval_requests: list[dict] = []
+    longest_final_wait_days = 0
+    has_wait3_final_approval = False
+    phase_counts = {"completed": 0, "in_progress": 0, "pending": 0, "delay": 0, "rejected": 0}
+    project_matrix: list[dict] = []
+    max_delay_days = 0
+
+    for project in projects:
+        dept_id = int(project.department_id) if project.department_id is not None else 0
+        if dept_id and project.status != "rejected":
+            department_projects_count[dept_id] = department_projects_count.get(dept_id, 0) + 1
+
+        status_view = _get_hq_status_view(project, today)
+        if status_view["key"] == "delay":
+            delayed_project_ids.add(project.id)
+            if dept_id:
+                delay_count_by_dept[dept_id] = delay_count_by_dept.get(dept_id, 0) + 1
+            for task in project.tasks:
+                if task.due_date and task.status != "done" and task.due_date < today:
+                    max_delay_days = max(max_delay_days, (today - task.due_date).days)
+
+        phase_key = status_view["key"]
+        if project.status == "rejected":
+            phase_key = "rejected"
+        phase_counts[phase_key] = phase_counts.get(phase_key, 0) + 1
+
+        budget_rate = project.budget_consumption_rate or Decimal("0")
+        budget_state = "ok"
+        if project.status == "in_progress":
+            if budget_rate >= Decimal("100"):
+                budget_state = "over"
+                if dept_id:
+                    project_budget_over_by_dept[dept_id] = project_budget_over_by_dept.get(dept_id, 0) + 1
+            elif budget_rate >= Decimal("80"):
+                budget_state = "warn"
+        project_budget_state[project.id] = budget_state
+
+        if project.status == "hq_pending" and project.approval_stage == "hq_pending":
+            dept_log = _get_latest_action_log(project, "approve_department")
+            submit_log = _get_latest_submit_log(project)
+            request_dt = (dept_log.acted_at if dept_log else None) or (submit_log.acted_at if submit_log else None) or project.created_at
+            request_jst_date = _jst_date_from_datetime(request_dt)
+            wait_days = (today - request_jst_date).days if request_jst_date else 0
+            longest_final_wait_days = max(longest_final_wait_days, wait_days)
+            if wait_days >= 3:
+                has_wait3_final_approval = True
+            final_approval_requests.append(
+                {
+                    "date_class": "urgent-cell" if wait_days >= 3 else "",
+                    "department_approved_on": format_jst_date(request_dt, "%m/%d") if request_dt else "—",
+                    "department_badge_class": _get_hq_department_badge_class(project.department.name if project.department else None),
+                    "department_name": project.department.name if project.department else "未所属",
+                    "project_name": project.title,
+                    "estimated_budget_text": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+                    "status_badge_class": "badge-primary bp-urgent" if wait_days >= 3 else "badge badge-approval-hq",
+                    "status_text": f"{wait_days}日待機" if wait_days >= 3 else "本部承認待ち",
+                    "review_url": url_for("hq_project_final_review", project_id=project.id),
+                    "sort_key": request_dt or project.created_at,
+                }
+            )
+
+        progress_percent: int | None = 0
+        if project.status == "completed":
+            progress_percent = 100
+        elif project.status == "rejected":
+            progress_percent = None
+        elif project.status in {"department_pending", "hq_pending"}:
+            progress_percent = None
+        elif project.tasks:
+            done_count = sum(1 for task in project.tasks if task.status == "done")
+            progress_percent = int(round((done_count / len(project.tasks)) * 100))
+
+        progress_fill_class = "mf-ok" if progress_percent == 100 else "mf-ok"
+        progress_text_class = "mp-blue"
+        if progress_percent == 100:
+            progress_text_class = "mp-ok"
+
+        budget_fill_class = "mf-ok"
+        budget_text_class = "mp-blue"
+        if project_budget_state.get(project.id) == "over":
+            budget_fill_class = "mf-over"
+            budget_text_class = "mp-over"
+        elif project_budget_state.get(project.id) == "warn":
+            budget_fill_class = "mf-warn"
+            budget_text_class = "mp-warn"
+
+        report_class = "matrix-report-normal"
+        report_text = "—"
+        updated_jst_date = _jst_date_from_datetime(project.monthly_report_updated_at)
+        if project.status == "rejected":
+            report_text = "—"
+        elif project.monthly_report_updated_at:
+            if project.status == "completed":
+                report_text = "完了報告済"
+            else:
+                report_text = f"{format_jst_date(project.monthly_report_updated_at, '%m/%d')} 更新"
+
+            if updated_jst_date and (updated_jst_date.year, updated_jst_date.month) < (today.year, today.month):
+                report_class = "matrix-report-danger"
+            elif updated_jst_date:
+                days_since_update = (today - updated_jst_date).days
+                report_class = "matrix-report-warn" if days_since_update >= 15 else "matrix-report-normal"
+
+        if project.status in {"department_pending", "hq_pending", "rejected"}:
+            detail_label = "申請概要"
+            detail_base = _normalize_single_line(project.summary or project.purpose or "")
+            if not detail_base:
+                detail_text = "申請概要は登録されていません。"
+            else:
+                detail_text = _truncate_with_ellipsis(detail_base, 70)
+        elif project.status == "completed":
+            detail_label = "最終報告"
+            detail_text = _normalize_single_line(project.monthly_report_comment or "")
+            if not detail_text:
+                detail_text = "最終報告はまだ登録されていません。"
+        else:
+            detail_text = _normalize_single_line(project.monthly_report_comment or "")
+            if project.monthly_report_updated_at:
+                updated_jst = project.monthly_report_updated_at.astimezone(ZoneInfo("Asia/Tokyo"))
+                detail_label = f"最新月次報告（{updated_jst.year}年{updated_jst.month}月）"
+            else:
+                detail_label = "最新月次報告"
+            if not detail_text:
+                detail_text = "月次報告はまだ登録されていません。"
+
+        project_name_class = ""
+        row_class = "matrix-row-muted" if project.status in {"completed", "rejected"} else ""
+
+        search_text = " ".join(
+            (project.title or "",
+             project.department.name if project.department else "",
+             project.applicant.display_name if project.applicant else "",
+             project.monthly_report_comment or "",
+             status_view["text"] or "")
+        )
+        search_text = " ".join(search_text.split())
+
+        matrix_item = {
+            "row_class": row_class,
+            "dept_key": str(project.department_id) if project.department_id is not None else "",
+            "status_key": status_view["key"],
+            "search_text": search_text,
+            "project_name_class": project_name_class,
+            "project_name": project.title,
+            "department_badge_class": _get_hq_department_badge_class(project.department.name if project.department else None),
+            "department_name": project.department.name if project.department else "未所属",
+            "owner_name": project.applicant.display_name if project.applicant else "主担当未設定",
+            "status_badge_class": status_view["badge_class"],
+            "status_text": status_view["text"],
+            "progress_text": f"{progress_percent}%" if progress_percent is not None else "",
+            "progress_fill_class": progress_fill_class,
+            "progress_width": f"{min(progress_percent or 0, 100)}%" if progress_percent is not None else "0%",
+            "progress_text_class": progress_text_class,
+            "progress_fallback_text": "—" if project.status == "rejected" else "未着手",
+            "budget_text": f"{format_percent_value(budget_rate)}%" if project.status in {"in_progress", "completed"} else "",
+            "budget_fill_class": budget_fill_class,
+            "budget_width": f"{min(float(budget_rate), 100.0):.0f}%",
+            "budget_text_class": budget_text_class,
+            "budget_fallback_text": "—" if project.status == "rejected" else "申請中",
+            "report_class": report_class,
+            "report_text": report_text,
+            "detail_label": detail_label,
+            "detail_text": detail_text,
+            "sort_budget_priority": 0 if budget_state == "over" else (1 if budget_state == "warn" else 2),
+            "sort_updated_ts": (project.updated_at or project.created_at).timestamp(),
+        }
+        project_matrix.append(matrix_item)
+
+    project_matrix.sort(
+        key=lambda item: (
+            item["sort_budget_priority"] if item["status_key"] == "in_progress" else 3,
+            -item["sort_updated_ts"],
+        ),
+    )
+    for item in project_matrix:
+        item.pop("sort_budget_priority", None)
+        item.pop("sort_updated_ts", None)
+
+    final_approval_requests.sort(key=lambda item: (item["sort_key"], item["project_name"]))
+    for item in final_approval_requests:
+        item.pop("sort_key", None)
+
+    for dept in departments:
+        dept_id = int(dept.id)
+        annual_amount = yearly_budget_by_department.get(dept_id, Decimal("0"))
+        actual_amount = actual_by_department.get(dept_id, Decimal("0"))
+        rate = Decimal("0")
+        is_budget_unregistered = annual_amount <= 0
+        if not is_budget_unregistered:
+            rate = (actual_amount / annual_amount) * Decimal("100")
+
+        fill_class = "dbf-success"
+        rate_class = "dbl-pct-success" if not is_budget_unregistered else "dbl-pct-muted"
+        state_rank = 2
+        if is_budget_unregistered:
+            fill_class = "dbf-ok"
+            state_rank = 3
+        elif rate >= Decimal("100"):
+            fill_class = "dbf-over"
+            rate_class = "dbl-pct-over"
+            department_over += 1
+            state_rank = 0
+        elif rate >= Decimal("80"):
+            fill_class = "dbf-warn"
+            rate_class = "dbl-pct-warn"
+            department_caution += 1
+            state_rank = 1
+
+        dept_delay = delay_count_by_dept.get(dept_id, 0)
+        dept_over = project_budget_over_by_dept.get(dept_id, 0)
+        dept_warn = sum(
+            1
+            for p in projects
+            if p.department_id == dept_id and p.status == "in_progress" and project_budget_state.get(p.id) == "warn"
+        )
+        tags = [{"class": "", "text": f"案件 {department_projects_count.get(dept_id, 0)}件"}]
+        if dept_delay > 0:
+            tags.append({"class": "", "text": f"遅延 {dept_delay}"})
+        if dept_over > 0:
+            tags.append({"class": "", "text": f"予算超過 {dept_over}"})
+        if dept_warn > 0:
+            tags.append({"class": "", "text": f"予算注意 {dept_warn}"})
+        if is_budget_unregistered:
+            tags.append({"class": "", "text": "年間予算未登録"})
+        elif dept_over == 0 and dept_warn == 0:
+            tags.append({"class": "", "text": "予算健全"})
+
+        department_items.append(
+            {
+                "department_name": dept.name,
+                "amount_text": f"{format_decimal_amount(actual_amount)} / {format_decimal_amount(annual_amount)}",
+                "rate_text": f"{format_percent_value(rate)}%",
+                "rate_class": rate_class,
+                "fill_class": fill_class,
+                "fill_width": f"{min(float(rate), 100.0):.0f}%",
+                "tags": tags,
+                "sort_state_rank": state_rank,
+                "sort_rate_value": float(rate),
+            }
+        )
+
+    department_items.sort(key=lambda item: (item["sort_state_rank"], -item["sort_rate_value"]))
+    for item in department_items:
+        item.pop("sort_state_rank", None)
+        item.pop("sort_rate_value", None)
+
+    company_budget_total_sum = (
+        db.session.query(func.coalesce(func.sum(DepartmentYearlyBudget.annual_budget_amount), 0))
+        .filter(DepartmentYearlyBudget.fiscal_year == fiscal_year)
+        .scalar()
+    )
+    company_budget_total = Decimal(company_budget_total_sum or 0)
+    company_actual_sum = (
+        db.session.query(func.coalesce(func.sum(BudgetActualLog.amount), 0))
+        .join(Project, Project.id == BudgetActualLog.project_id)
+        .filter(
+            BudgetActualLog.recorded_on >= fiscal_start,
+            BudgetActualLog.recorded_on <= fiscal_end,
+        )
+        .scalar()
+    )
+    company_actual = Decimal(company_actual_sum or 0)
+
+    company_budget = {"show_empty": True}
+    company_rate = Decimal("0")
+    if company_budget_total > 0:
+        company_rate = (company_actual / company_budget_total) * Decimal("100")
+        over_amount = max(company_actual - company_budget_total, Decimal("0"))
+        remaining_amount = max(company_budget_total - company_actual, Decimal("0"))
+        circle = Decimal("87.96")
+        used_pct = min(company_rate, Decimal("100"))
+        over_pct = min(max(company_rate - Decimal("100"), Decimal("0")), Decimal("100"))
+        used_dash = (circle * used_pct / Decimal("100")).quantize(Decimal("0.01"))
+        over_dash = (circle * over_pct / Decimal("100")).quantize(Decimal("0.01"))
+        company_budget = {
+            "show_empty": False,
+            "rate_value": float(company_rate),
+            "over_rate_value": float(over_pct),
+            "main_dasharray": f"{used_dash} {(circle - used_dash).quantize(Decimal('0.01'))}",
+            "over_dasharray": f"{over_dash} {(circle - over_dash).quantize(Decimal('0.01'))}",
+            "over_dashoffset": f"-{used_dash}",
+            "rate_class": "dp-danger" if company_rate >= Decimal("100") else ("dp-warn" if company_rate >= Decimal("80") else ""),
+            "rate_text": f"{format_percent_value(company_rate)}%",
+            "used_amount_text": format_decimal_amount(company_actual),
+            "over_amount_text": format_decimal_amount(over_amount),
+            "remaining_amount_text": format_decimal_amount(remaining_amount),
+            "total_amount_text": format_decimal_amount(company_budget_total),
+        }
+
+    phase_segments = []
+    project_total = len(projects)
+    if project_total > 0:
+        circle_value = Decimal("87.96")
+        phase_order = [
+            ("completed", "完了", "phase-stroke-completed", "phase-dot-completed"),
+            ("in_progress", "開発進行中", "phase-stroke-progress", "phase-dot-progress"),
+            ("pending", "承認待ち", "phase-stroke-pending", "phase-dot-pending"),
+            ("delay", "遅延中", "phase-stroke-delayed", "phase-dot-delayed"),
+            ("rejected", "却下", "phase-stroke-rejected", "phase-dot-rejected"),
+        ]
+        cumulative = Decimal("0")
+        for key, label, stroke_class, dot_class in phase_order:
+            count = phase_counts.get(key, 0)
+            pct = (Decimal(count) / Decimal(project_total)) * Decimal("100")
+            arc = (circle_value * Decimal(count) / Decimal(project_total)).quantize(Decimal("0.01"))
+            phase_segments.append(
+                {
+                    "name": label,
+                    "count_text": f"{count}件",
+                    "pct_text": f"{format_percent_value(pct)}%",
+                    "stroke_class": stroke_class,
+                    "dot_class": dot_class,
+                    "dasharray": f"{arc} {(circle_value - arc).quantize(Decimal('0.01'))}",
+                    "dashoffset": f"-{cumulative.quantize(Decimal('0.01'))}",
+                }
+            )
+            cumulative += arc
+
+    managed_projects = [p for p in projects if p.status in {"department_pending", "hq_pending", "in_progress", "completed"}]
+    budget_project_over = sum(1 for p in projects if p.status == "in_progress" and project_budget_state.get(p.id) == "over")
+    budget_project_warn = sum(1 for p in projects if p.status == "in_progress" and project_budget_state.get(p.id) == "warn")
+
+    budget_alert_dept_number_class = "sb-number-normal"
+    if department_over > 0:
+        budget_alert_dept_number_class = "sb-number-red"
+    elif department_caution > 0:
+        budget_alert_dept_number_class = "sb-number-orange"
+
+    company_budget_number_class = "sb-number-normal"
+    if company_budget_total > 0:
+        if company_rate >= Decimal("100"):
+            company_budget_number_class = "sb-number-red"
+        elif company_rate >= Decimal("80"):
+            company_budget_number_class = "sb-number-orange"
+
+    budget_alert_project_number_class = "sb-number-normal"
+    if budget_project_over > 0:
+        budget_alert_project_number_class = "sb-number-red"
+    elif budget_project_warn > 0:
+        budget_alert_project_number_class = "sb-number-orange"
+
+    summary = {
+        "department_projects": {
+            "value": len(managed_projects),
+            "unit": "件",
+            "meta": f"{len(departments)}部門合計",
+            "number_class": "sb-number-normal",
+        },
+        "final_approval_requests": {
+            "value": len(final_approval_requests),
+            "unit": "件",
+            "meta": f"最長 {longest_final_wait_days}日待機中" if final_approval_requests else "待機中なし",
+            "number_class": "sb-number-yellow" if has_wait3_final_approval else "sb-number-normal",
+        },
+        "budget_alert_departments": {
+            "value": department_caution + department_over,
+            "unit": "部門",
+            "meta": f"注意{department_caution}/超過{department_over}",
+            "number_class": budget_alert_dept_number_class,
+        },
+        "company_budget_rate": {
+            "value": format_percent_value(company_rate),
+            "unit": "%",
+            "meta": f"{_format_summary_amount_short(company_actual)}/{_format_summary_amount_short(company_budget_total)}",
+            "number_class": company_budget_number_class,
+        },
+        "delayed_projects": {
+            "value": len(delayed_project_ids),
+            "unit": "件",
+            "meta": f"最長遅延{max_delay_days}日" if delayed_project_ids else "最長遅延なし",
+            "number_class": "sb-number-red" if delayed_project_ids else "sb-number-normal",
+        },
+        "budget_alert_projects": {
+            "value": budget_project_warn + budget_project_over,
+            "unit": "件",
+            "meta": f"注意{budget_project_warn}/超過{budget_project_over}",
+            "number_class": budget_alert_project_number_class,
+        },
+    }
+
+    return {
+        "summary": summary,
+        "department_budgets": department_items,
+        "company_budget": company_budget,
+        "phase_distribution": {"total_count": project_total, "segments": phase_segments},
+        "final_approval_requests": final_approval_requests,
+        "project_matrix": project_matrix,
+        "departments": [{"dept_key": str(d.id), "name": d.name} for d in departments],
+    }
+
+
 @app.route("/top/hq")
 @login_required
 def hq_top():
-    return render_template("hq_top.html", demo_role="hq")
+    access_error = require_hq()
+    if access_error:
+        return access_error
+
+    try:
+        view_data = build_hq_top_view_data()
+    except SQLAlchemyError:
+        flash("ダッシュボード情報の取得に失敗しました。時間をおいてもう一度お試しください。", "danger")
+        return render_template(
+            "hq_top_empty.html",
+            unread_notifications_count=get_unread_notifications_count(),
+        )
+
+    return render_template(
+        "hq_top.html",
+        view_data=view_data,
+        unread_notifications_count=get_unread_notifications_count(),
+    )
 
 
 # =============================
