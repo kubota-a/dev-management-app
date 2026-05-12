@@ -1593,7 +1593,7 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
     for p in projects:
         if not (p.status == "department_pending" and p.approval_stage == "department_pending"):
             continue
-        submitted_at = _get_latest_action_datetime(p, "submit") or p.created_at
+        submitted_at = _get_manager_review_submitted_at(p)
         submitted_jst_date = _jst_date_from_datetime(submitted_at)
         wait_days = (today - submitted_jst_date).days if submitted_jst_date else 0
         if wait_days >= 3:
@@ -1920,8 +1920,14 @@ def _get_latest_submit_log(project: Project) -> ProjectStatusLog | None:
     return max(submit_logs, key=lambda log: (log.acted_at, log.id))
 
 
+def _get_manager_review_submitted_at(project: Project) -> datetime | None:
+    """部門承認待ち案件の申請起算日を返す。"""
+    submit_log = _get_latest_submit_log(project)
+    return (submit_log.acted_at if submit_log else None) or project.created_at
+
+
 def get_manager_review_projects(department_id: int) -> list[Project]:
-    return (
+    projects = (
         Project.query.options(
             joinedload(Project.applicant),
             joinedload(Project.department),
@@ -1932,23 +1938,23 @@ def get_manager_review_projects(department_id: int) -> list[Project]:
             Project.status == "department_pending",
             Project.approval_stage == "department_pending",
         )
-        .order_by(Project.created_at.asc(), Project.id.asc())
         .all()
     )
+    projects.sort(
+        key=lambda project: (
+            _get_manager_review_submitted_at(project) or project.created_at,
+            project.id,
+        )
+    )
+    return projects
 
 
 def find_next_manager_review_project(department_id: int, exclude_project_id: int | None = None) -> Project | None:
-    q = (
-        Project.query.filter(
-            Project.department_id == department_id,
-            Project.status == "department_pending",
-            Project.approval_stage == "department_pending",
-        )
-        .order_by(Project.created_at.asc(), Project.id.asc())
-    )
-    if exclude_project_id is not None:
-        q = q.filter(Project.id != exclude_project_id)
-    return q.first()
+    projects = get_manager_review_projects(department_id)
+    for project in projects:
+        if exclude_project_id is None or project.id != exclude_project_id:
+            return project
+    return None
 
 
 def build_department_budget_simulation(project: Project) -> dict:
@@ -2070,10 +2076,10 @@ def build_manager_review_view_data(
     rejection_comment: str = "",
     force_reject_mode: bool = False,
 ) -> dict:
-    submit_log = _get_latest_submit_log(project)
-    submitted_at = submit_log.acted_at if submit_log else project.created_at
-    submitted_jst = submitted_at.astimezone(ZoneInfo("Asia/Tokyo"))
-    waiting_days = (datetime.now(ZoneInfo("Asia/Tokyo")).date() - submitted_jst.date()).days
+    today = jst_today()
+    submitted_at = _get_manager_review_submitted_at(project)
+    submitted_jst_date = _jst_date_from_datetime(submitted_at)
+    waiting_days = (today - submitted_jst_date).days if submitted_jst_date else 0
 
     current_index = next((idx for idx, p in enumerate(queue_projects) if p.id == project.id), 0)
     total_count = len(queue_projects)
@@ -2087,15 +2093,15 @@ def build_manager_review_view_data(
 
     queue_items = []
     for idx, item in enumerate(queue_slice, start=queue_slice_start + 1):
-        item_submit_log = _get_latest_submit_log(item)
-        item_submitted = item_submit_log.acted_at if item_submit_log else item.created_at
-        item_wait_days = (datetime.now(ZoneInfo("Asia/Tokyo")).date() - item_submitted.astimezone(ZoneInfo("Asia/Tokyo")).date()).days
+        item_submitted = _get_manager_review_submitted_at(item)
+        item_submitted_jst_date = _jst_date_from_datetime(item_submitted)
+        item_wait_days = (today - item_submitted_jst_date).days if item_submitted_jst_date else 0
         queue_items.append(
             {
                 "project_id": item.id,
                 "index": idx,
                 "title": item.title,
-                "submitted_date": format_jst_date(item_submitted, "%m/%d"),
+                "submitted_date": format_jst_date(item_submitted, "%m/%d") if item_submitted else "—",
                 "is_current": item.id == project.id,
                 "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
             }
