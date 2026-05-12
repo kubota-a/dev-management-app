@@ -2820,8 +2820,6 @@ def build_hq_top_view_data() -> dict:
         .order_by(Project.updated_at.desc(), Project.id.desc())
         .all()
     )
-    if not departments and not projects:
-        return _build_hq_top_empty_view_data()
     allowed_hq_project_statuses = {
         "department_pending",
         "hq_pending",
@@ -2860,6 +2858,7 @@ def build_hq_top_view_data() -> dict:
     department_projects_count: dict[int, int] = {}
     delay_count_by_dept: dict[int, int] = {}
     project_budget_over_by_dept: dict[int, int] = {}
+    project_budget_warn_by_dept: dict[int, int] = {}
 
     delayed_project_ids: set[int] = set()
     project_budget_state: dict[int, str] = {}
@@ -2898,6 +2897,8 @@ def build_hq_top_view_data() -> dict:
                     project_budget_over_by_dept[dept_id] = project_budget_over_by_dept.get(dept_id, 0) + 1
             elif budget_rate >= Decimal("80"):
                 budget_state = "warn"
+                if dept_id:
+                    project_budget_warn_by_dept[dept_id] = project_budget_warn_by_dept.get(dept_id, 0) + 1
         project_budget_state[project.id] = budget_state
 
         if project.status == "hq_pending" and project.approval_stage == "hq_pending":
@@ -3112,11 +3113,7 @@ def build_hq_top_view_data() -> dict:
 
         dept_delay = delay_count_by_dept.get(dept_id, 0)
         dept_over = project_budget_over_by_dept.get(dept_id, 0)
-        dept_warn = sum(
-            1
-            for p in display_projects
-            if p.department_id == dept_id and p.status == "in_progress" and project_budget_state.get(p.id) == "warn"
-        )
+        dept_warn = project_budget_warn_by_dept.get(dept_id, 0)
         tags = [{"class": "dbt-count", "text": f"案件 {department_projects_count.get(dept_id, 0)}件"}]
         if dept_delay > 0:
             tags.append({"class": "dbt-danger", "text": f"遅延 {dept_delay}"})
@@ -3176,13 +3173,14 @@ def build_hq_top_view_data() -> dict:
         over_pct = min(max(company_rate - Decimal("100"), Decimal("0")), Decimal("100"))
         used_dash = (circle * used_pct / Decimal("100")).quantize(Decimal("0.01"))
         over_dash = (circle * over_pct / Decimal("100")).quantize(Decimal("0.01"))
+        over_dashoffset = "0" if used_dash == Decimal("0") else f"-{used_dash}"
         company_budget = {
             "show_empty": False,
             "rate_value": float(company_rate),
             "over_rate_value": float(over_pct),
             "main_dasharray": f"{used_dash} {(circle - used_dash).quantize(Decimal('0.01'))}",
             "over_dasharray": f"{over_dash} {(circle - over_dash).quantize(Decimal('0.01'))}",
-            "over_dashoffset": f"-{used_dash}",
+            "over_dashoffset": over_dashoffset,
             "rate_class": "dp-danger" if company_rate >= Decimal("100") else ("dp-warn" if company_rate >= Decimal("80") else ""),
             "rate_text": f"{_format_hq_percent_int(company_rate)}%",
             "used_amount_text": format_decimal_amount(company_actual),
