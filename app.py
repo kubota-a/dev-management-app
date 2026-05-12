@@ -3346,8 +3346,7 @@ def _get_hq_pending_projects() -> list[Project]:
 
     def sort_key(project: Project):
         dept_log = _get_latest_action_log(project, "approve_department")
-        submit_log = _get_latest_submit_log(project)
-        base_dt = (dept_log.acted_at if dept_log else None) or (submit_log.acted_at if submit_log else None) or project.created_at
+        base_dt = (dept_log.acted_at if dept_log else None) or project.updated_at or project.created_at
         return (base_dt, project.id)
 
     return sorted(projects, key=sort_key)
