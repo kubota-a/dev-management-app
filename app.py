@@ -1,7 +1,7 @@
 import os
 import re
 from datetime import date, datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv  # .envファイルを読み込むライブラリ
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for  # Webアプリ本体を作るフレームワーク
@@ -220,6 +220,14 @@ def format_percent_value(value: Decimal | None) -> str:
     if text.endswith(".0"):
         text = text[:-2]
     return text
+
+
+def _format_hq_percent_int(value: Decimal | int | float | None) -> str:
+    """HQトップ用。割合を整数％表示用の文字列に整形する。"""
+    if value is None:
+        return "0"
+    decimal_value = Decimal(str(value))
+    return str(int(decimal_value.quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
 
 
 def get_fiscal_year(target_date: date) -> int:
@@ -2747,9 +2755,11 @@ def _get_hq_status_view(project: Project, today: date) -> dict:
         return {"key": "completed", "text": "完了", "badge_class": "badge b-done", "is_delay": False}
     if project.status == "rejected":
         return {"key": "rejected", "text": "却下", "badge_class": "badge b-rejected", "is_delay": False}
-    if has_delay:
-        return {"key": "delay", "text": "遅延", "badge_class": "badge b-delay", "is_delay": True}
-    return {"key": "in_progress", "text": "進行中", "badge_class": "badge b-prog", "is_delay": False}
+    if project.status == "in_progress":
+        if has_delay:
+            return {"key": "delay", "text": "遅延", "badge_class": "badge b-delay", "is_delay": True}
+        return {"key": "in_progress", "text": "進行中", "badge_class": "badge b-prog", "is_delay": False}
+    return {"key": "unknown", "text": "不明", "badge_class": "badge", "is_delay": False}
 
 
 def _get_hq_department_badge_class(department_name: str | None) -> str:
@@ -2806,6 +2816,14 @@ def build_hq_top_view_data() -> dict:
     )
     if not departments and not projects:
         return _build_hq_top_empty_view_data()
+    allowed_hq_project_statuses = {
+        "department_pending",
+        "hq_pending",
+        "in_progress",
+        "completed",
+        "rejected",
+    }
+    display_projects = [p for p in projects if p.status in allowed_hq_project_statuses]
 
     actual_rows = (
         db.session.query(
@@ -2846,7 +2864,7 @@ def build_hq_top_view_data() -> dict:
     project_matrix: list[dict] = []
     max_delay_days = 0
 
-    for project in projects:
+    for project in display_projects:
         dept_id = int(project.department_id) if project.department_id is not None else 0
         if dept_id and project.status != "rejected":
             department_projects_count[dept_id] = department_projects_count.get(dept_id, 0) + 1
@@ -2878,8 +2896,7 @@ def build_hq_top_view_data() -> dict:
 
         if project.status == "hq_pending" and project.approval_stage == "hq_pending":
             dept_log = _get_latest_action_log(project, "approve_department")
-            submit_log = _get_latest_submit_log(project)
-            request_dt = (dept_log.acted_at if dept_log else None) or (submit_log.acted_at if submit_log else None) or project.created_at
+            request_dt = (dept_log.acted_at if dept_log else None) or project.updated_at or project.created_at
             request_jst_date = _jst_date_from_datetime(request_dt)
             wait_days = (today - request_jst_date).days if request_jst_date else 0
             longest_final_wait_days = max(longest_final_wait_days, wait_days)
@@ -2892,10 +2909,20 @@ def build_hq_top_view_data() -> dict:
                     "department_badge_class": _get_hq_department_badge_class(project.department.name if project.department else None),
                     "department_name": project.department.name if project.department else "未所属",
                     "project_name": project.title,
-                    "estimated_budget_text": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+                    "estimated_budget_text": format_decimal_amount(
+                        Decimal(
+                            (
+                                project.approved_budget_amount
+                                if project.approved_budget_amount is not None
+                                else project.estimated_budget_amount
+                            )
+                            or 0
+                        )
+                    ),
                     "status_badge_class": "badge-primary bp-urgent" if wait_days >= 3 else "badge badge-approval-hq",
                     "status_text": f"{wait_days}日待機" if wait_days >= 3 else "本部承認待ち",
                     "review_url": url_for("hq_project_final_review", project_id=project.id),
+                    "project_id": project.id,
                     "sort_key": request_dt or project.created_at,
                 }
             )
@@ -2911,17 +2938,24 @@ def build_hq_top_view_data() -> dict:
             done_count = sum(1 for task in project.tasks if task.status == "done")
             progress_percent = int(round((done_count / len(project.tasks)) * 100))
 
-        progress_fill_class = "mf-ok" if progress_percent == 100 else "mf-ok"
+        progress_fill_class = "mf-prog" if progress_percent == 100 else "mf-ok"
         progress_text_class = "mp-blue"
         if progress_percent == 100:
             progress_text_class = "mp-ok"
 
+        display_budget_state = "ok"
+        if project.status in {"in_progress", "completed"}:
+            if budget_rate >= Decimal("100"):
+                display_budget_state = "over"
+            elif budget_rate >= Decimal("80"):
+                display_budget_state = "warn"
+
         budget_fill_class = "mf-ok"
         budget_text_class = "mp-blue"
-        if project_budget_state.get(project.id) == "over":
+        if display_budget_state == "over":
             budget_fill_class = "mf-over"
             budget_text_class = "mp-over"
-        elif project_budget_state.get(project.id) == "warn":
+        elif display_budget_state == "warn":
             budget_fill_class = "mf-warn"
             budget_text_class = "mp-warn"
 
@@ -2976,6 +3010,23 @@ def build_hq_top_view_data() -> dict:
         )
         search_text = " ".join(search_text.split())
 
+        if status_view["key"] == "delay":
+            sort_priority = 1
+        elif project.status == "in_progress" and budget_state == "over":
+            sort_priority = 2
+        elif project.status == "in_progress" and budget_state == "warn":
+            sort_priority = 3
+        elif project.status == "hq_pending":
+            sort_priority = 4
+        elif project.status == "department_pending":
+            sort_priority = 5
+        elif project.status == "in_progress":
+            sort_priority = 6
+        elif project.status == "completed":
+            sort_priority = 7
+        else:
+            sort_priority = 8
+
         matrix_item = {
             "row_class": row_class,
             "dept_key": str(project.department_id) if project.department_id is not None else "",
@@ -2993,7 +3044,7 @@ def build_hq_top_view_data() -> dict:
             "progress_width": f"{min(progress_percent or 0, 100)}%" if progress_percent is not None else "0%",
             "progress_text_class": progress_text_class,
             "progress_fallback_text": "—" if project.status == "rejected" else "未着手",
-            "budget_text": f"{format_percent_value(budget_rate)}%" if project.status in {"in_progress", "completed"} else "",
+            "budget_text": f"{_format_hq_percent_int(budget_rate)}%" if project.status in {"in_progress", "completed"} else "",
             "budget_fill_class": budget_fill_class,
             "budget_width": f"{min(float(budget_rate), 100.0):.0f}%",
             "budget_text_class": budget_text_class,
@@ -3002,22 +3053,28 @@ def build_hq_top_view_data() -> dict:
             "report_text": report_text,
             "detail_label": detail_label,
             "detail_text": detail_text,
-            "sort_budget_priority": 0 if budget_state == "over" else (1 if budget_state == "warn" else 2),
-            "sort_updated_ts": (project.updated_at or project.created_at).timestamp(),
+            "sort_priority": sort_priority,
+            "sort_planned_end_none": project.planned_end_date is None,
+            "sort_planned_end_date": project.planned_end_date or date.max,
+            "sort_project_id": project.id,
         }
         project_matrix.append(matrix_item)
 
     project_matrix.sort(
         key=lambda item: (
-            item["sort_budget_priority"] if item["status_key"] == "in_progress" else 3,
-            -item["sort_updated_ts"],
+            item["sort_priority"],
+            item["sort_planned_end_none"],
+            item["sort_planned_end_date"],
+            item["sort_project_id"],
         ),
     )
     for item in project_matrix:
-        item.pop("sort_budget_priority", None)
-        item.pop("sort_updated_ts", None)
+        item.pop("sort_priority", None)
+        item.pop("sort_planned_end_none", None)
+        item.pop("sort_planned_end_date", None)
+        item.pop("sort_project_id", None)
 
-    final_approval_requests.sort(key=lambda item: (item["sort_key"], item["project_name"]))
+    final_approval_requests.sort(key=lambda item: (item["sort_key"], item["project_id"]))
     for item in final_approval_requests:
         item.pop("sort_key", None)
 
@@ -3034,7 +3091,7 @@ def build_hq_top_view_data() -> dict:
         rate_class = "dbl-pct-success" if not is_budget_unregistered else "dbl-pct-muted"
         state_rank = 2
         if is_budget_unregistered:
-            fill_class = "dbf-ok"
+            fill_class = "dbf-muted"
             state_rank = 3
         elif rate >= Decimal("100"):
             fill_class = "dbf-over"
@@ -3051,26 +3108,26 @@ def build_hq_top_view_data() -> dict:
         dept_over = project_budget_over_by_dept.get(dept_id, 0)
         dept_warn = sum(
             1
-            for p in projects
+            for p in display_projects
             if p.department_id == dept_id and p.status == "in_progress" and project_budget_state.get(p.id) == "warn"
         )
-        tags = [{"class": "", "text": f"案件 {department_projects_count.get(dept_id, 0)}件"}]
+        tags = [{"class": "dbt-count", "text": f"案件 {department_projects_count.get(dept_id, 0)}件"}]
         if dept_delay > 0:
-            tags.append({"class": "", "text": f"遅延 {dept_delay}"})
+            tags.append({"class": "dbt-danger", "text": f"遅延 {dept_delay}"})
         if dept_over > 0:
-            tags.append({"class": "", "text": f"予算超過 {dept_over}"})
+            tags.append({"class": "dbt-danger", "text": f"予算超過 {dept_over}"})
         if dept_warn > 0:
-            tags.append({"class": "", "text": f"予算注意 {dept_warn}"})
+            tags.append({"class": "dbt-warn", "text": f"予算注意 {dept_warn}"})
         if is_budget_unregistered:
-            tags.append({"class": "", "text": "年間予算未登録"})
+            tags.append({"class": "dbt-muted", "text": "年間予算未登録"})
         elif dept_over == 0 and dept_warn == 0:
-            tags.append({"class": "", "text": "予算健全"})
+            tags.append({"class": "dbt-success", "text": "予算健全"})
 
         department_items.append(
             {
                 "department_name": dept.name,
                 "amount_text": f"{format_decimal_amount(actual_amount)} / {format_decimal_amount(annual_amount)}",
-                "rate_text": f"{format_percent_value(rate)}%",
+                "rate_text": f"{_format_hq_percent_int(rate)}%",
                 "rate_class": rate_class,
                 "fill_class": fill_class,
                 "fill_width": f"{min(float(rate), 100.0):.0f}%",
@@ -3121,7 +3178,7 @@ def build_hq_top_view_data() -> dict:
             "over_dasharray": f"{over_dash} {(circle - over_dash).quantize(Decimal('0.01'))}",
             "over_dashoffset": f"-{used_dash}",
             "rate_class": "dp-danger" if company_rate >= Decimal("100") else ("dp-warn" if company_rate >= Decimal("80") else ""),
-            "rate_text": f"{format_percent_value(company_rate)}%",
+            "rate_text": f"{_format_hq_percent_int(company_rate)}%",
             "used_amount_text": format_decimal_amount(company_actual),
             "over_amount_text": format_decimal_amount(over_amount),
             "remaining_amount_text": format_decimal_amount(remaining_amount),
@@ -3129,7 +3186,7 @@ def build_hq_top_view_data() -> dict:
         }
 
     phase_segments = []
-    project_total = len(projects)
+    project_total = len(display_projects)
     if project_total > 0:
         circle_value = Decimal("87.96")
         phase_order = [
@@ -3142,24 +3199,34 @@ def build_hq_top_view_data() -> dict:
         cumulative = Decimal("0")
         for key, label, stroke_class, dot_class in phase_order:
             count = phase_counts.get(key, 0)
-            pct = (Decimal(count) / Decimal(project_total)) * Decimal("100")
-            arc = (circle_value * Decimal(count) / Decimal(project_total)).quantize(Decimal("0.01"))
+            if count <= 0:
+                pct = Decimal("0")
+                arc = Decimal("0")
+                dasharray = "0 87.96"
+            else:
+                pct = (Decimal(count) / Decimal(project_total)) * Decimal("100")
+                arc = (circle_value * Decimal(count) / Decimal(project_total)).quantize(Decimal("0.01"))
+                dasharray = f"{arc} {(circle_value - arc).quantize(Decimal('0.01'))}"
             phase_segments.append(
                 {
                     "name": label,
                     "count_text": f"{count}件",
-                    "pct_text": f"{format_percent_value(pct)}%",
+                    "pct_text": f"{_format_hq_percent_int(pct)}%",
                     "stroke_class": stroke_class,
                     "dot_class": dot_class,
-                    "dasharray": f"{arc} {(circle_value - arc).quantize(Decimal('0.01'))}",
+                    "dasharray": dasharray,
                     "dashoffset": f"-{cumulative.quantize(Decimal('0.01'))}",
                 }
             )
             cumulative += arc
 
-    managed_projects = [p for p in projects if p.status in {"department_pending", "hq_pending", "in_progress", "completed"}]
-    budget_project_over = sum(1 for p in projects if p.status == "in_progress" and project_budget_state.get(p.id) == "over")
-    budget_project_warn = sum(1 for p in projects if p.status == "in_progress" and project_budget_state.get(p.id) == "warn")
+    managed_projects = [p for p in display_projects if p.status in {"department_pending", "hq_pending", "in_progress", "completed"}]
+    budget_project_over = sum(
+        1 for p in display_projects if p.status == "in_progress" and project_budget_state.get(p.id) == "over"
+    )
+    budget_project_warn = sum(
+        1 for p in display_projects if p.status == "in_progress" and project_budget_state.get(p.id) == "warn"
+    )
 
     budget_alert_dept_number_class = "sb-number-normal"
     if department_over > 0:
@@ -3190,7 +3257,7 @@ def build_hq_top_view_data() -> dict:
         "final_approval_requests": {
             "value": len(final_approval_requests),
             "unit": "件",
-            "meta": f"最長 {longest_final_wait_days}日待機中" if final_approval_requests else "待機中なし",
+            "meta": f"最長{longest_final_wait_days}日待機中" if final_approval_requests else "待機中なし",
             "number_class": "sb-number-yellow" if has_wait3_final_approval else "sb-number-normal",
         },
         "budget_alert_departments": {
@@ -3200,7 +3267,7 @@ def build_hq_top_view_data() -> dict:
             "number_class": budget_alert_dept_number_class,
         },
         "company_budget_rate": {
-            "value": format_percent_value(company_rate),
+            "value": _format_hq_percent_int(company_rate),
             "unit": "%",
             "meta": f"{_format_summary_amount_short(company_actual)}/{_format_summary_amount_short(company_budget_total)}",
             "number_class": company_budget_number_class,
