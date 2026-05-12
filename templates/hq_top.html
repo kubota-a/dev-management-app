@@ -226,6 +226,15 @@
   .mock-hq-dashboard table.ap-tbl { min-width: 720px; }
   .mock-hq-dashboard .ap-tbl th,
   .mock-hq-dashboard .ap-tbl td { white-space: nowrap; }
+  .mock-hq-dashboard .matrix-table-wrap { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+  .mock-hq-dashboard .matrix-tbl { width: 100%; min-width: 860px; border-collapse: collapse; }
+  .mock-hq-dashboard .matrix-tbl th:nth-child(2),
+  .mock-hq-dashboard .matrix-tbl td:nth-child(2) { min-width: 190px; max-width: 240px; }
+  .mock-hq-dashboard .matrix-tbl td:nth-child(2),
+  .mock-hq-dashboard .matrix-tbl td:nth-child(2) strong,
+  .mock-hq-dashboard .matrix-tbl td:nth-child(2) a { white-space: nowrap; word-break: keep-all; overflow-wrap: normal; }
+  .mock-hq-dashboard .matrix-tbl td:nth-child(2) strong,
+  .mock-hq-dashboard .matrix-tbl td:nth-child(2) a { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 }
 @media (max-width: 540px) { .mock-hq-dashboard .matrix-toolbar { gap: 6px; } }
 @media (min-width: 1201px) {
@@ -450,7 +459,7 @@
       <select class="filter-sel" id="deptSel" onchange="filterHqDashboardMatrix()"><option value="all">全部門</option>{% for dept in departments %}<option value="{{ dept.dept_key|default(dept.name|default(dept)) }}">{{ dept.name|default(dept) }}</option>{% endfor %}</select>
       <div class="f-chip-group"><button class="f-chip active" id="fcAll" type="button" onclick="setHqDashboardChip(this,'all')">全て</button><button class="f-chip fc-delay" id="fcDelay" type="button" onclick="setHqDashboardChip(this,'delay')">遅延</button><button class="f-chip" id="fcInProgress" type="button" onclick="setHqDashboardChip(this,'in_progress')">進行中</button><button class="f-chip" id="fcPending" type="button" onclick="setHqDashboardChip(this,'pending')">承認待ち</button><button class="f-chip" id="fcCompleted" type="button" onclick="setHqDashboardChip(this,'completed')">完了</button></div>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="matrix-table-wrap" style="overflow-x:auto;">
       <table class="matrix-tbl">
         <thead><tr><th></th><th>案件名</th><th>部門</th><th>主担当</th><th>ステータス</th><th>進捗</th><th>予算消費</th><th>月次報告</th></tr></thead>
         <tbody id="matrixTbody">
