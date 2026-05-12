@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% set page_role = "hq" %}
+{% set active_menu = "hq_dashboard" %}
+{% set header_title = "ダッシュボード" %}
+{% set header_meta = "要対応項目と全社の予算・案件状況を確認します" %}
+{% set content_width_class = "app-content-wide" %}
+{% set content_footer_enabled = false %}
+
+{% block title %}ダッシュボード{% endblock %}
+
+{% block head_extra %}
+<style>
+.hq-top-empty {
+  padding: 20px;
+}
+.hq-top-empty-card {
+  background: #fff;
+  border: 1px solid var(--app-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 20px;
+}
+.hq-top-empty-card p {
+  margin: 0 0 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hq-top-empty">
+  <div class="hq-top-empty-card">
+    <p>現在、ダッシュボード情報を表示できません。</p>
+    <p><a href="{{ url_for('hq_top') }}" class="app-nav-link">本部管理者トップへ戻る</a></p>
+  </div>
+</div>
+{% endblock %}
