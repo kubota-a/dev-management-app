@@ -1,5 +1,29 @@
-<a href="/top/applicant" class="app-nav-link{% if active_menu == 'applicant_dashboard' %} is-active{% endif %}">ダッシュボード</a>
-<a href="/applicant/projects/new" class="app-nav-link{% if active_menu == 'applicant_new' %} is-active{% endif %}">新規案件の申請</a>
-<a href="#" class="app-nav-link{% if active_menu == 'applicant_status' %} is-active{% endif %}">申請状況の確認・管理</a>
-<a href="#" class="app-nav-link{% if active_menu == 'applicant_resubmit' %} is-active{% endif %}">修正して再申請</a>
-<a href="#" class="app-nav-link{% if active_menu == 'applicant_progress' %} is-active{% endif %}">案件の進捗管理</a>
+<style>
+.app-nav-link.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nav-label-mobile {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .nav-label-pc {
+    display: none;
+  }
+
+  .nav-label-mobile {
+    display: inline;
+  }
+}
+</style>
+
+<a href="{{ url_for('applicant_top') }}" class="app-nav-link{% if active_menu == 'applicant_dashboard' %} is-active{% endif %}">ダッシュボード</a>
+<a href="{{ url_for('applicant_project_new') }}" class="app-nav-link{% if active_menu == 'applicant_new' %} is-active{% endif %}">新規案件の申請</a>
+<a href="{{ url_for('applicant_project_status_index') }}" class="app-nav-link{% if active_menu == 'applicant_status' %} is-active{% endif %}">申請状況の確認・管理</a>
+<span class="app-nav-link is-disabled" title="未実装です" aria-disabled="true">
+  <span class="nav-label-pc">修正して再申請</span>
+  <span class="nav-label-mobile">修正して再申請（未実装）</span>
+</span>
+<a href="{{ url_for('applicant_project_progress') }}" class="app-nav-link{% if active_menu == 'applicant_progress' %} is-active{% endif %}">案件の進捗管理</a>
