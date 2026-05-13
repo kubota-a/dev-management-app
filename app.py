@@ -577,10 +577,327 @@ def logout():
 # =============================
 # ■ 申請者：トップ画面
 # =============================
+def build_empty_applicant_top_view_data() -> dict:
+    """申請者トップ画面の空状態データを返す。"""
+    return {
+        "approval_projects": [],
+        "in_progress_projects": [],
+        "attention_tasks": {
+            "delayed": {
+                "count_label": "なし",
+                "count_class": "side-card-count-normal",
+                "items": [],
+            },
+            "due_soon": {
+                "count_label": "なし",
+                "count_class": "side-card-count-normal",
+                "items": [],
+            },
+        },
+    }
+
+
+def build_applicant_top_approval_projects(projects: list[Project]) -> list[dict]:
+    """申請中案件の承認ステータス表示データを作成する。"""
+    items = []
+    for project in projects:
+        submit_logs = [log for log in project.project_status_logs if log.action == "submit" and log.acted_at is not None]
+        submitted_at = max((log.acted_at for log in submit_logs), default=None) or project.created_at
+        submitted_sort_at = submitted_at or datetime.min.replace(tzinfo=ZoneInfo("UTC"))
+
+        steps = []
+        is_rejected = project.status == "rejected"
+        reject_message = ""
+        if project.status == "department_pending":
+            steps = [
+                {"class_name": "done", "icon": "✓", "label": "申請済"},
+                {"class_name": "current", "icon": "⋯", "label": "部門承認待ち"},
+                {"class_name": "", "icon": "3", "label": "本部承認待ち"},
+                {"class_name": "", "icon": "4", "label": "開発管理へ"},
+            ]
+        elif project.status == "hq_pending":
+            steps = [
+                {"class_name": "done", "icon": "✓", "label": "申請済"},
+                {"class_name": "done", "icon": "✓", "label": "部門承認済"},
+                {"class_name": "current", "icon": "⋯", "label": "本部承認待ち"},
+                {"class_name": "", "icon": "4", "label": "開発管理へ"},
+            ]
+        elif project.status == "rejected":
+            rejection_log = get_latest_rejection_log(project)
+            if rejection_log and rejection_log.action == "reject_hq":
+                steps = [
+                    {"class_name": "done", "icon": "✓", "label": "申請済"},
+                    {"class_name": "done", "icon": "✓", "label": "部門承認済"},
+                    {"class_name": "rejected", "icon": "✕", "label": "本部却下"},
+                    {"class_name": "", "icon": "4", "label": "開発管理へ"},
+                ]
+                reject_message = "本部管理者より却下されました。"
+            elif rejection_log and rejection_log.action == "reject_department":
+                steps = [
+                    {"class_name": "done", "icon": "✓", "label": "申請済"},
+                    {"class_name": "rejected", "icon": "✕", "label": "部門却下"},
+                    {"class_name": "", "icon": "3", "label": "本部承認待ち"},
+                    {"class_name": "", "icon": "4", "label": "開発管理へ"},
+                ]
+                reject_message = "部門管理者より却下されました。"
+            else:
+                steps = [
+                    {"class_name": "done", "icon": "✓", "label": "申請済"},
+                    {"class_name": "rejected", "icon": "✕", "label": "却下"},
+                    {"class_name": "", "icon": "3", "label": "本部承認待ち"},
+                    {"class_name": "", "icon": "4", "label": "開発管理へ"},
+                ]
+                reject_message = "申請は却下されました。"
+
+        items.append(
+            {
+                "project_id": project.id,
+                "project_name": project.title or "",
+                "department_name": project.department.name if project.department else "未設定",
+                "submitted_date_display": format_jst_date(submitted_at),
+                "submitted_sort_at": submitted_sort_at,
+                "is_rejected": is_rejected,
+                "reject_message": reject_message,
+                "steps": steps,
+            }
+        )
+
+    items.sort(key=lambda item: (item["submitted_sort_at"], -item["project_id"]), reverse=True)
+    for item in items:
+        item.pop("submitted_sort_at", None)
+    return items
+
+
+def build_applicant_top_in_progress_projects(projects: list[Project]) -> list[dict]:
+    """開発管理中案件カードの表示データを作成する。"""
+    today = jst_today()
+    items = []
+
+    for project in projects:
+        incomplete_tasks = [task for task in project.tasks if task.status != "done"]
+        overdue_days = [(today - task.due_date).days for task in incomplete_tasks if task.due_date and task.due_date < today]
+        has_delay = len(overdue_days) > 0
+        delay_days_max = max(overdue_days) if overdue_days else 0
+
+        total_tasks = len(project.tasks)
+        progress_pct = 0
+        if total_tasks > 0:
+            progress_pct = int(round(sum(int(task.progress_rate or 0) for task in project.tasks) / total_tasks))
+
+        base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
+        base_budget = Decimal(base_budget or 0)
+        actual_budget = sum((Decimal(log.amount or 0) for log in project.budget_actual_logs), Decimal("0"))
+        budget_pct = 0
+        if base_budget > 0:
+            budget_pct = int(round((actual_budget / base_budget) * Decimal("100")))
+
+        budget_label = None
+        budget_label_class = ""
+        budget_gauge_class = "gf-budget-ok"
+        if budget_pct >= 100:
+            budget_label = "予算"
+            budget_label_class = "pc-budget-over-badge"
+            budget_gauge_class = "gf-budget-over"
+        elif budget_pct >= 80:
+            budget_label = "予算"
+            budget_label_class = "pc-warning-badge"
+            budget_gauge_class = "gf-budget-warn"
+
+        card_class = "normal"
+        if has_delay:
+            card_class = "delayed"
+        elif budget_pct >= 80:
+            card_class = "warning"
+
+        planned_end = project.planned_end_date
+        items.append(
+            {
+                "project_id": project.id,
+                "project_name": project.title or "",
+                "department_name": project.department.name if project.department else "未設定",
+                "planned_end_display": format_business_date(planned_end),
+                "progress_pct": progress_pct,
+                "progress_gauge_width": max(0, min(progress_pct, 100)),
+                "budget_pct": budget_pct,
+                "budget_gauge_width": max(0, min(budget_pct, 100)),
+                "budget_gauge_class": budget_gauge_class,
+                "budget_label": budget_label,
+                "budget_label_class": budget_label_class,
+                "has_delay": has_delay,
+                "delay_days_max": delay_days_max,
+                "card_class": card_class,
+                "planned_end_sort_key": planned_end,
+            }
+        )
+
+    # 遅延案件を先頭にし、遅延なし案件は完了予定日が近い順で並べる
+    delayed_items = [item for item in items if item["has_delay"]]
+    delayed_items.sort(key=lambda item: (-item["delay_days_max"], item["project_id"]))
+
+    non_delayed_items = [item for item in items if not item["has_delay"]]
+    non_delayed_items.sort(
+        key=lambda item: (
+            item["planned_end_sort_key"] is None,
+            item["planned_end_sort_key"] or date.max,
+            item["project_id"],
+        )
+    )
+
+    sorted_items = delayed_items + non_delayed_items
+    for item in sorted_items:
+        item.pop("planned_end_sort_key", None)
+    return sorted_items
+
+
+def build_applicant_top_attention_tasks(projects: list[Project]) -> dict:
+    """注意タスク（遅延・3日以内期限）の表示データを作成する。"""
+    today = jst_today()
+    due_soon_last = today + timedelta(days=2)
+    delayed_items = []
+    due_soon_items = []
+
+    for project in projects:
+        for task in project.tasks:
+            if task.status == "done" or task.due_date is None:
+                continue
+
+            progress_rate = int(task.progress_rate or 0)
+            if task.due_date < today:
+                delayed_days = (today - task.due_date).days
+                delayed_items.append(
+                    {
+                        "project_id": project.id,
+                        "task_id": task.id,
+                        "task_name": task.title or "",
+                        "project_name": project.title or "",
+                        "due_label": f"+{delayed_days}",
+                        "progress_rate_label": f"{progress_rate}%",
+                        "due_date_sort_key": task.due_date,
+                    }
+                )
+            elif today <= task.due_date <= due_soon_last:
+                due_label = f"{task.due_date.month}/{task.due_date.day}"
+                due_class = "side-task-due-normal"
+                due_kind = "due_later"
+                if task.due_date == today:
+                    due_label = "今日"
+                    due_class = "side-task-due-today"
+                    due_kind = "due_today"
+                elif task.due_date == today + timedelta(days=1):
+                    due_label = "明日"
+                    due_class = "side-task-due-soon"
+                    due_kind = "due_tomorrow"
+
+                due_soon_items.append(
+                    {
+                        "project_id": project.id,
+                        "task_id": task.id,
+                        "task_name": task.title or "",
+                        "project_name": project.title or "",
+                        "due_label": due_label,
+                        "due_class": due_class,
+                        "due_kind": due_kind,
+                        "progress_rate_label": f"{progress_rate}%",
+                        "due_date_sort_key": task.due_date,
+                    }
+                )
+
+    delayed_items.sort(key=lambda item: (item["due_date_sort_key"], item["task_id"]))
+    due_soon_items.sort(
+        key=lambda item: (
+            item["due_date_sort_key"],
+            item["task_id"],
+        )
+    )
+
+    delayed_count = len(delayed_items)
+    due_soon_count = len(due_soon_items)
+    delayed_count_label = f"{delayed_count}件" if delayed_count > 0 else "なし"
+    delayed_count_class = "side-card-count-danger" if delayed_count > 0 else "side-card-count-normal"
+
+    due_soon_count_label = f"{due_soon_count}件" if due_soon_count > 0 else "なし"
+    if due_soon_count == 0:
+        due_soon_count_class = "side-card-count-normal"
+    elif any(item["due_kind"] == "due_today" for item in due_soon_items):
+        due_soon_count_class = "side-card-count-danger"
+    elif any(item["due_kind"] == "due_tomorrow" for item in due_soon_items):
+        due_soon_count_class = "side-card-count-warning"
+    else:
+        due_soon_count_class = "side-card-count-muted"
+
+    for item in delayed_items:
+        item.pop("due_date_sort_key", None)
+    for item in due_soon_items:
+        item.pop("due_date_sort_key", None)
+
+    return {
+        "delayed": {
+            "count_label": delayed_count_label,
+            "count_class": delayed_count_class,
+            "items": delayed_items,
+        },
+        "due_soon": {
+            "count_label": due_soon_count_label,
+            "count_class": due_soon_count_class,
+            "items": due_soon_items,
+        },
+    }
+
+
+def build_applicant_top_view_data(user_id: int) -> dict:
+    """申請者トップ画面の表示データをまとめて作成する。"""
+    approval_projects = (
+        Project.query.options(
+            joinedload(Project.department),
+            joinedload(Project.project_status_logs),
+        )
+        .filter(
+            Project.applicant_id == user_id,
+            Project.status.in_(["department_pending", "hq_pending", "rejected"]),
+        )
+        .all()
+    )
+
+    in_progress_projects = (
+        Project.query.options(
+            joinedload(Project.department),
+            joinedload(Project.tasks),
+            joinedload(Project.budget_actual_logs),
+        )
+        .filter(
+            Project.applicant_id == user_id,
+            Project.status == "in_progress",
+            Project.approval_stage == "approved",
+        )
+        .all()
+    )
+
+    return {
+        "approval_projects": build_applicant_top_approval_projects(approval_projects),
+        "in_progress_projects": build_applicant_top_in_progress_projects(in_progress_projects),
+        "attention_tasks": build_applicant_top_attention_tasks(in_progress_projects),
+    }
+
+
 @app.route("/top/applicant")
 @login_required
 def applicant_top():
-    return render_template("applicant_top.html", demo_role="applicant")
+    access_error = require_applicant()
+    if access_error:
+        return access_error
+
+    try:
+        view_data = build_applicant_top_view_data(current_user.id)
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("ダッシュボード情報の取得に失敗しました。時間をおいてもう一度お試しください。", "danger")
+        view_data = build_empty_applicant_top_view_data()
+
+    return render_template(
+        "applicant_top.html",
+        view_data=view_data,
+        unread_notifications_count=get_unread_notifications_count(),
+    )
 
 
 # =============================
@@ -808,6 +1125,30 @@ def applicant_project_drafts_delete(draft_id):
 # =============================
 # ■ 申請者：申請状況確認・管理画面
 # =============================
+@app.route("/applicant/projects/status")
+@login_required
+def applicant_project_status_index():
+    access_error = require_applicant()
+    if access_error:
+        return access_error
+
+    target_statuses = ("department_pending", "hq_pending", "rejected")
+    latest_project = (
+        Project.query.filter(
+            Project.applicant_id == current_user.id,
+            Project.status.in_(target_statuses),
+        )
+        .order_by(Project.created_at.desc(), Project.id.desc())
+        .first()
+    )
+
+    if latest_project is None:
+        flash("確認できる申請中・却下案件はありません。", "notice")
+        return redirect(url_for("applicant_top"))
+
+    return redirect(url_for("applicant_project_status", project_id=latest_project.id))
+
+
 @app.route("/applicant/projects/<int:project_id>/status")
 @login_required
 def applicant_project_status(project_id):

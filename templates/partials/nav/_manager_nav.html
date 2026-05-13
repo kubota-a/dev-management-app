@@ -1,3 +1,3 @@
-<a href="/top/manager" class="app-nav-link{% if active_menu == 'manager_dashboard' %} is-active{% endif %}">ダッシュボード</a>
-<a href="#" class="app-nav-link{% if active_menu == 'manager_review' %} is-active{% endif %}">承認審査</a>
-<a href="#" class="app-nav-link{% if active_menu == 'manager_monitoring' %} is-active{% endif %}">案件モニタリング</a>
+<a href="{{ url_for('manager_top') }}" class="app-nav-link{% if active_menu == 'manager_dashboard' %} is-active{% endif %}">ダッシュボード</a>
+<a href="{{ url_for('manager_project_review_entry') }}" class="app-nav-link{% if active_menu == 'manager_review' %} is-active{% endif %}">承認審査</a>
+<a href="{{ url_for('manager_project_monitoring') }}" class="app-nav-link{% if active_menu == 'manager_monitoring' %} is-active{% endif %}">案件モニタリング</a>

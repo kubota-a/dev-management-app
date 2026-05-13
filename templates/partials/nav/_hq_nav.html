@@ -1,2 +1,2 @@
-<a href="/top/hq" class="app-nav-link{% if active_menu == 'hq_dashboard' %} is-active{% endif %}">ダッシュボード</a>
-<a href="#" class="app-nav-link{% if active_menu == 'hq_final_review' %} is-active{% endif %}">最終承認審査</a>
+<a href="{{ url_for('hq_top') }}" class="app-nav-link{% if active_menu == 'hq_dashboard' %} is-active{% endif %}">ダッシュボード</a>
+<a href="{{ url_for('hq_project_final_review_entry') }}" class="app-nav-link{% if active_menu == 'hq_final_review' %} is-active{% endif %}">最終承認審査</a>
