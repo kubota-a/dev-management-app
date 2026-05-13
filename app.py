@@ -1125,6 +1125,30 @@ def applicant_project_drafts_delete(draft_id):
 # =============================
 # ■ 申請者：申請状況確認・管理画面
 # =============================
+@app.route("/applicant/projects/status")
+@login_required
+def applicant_project_status_index():
+    access_error = require_applicant()
+    if access_error:
+        return access_error
+
+    target_statuses = ("department_pending", "hq_pending", "rejected")
+    latest_project = (
+        Project.query.filter(
+            Project.applicant_id == current_user.id,
+            Project.status.in_(target_statuses),
+        )
+        .order_by(Project.created_at.desc(), Project.id.desc())
+        .first()
+    )
+
+    if latest_project is None:
+        flash("確認できる申請中・却下案件はありません。", "notice")
+        return redirect(url_for("applicant_top"))
+
+    return redirect(url_for("applicant_project_status", project_id=latest_project.id))
+
+
 @app.route("/applicant/projects/<int:project_id>/status")
 @login_required
 def applicant_project_status(project_id):
