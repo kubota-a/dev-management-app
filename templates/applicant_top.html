@@ -39,11 +39,16 @@
 .mock-applicant-dashboard .mock-applicant-dashboard-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-areas:
+    "approval side"
+    "projects side";
   gap: 24px;
   align-items: start;
 }
-.mock-applicant-dashboard .mock-applicant-dashboard-main { min-width: 0; }
+.mock-applicant-dashboard .mock-applicant-dashboard-approval { grid-area: approval; min-width: 0; }
+.mock-applicant-dashboard .mock-applicant-dashboard-projects { grid-area: projects; min-width: 0; }
 .mock-applicant-dashboard .mock-applicant-dashboard-side { min-width: 0; }
+.mock-applicant-dashboard .mock-applicant-dashboard-side { grid-area: side; }
 
 .mock-applicant-dashboard .sec-head { display: flex; align-items: center; margin-bottom: 14px; }
 .mock-applicant-dashboard .sec-title { font-size: 15px; font-weight: 700; color: var(--appdash-text); display: flex; align-items: center; gap: 8px; }
@@ -242,7 +247,17 @@
 .mock-applicant-dashboard .side-task-due-normal { color: #7a8790; }
 
 @media (max-width: 900px) {
-  .mock-applicant-dashboard .mock-applicant-dashboard-layout { grid-template-columns: 1fr; }
+  .mock-applicant-dashboard .mock-applicant-dashboard-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "approval"
+      "side"
+      "projects";
+    row-gap: 12px;
+  }
+  .mock-applicant-dashboard .approval-list {
+    margin-bottom: 0;
+  }
   .mock-applicant-dashboard .project-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 899px) {
@@ -308,7 +323,7 @@
 <div class="mock-applicant-dashboard">
   <div class="mock-applicant-dashboard-content">
     <div class="mock-applicant-dashboard-layout">
-      <div class="mock-applicant-dashboard-main">
+      <section class="mock-applicant-dashboard-approval">
         <div class="sec-head">
           <div class="sec-title">申請中案件の承認ステータス</div>
         </div>
@@ -410,71 +425,8 @@
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="sec-head">
-          <div class="sec-title">開発管理中の案件</div>
-        </div>
-        <div class="project-grid">
-          <div class="proj-card normal">
-            <div class="pc-header">
-              <div class="pc-name">クラウド移行PJ</div>
-            </div>
-            <div class="pc-body">
-              <div class="pc-meta">
-                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
-                <div class="pc-meta-item">期限：<strong>2025/09/30</strong></div>
-              </div>
-              <div class="pc-gauge-label"><span>全体進捗</span><strong>58%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:58%"></div></div>
-              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-success)">62%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-budget-ok" style="width:62%"></div></div>
-            </div>
-            <div class="pc-footer">
-              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
-            </div>
-          </div>
-
-          <div class="proj-card delayed">
-            <div class="pc-header">
-              <div class="pc-name">顧客管理システム刷新</div>
-              <div class="pc-delayed-badge">遅延注意</div>
-            </div>
-            <div class="pc-body">
-              <div class="pc-meta">
-                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
-                <div class="pc-meta-item">期限：<strong>2025/06/30</strong></div>
-              </div>
-              <div class="pc-gauge-label"><span>全体進捗</span><strong style="color:var(--appdash-danger)">44%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:44%"></div></div>
-              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-warning)">88%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-budget-warn" style="width:88%"></div></div>
-            </div>
-            <div class="pc-footer">
-              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
-            </div>
-          </div>
-
-          <div class="proj-card warning">
-            <div class="pc-header">
-              <div class="pc-name">API Gateway整備</div>
-              <div class="pc-warning-badge">予算注意</div>
-            </div>
-            <div class="pc-body">
-              <div class="pc-meta">
-                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
-                <div class="pc-meta-item">期限：<strong>2025/08/15</strong></div>
-              </div>
-              <div class="pc-gauge-label"><span>全体進捗</span><strong>72%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:72%"></div></div>
-              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-danger)">103%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-budget-over" style="width:100%"></div></div>
-            </div>
-            <div class="pc-footer">
-              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
-            </div>
-          </div>
-        </div>
-      </div>
       <aside class="mock-applicant-dashboard-side">
         <section class="side-card side-card-delayed">
           <div class="side-card-head side-card-accordion-head" onclick="toggleApplicantDashboardSideAccordion(this)">
@@ -560,6 +512,72 @@
           </div>
         </section>
       </aside>
+
+      <section class="mock-applicant-dashboard-projects">
+        <div class="sec-head">
+          <div class="sec-title">開発管理中の案件</div>
+        </div>
+        <div class="project-grid">
+          <div class="proj-card normal">
+            <div class="pc-header">
+              <div class="pc-name">クラウド移行PJ</div>
+            </div>
+            <div class="pc-body">
+              <div class="pc-meta">
+                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
+                <div class="pc-meta-item">期限：<strong>2025/09/30</strong></div>
+              </div>
+              <div class="pc-gauge-label"><span>全体進捗</span><strong>58%</strong></div>
+              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:58%"></div></div>
+              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-success)">62%</strong></div>
+              <div class="gauge-track"><div class="gauge-fill gf-budget-ok" style="width:62%"></div></div>
+            </div>
+            <div class="pc-footer">
+              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
+            </div>
+          </div>
+
+          <div class="proj-card delayed">
+            <div class="pc-header">
+              <div class="pc-name">顧客管理システム刷新</div>
+              <div class="pc-delayed-badge">遅延注意</div>
+            </div>
+            <div class="pc-body">
+              <div class="pc-meta">
+                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
+                <div class="pc-meta-item">期限：<strong>2025/06/30</strong></div>
+              </div>
+              <div class="pc-gauge-label"><span>全体進捗</span><strong style="color:var(--appdash-danger)">44%</strong></div>
+              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:44%"></div></div>
+              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-warning)">88%</strong></div>
+              <div class="gauge-track"><div class="gauge-fill gf-budget-warn" style="width:88%"></div></div>
+            </div>
+            <div class="pc-footer">
+              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
+            </div>
+          </div>
+
+          <div class="proj-card warning">
+            <div class="pc-header">
+              <div class="pc-name">API Gateway整備</div>
+              <div class="pc-warning-badge">予算注意</div>
+            </div>
+            <div class="pc-body">
+              <div class="pc-meta">
+                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
+                <div class="pc-meta-item">期限：<strong>2025/08/15</strong></div>
+              </div>
+              <div class="pc-gauge-label"><span>全体進捗</span><strong>72%</strong></div>
+              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:72%"></div></div>
+              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-danger)">103%</strong></div>
+              <div class="gauge-track"><div class="gauge-fill gf-budget-over" style="width:100%"></div></div>
+            </div>
+            <div class="pc-footer">
+              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </div>
