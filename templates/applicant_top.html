@@ -312,6 +312,23 @@
   .mock-applicant-dashboard .project-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 899px) {
+  .mock-applicant-dashboard .ac-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .mock-applicant-dashboard .ac-top-left {
+    display: contents;
+  }
+  .mock-applicant-dashboard .ac-name {
+    order: 1;
+  }
+  .mock-applicant-dashboard .ac-submitted-date {
+    order: 2;
+  }
+  .mock-applicant-dashboard .ac-department {
+    order: 3;
+  }
   .mock-applicant-dashboard .ac-main {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -418,9 +435,9 @@
                 <div class="ac-top">
                   <div class="ac-top-left">
                     <div class="ac-name">{{ item.get("project_name", "") }}</div>
-                    <div class="ac-date">{{ item.get("department_name", "未設定") }}</div>
+                    <div class="ac-date ac-department">{{ item.get("department_name", "未設定") }}</div>
                   </div>
-                  <div class="ac-date">申請日：{{ item.get("submitted_date_display", "") }}</div>
+                  <div class="ac-date ac-submitted-date">申請日：{{ item.get("submitted_date_display", "") }}</div>
                 </div>
                 <div class="ac-main">
                   <div class="ac-steps">
