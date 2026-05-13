@@ -64,6 +64,7 @@
 .mock-applicant-dashboard .approval-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(26, 117, 133, .14); }
 .mock-applicant-dashboard .approval-card.rejected { border-left: 4px solid var(--appdash-danger); background: var(--appdash-danger-bg); }
 .mock-applicant-dashboard .ac-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.mock-applicant-dashboard .ac-top-left { min-width: 0; }
 .mock-applicant-dashboard .ac-name { font-size: 14px; font-weight: 700; }
 .mock-applicant-dashboard .ac-date { font-size: 12px; color: var(--appdash-muted); }
 .mock-applicant-dashboard .ac-main {
@@ -115,6 +116,13 @@
 .mock-applicant-dashboard .ac-reject-msg { font-size: 13px; color: var(--appdash-danger); font-weight: 600; }
 .mock-applicant-dashboard .ac-reapply-btn { background: var(--appdash-danger); color: #fff; border: none; padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .mock-applicant-dashboard .ac-reapply-text-mobile { display: none; }
+.mock-applicant-dashboard .ac-detail-btn,
+.mock-applicant-dashboard .ac-reapply-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .mock-applicant-dashboard .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 28px; }
 .mock-applicant-dashboard .proj-card {
@@ -129,9 +137,11 @@
 .mock-applicant-dashboard .pc-header { padding: 14px 16px 10px; display: flex; justify-content: space-between; align-items: flex-start; }
 .mock-applicant-dashboard .pc-name { font-size: 14px; font-weight: 700; line-height: 1.4; flex: 1; }
 .mock-applicant-dashboard .pc-delayed-badge,
-.mock-applicant-dashboard .pc-warning-badge { color: #fff; font-size: 10px; font-weight: 800; padding: 2px 9px; border-radius: 10px; white-space: nowrap; margin-left: 8px; }
+.mock-applicant-dashboard .pc-warning-badge,
+.mock-applicant-dashboard .pc-budget-over-badge { color: #fff; font-size: 10px; font-weight: 800; padding: 2px 9px; border-radius: 10px; white-space: nowrap; margin-left: 8px; }
 .mock-applicant-dashboard .pc-delayed-badge { background: var(--appdash-danger); }
 .mock-applicant-dashboard .pc-warning-badge { background: var(--appdash-warning); }
+.mock-applicant-dashboard .pc-budget-over-badge { background: var(--appdash-danger); }
 .mock-applicant-dashboard .pc-body { padding: 0 16px 14px; }
 .mock-applicant-dashboard .pc-meta { display: flex; gap: 14px; margin-bottom: 12px; }
 .mock-applicant-dashboard .pc-meta-item { font-size: 12px; color: var(--appdash-muted); }
@@ -154,6 +164,12 @@
   transition: background .15s;
 }
 .mock-applicant-dashboard .pc-update-btn:hover { background: var(--appdash-header-dark); }
+.mock-applicant-dashboard .pc-update-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .mock-applicant-dashboard .side-card {
   background: #fff;
@@ -181,6 +197,9 @@
 }
 .mock-applicant-dashboard .side-card-count { font-size: 12px; font-weight: 700; }
 .mock-applicant-dashboard .side-card-count-danger { color: var(--appdash-danger); }
+.mock-applicant-dashboard .side-card-count-warning { color: #f97316; }
+.mock-applicant-dashboard .side-card-count-muted { color: #7a8790; }
+.mock-applicant-dashboard .side-card-count-normal { color: var(--appdash-header); }
 .mock-applicant-dashboard .side-card-head-right {
   display: flex;
   align-items: center;
@@ -202,9 +221,32 @@
   border-bottom: 1px solid #e9eff1;
   cursor: pointer;
   transition: background .15s;
+  text-decoration: none;
+  color: inherit;
 }
 .mock-applicant-dashboard .side-task-item:hover { background: #f7fbfc; }
 .mock-applicant-dashboard .side-task-item:last-child { border-bottom: none; }
+.mock-applicant-dashboard .empty-card {
+  background: #fff;
+  border: 1px solid var(--appdash-border);
+  border-radius: var(--appdash-radius);
+  box-shadow: var(--appdash-shadow);
+  padding: 16px 20px;
+}
+.mock-applicant-dashboard .empty-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--appdash-text);
+}
+.mock-applicant-dashboard .empty-card-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--appdash-muted);
+  line-height: 1.5;
+}
+.mock-applicant-dashboard .project-empty-card {
+  grid-column: 1 / -1;
+}
 .mock-applicant-dashboard .side-task-main { flex: 1; min-width: 0; }
 .mock-applicant-dashboard .side-task-name {
   font-size: 12px;
@@ -321,14 +363,47 @@
   font-weight: 700;
   cursor: pointer;
   font-family: var(--font-family-base);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .applicant-dashboard-footer-new-btn:hover {
   background: #155f6d;
+}
+.applicant-top-local-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%) translateY(8px);
+  background: rgba(28, 43, 48, .94);
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 1200;
+}
+.applicant-top-local-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 </style>
 {% endblock %}
 
 {% block content %}
+{% set vd = view_data|default({}) %}
+{% set approval_projects = vd.get("approval_projects", []) %}
+{% set in_progress_projects = vd.get("in_progress_projects", []) %}
+{% set attention_tasks = vd.get("attention_tasks", {}) %}
+{% set delayed_tasks = attention_tasks.get("delayed", {}) %}
+{% set due_soon_tasks = attention_tasks.get("due_soon", {}) %}
+{% set delayed_task_items = delayed_tasks.get("items", []) %}
+{% set due_soon_task_items = due_soon_tasks.get("items", []) %}
 <div class="mock-applicant-dashboard">
   <div class="mock-applicant-dashboard-content">
     <div class="mock-applicant-dashboard-layout">
@@ -337,192 +412,99 @@
           <div class="sec-title">申請中案件の承認ステータス</div>
         </div>
         <div class="approval-list">
-          <div class="approval-card">
-            <div class="ac-top">
-              <div class="ac-name">基幹システム刷新PJ</div>
-              <div class="ac-date">申請日：2025/05/13</div>
-            </div>
-            <div class="ac-main">
-              <div class="ac-steps">
-                <div class="step-bar">
-                  <div class="step done">
-                    <div class="step-circle">✓</div>
-                    <div class="step-label">申請済</div>
+          {% if approval_projects %}
+            {% for item in approval_projects %}
+              <div class="approval-card{% if item.get('is_rejected') %} rejected{% endif %}">
+                <div class="ac-top">
+                  <div class="ac-top-left">
+                    <div class="ac-name">{{ item.get("project_name", "") }}</div>
+                    <div class="ac-date">{{ item.get("department_name", "未設定") }}</div>
                   </div>
-                  <div class="step current">
-                    <div class="step-circle">⋯</div>
-                    <div class="step-label">部門承認待ち</div>
-                  </div>
-                  <div class="step">
-                    <div class="step-circle">3</div>
-                    <div class="step-label">本部承認待ち</div>
-                  </div>
-                  <div class="step">
-                    <div class="step-circle">4</div>
-                    <div class="step-label">開発管理へ</div>
-                  </div>
+                  <div class="ac-date">申請日：{{ item.get("submitted_date_display", "") }}</div>
                 </div>
-              </div>
-              <button type="button" class="ac-detail-btn" onclick="alert('案件詳細画面へ')">詳細</button>
-            </div>
-          </div>
-
-          <div class="approval-card">
-            <div class="ac-top">
-              <div class="ac-name">BI分析基盤整備</div>
-              <div class="ac-date">申請日：2025/05/08</div>
-            </div>
-            <div class="ac-main">
-              <div class="ac-steps">
-                <div class="step-bar">
-                  <div class="step done">
-                    <div class="step-circle">✓</div>
-                    <div class="step-label">申請済</div>
+                <div class="ac-main">
+                  <div class="ac-steps">
+                    <div class="step-bar">
+                      {% for step in item.get("steps", []) %}
+                        <div class="step{% if step.get('class_name') %} {{ step.get('class_name') }}{% endif %}">
+                          <div class="step-circle">{{ step.get("icon", "") }}</div>
+                          <div class="step-label">{{ step.get("label", "") }}</div>
+                        </div>
+                      {% endfor %}
+                    </div>
                   </div>
-                  <div class="step done">
-                    <div class="step-circle">✓</div>
-                    <div class="step-label">部門承認済</div>
-                  </div>
-                  <div class="step current">
-                    <div class="step-circle">⋯</div>
-                    <div class="step-label">本部承認待ち</div>
-                  </div>
-                  <div class="step">
-                    <div class="step-circle">4</div>
-                    <div class="step-label">開発管理へ</div>
-                  </div>
+                  <a class="ac-detail-btn" href="{{ url_for('applicant_project_status', project_id=item.get('project_id')) }}">詳細</a>
                 </div>
+                {% if item.get("is_rejected") %}
+                  <div class="ac-reject-action">
+                    <div class="ac-reject-msg">{{ item.get("reject_message", "申請は却下されました。") }}</div>
+                    <button type="button" class="ac-reapply-btn" onclick="showApplicantTopToast()">
+                      <span class="ac-reapply-text-pc">修正・再申請 →</span>
+                      <span class="ac-reapply-text-mobile">修正 →</span>
+                    </button>
+                  </div>
+                {% endif %}
               </div>
-              <button type="button" class="ac-detail-btn" onclick="alert('案件詳細画面へ')">詳細</button>
+            {% endfor %}
+          {% else %}
+            <div class="empty-card">
+              <div class="empty-card-title">申請中の案件はありません</div>
+              <div class="empty-card-text">新しい案件を申請すると、ここに承認ステータスが表示されます。</div>
             </div>
-          </div>
-
-          <div class="approval-card rejected">
-            <div class="ac-top">
-              <div class="ac-name">データ連携基盤構築</div>
-              <div class="ac-date">申請日：2025/05/10</div>
-            </div>
-            <div class="ac-main">
-              <div class="ac-steps">
-                <div class="step-bar">
-                  <div class="step done">
-                    <div class="step-circle">✓</div>
-                    <div class="step-label">申請済</div>
-                  </div>
-                  <div class="step rejected">
-                    <div class="step-circle">✕</div>
-                    <div class="step-label">部門却下</div>
-                  </div>
-                  <div class="step">
-                    <div class="step-circle">3</div>
-                    <div class="step-label">本部承認待ち</div>
-                  </div>
-                  <div class="step">
-                    <div class="step-circle">4</div>
-                    <div class="step-label">開発管理へ</div>
-                  </div>
-                </div>
-              </div>
-              <button type="button" class="ac-detail-btn" onclick="alert('案件詳細画面へ')">詳細</button>
-            </div>
-            <div class="ac-reject-action">
-              <div class="ac-reject-msg">部門管理者より却下されました。</div>
-              <button class="ac-reapply-btn" onclick="alert('修正・再申請画面へ')">
-                <span class="ac-reapply-text-pc">修正・再申請 →</span>
-                <span class="ac-reapply-text-mobile">修正 →</span>
-              </button>
-            </div>
-          </div>
+          {% endif %}
         </div>
       </section>
 
       <aside class="mock-applicant-dashboard-side">
         <section class="side-card side-card-delayed">
-          <div class="side-card-head side-card-accordion-head" onclick="toggleApplicantDashboardSideAccordion(this)">
+          <div class="side-card-head side-card-accordion-head" onclick="toggleApplicantDashboardSideAccordion(this)" aria-expanded="false">
             <h3 class="side-card-title">
               <span>遅延タスク</span>
-              <span class="side-card-count side-card-count-danger">2件</span>
+              <span class="side-card-count {{ delayed_tasks.get('count_class', 'side-card-count-normal') }}">{{ delayed_tasks.get("count_label", "なし") }}</span>
             </h3>
             <div class="side-card-head-right">
               <span class="side-card-accordion-arrow">▼</span>
             </div>
           </div>
-          {# 将来は遅延タスク一覧をDBから取得し、件数に応じて行数を変える想定 #}
           <div class="side-task-list side-card-accordion-body">
-            <div class="side-task-item" role="button" tabindex="0" onclick="alert('タスク詳細画面へ')">
-              <div class="side-task-main">
-                <div class="side-task-name">DBスキーマ設計レビュー</div>
-                <div class="side-task-project">顧客管理システム刷新</div>
-              </div>
-              <div class="side-task-status">
-                <div class="side-task-delay">+5</div>
-                <div class="side-task-progress">進捗<br>48%</div>
-              </div>
-            </div>
-            <div class="side-task-item" role="button" tabindex="0" onclick="alert('タスク詳細画面へ')">
-              <div class="side-task-main">
-                <div class="side-task-name">テスト環境構築</div>
-                <div class="side-task-project">顧客管理システム刷新</div>
-              </div>
-              <div class="side-task-status">
-                <div class="side-task-delay">+3</div>
-                <div class="side-task-progress">進捗<br>62%</div>
-              </div>
-            </div>
+            {% for task in delayed_task_items %}
+              <a class="side-task-item" href="{{ url_for('applicant_project_progress_detail', project_id=task.get('project_id')) }}" data-task-kind="delayed">
+                <div class="side-task-main">
+                  <div class="side-task-name">{{ task.get("task_name", "") }}</div>
+                  <div class="side-task-project">{{ task.get("project_name", "") }}</div>
+                </div>
+                <div class="side-task-status">
+                  <div class="side-task-delay">{{ task.get("due_label", "") }}</div>
+                  <div class="side-task-progress">進捗<br>{{ task.get("progress_rate_label", "0%") }}</div>
+                </div>
+              </a>
+            {% endfor %}
           </div>
         </section>
 
         <section class="side-card side-card-priority">
-          <div class="side-card-head side-card-accordion-head" onclick="toggleApplicantDashboardSideAccordion(this)">
+          <div class="side-card-head side-card-accordion-head" onclick="toggleApplicantDashboardSideAccordion(this)" aria-expanded="false">
             <h3 class="side-card-title">
               <span>3日以内が期限のタスク</span>
-              <span class="side-card-count">4件</span>
+              <span class="side-card-count {{ due_soon_tasks.get('count_class', 'side-card-count-normal') }}">{{ due_soon_tasks.get("count_label", "なし") }}</span>
             </h3>
             <div class="side-card-head-right">
               <span class="side-card-accordion-arrow">▼</span>
             </div>
           </div>
           <div class="side-task-list side-card-accordion-body">
-            <div class="side-task-item" role="button" tabindex="0" onclick="alert('タスク詳細画面へ')">
-              <div class="side-task-main">
-                <div class="side-task-name">API仕様書の最終確認</div>
-                <div class="side-task-project">API Gateway整備</div>
-              </div>
-              <div class="side-task-status">
-                <div class="side-task-due side-task-due-today">今日</div>
-                <div class="side-task-progress">進捗<br>62%</div>
-              </div>
-            </div>
-            <div class="side-task-item" role="button" tabindex="0" onclick="alert('タスク詳細画面へ')">
-              <div class="side-task-main">
-                <div class="side-task-name">マイグレーションスクリプト 速度改善</div>
-                <div class="side-task-project">クラウド移行PJ</div>
-              </div>
-              <div class="side-task-status">
-                <div class="side-task-due side-task-due-soon">明日</div>
-                <div class="side-task-progress">進捗<br>62%</div>
-              </div>
-            </div>
-            <div class="side-task-item" role="button" tabindex="0" onclick="alert('タスク詳細画面へ')">
-              <div class="side-task-main">
-                <div class="side-task-name">ステージング環境 動作検証</div>
-                <div class="side-task-project">API Gateway整備</div>
-              </div>
-              <div class="side-task-status">
-                <div class="side-task-due side-task-due-soon">5/15</div>
-                <div class="side-task-progress">進捗<br>62%</div>
-              </div>
-            </div>
-            <div class="side-task-item" role="button" tabindex="0" onclick="alert('タスク詳細画面へ')">
-              <div class="side-task-main">
-                <div class="side-task-name">CI/CDパイプライン構築</div>
-                <div class="side-task-project">顧客管理システム刷新</div>
-              </div>
-              <div class="side-task-status">
-                <div class="side-task-due side-task-due-normal">5/15</div>
-                <div class="side-task-progress">進捗<br>62%</div>
-              </div>
-            </div>
+            {% for task in due_soon_task_items %}
+              <a class="side-task-item" href="{{ url_for('applicant_project_progress_detail', project_id=task.get('project_id')) }}" data-task-kind="{{ task.get('due_kind', 'due_later') }}">
+                <div class="side-task-main">
+                  <div class="side-task-name">{{ task.get("task_name", "") }}</div>
+                  <div class="side-task-project">{{ task.get("project_name", "") }}</div>
+                </div>
+                <div class="side-task-status">
+                  <div class="side-task-due {{ task.get('due_class', 'side-task-due-normal') }}">{{ task.get("due_label", "") }}</div>
+                  <div class="side-task-progress">進捗<br>{{ task.get("progress_rate_label", "0%") }}</div>
+                </div>
+              </a>
+            {% endfor %}
           </div>
         </section>
       </aside>
@@ -532,76 +514,52 @@
           <div class="sec-title">開発管理中の案件</div>
         </div>
         <div class="project-grid">
-          <div class="proj-card normal">
-            <div class="pc-header">
-              <div class="pc-name">クラウド移行PJ</div>
-            </div>
-            <div class="pc-body">
-              <div class="pc-meta">
-                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
-                <div class="pc-meta-item">期限：<strong>2025/09/30</strong></div>
+          {% if in_progress_projects %}
+            {% for item in in_progress_projects %}
+              <div class="proj-card {{ item.get('card_class', 'normal') }}">
+                <div class="pc-header">
+                  <div class="pc-name">{{ item.get("project_name", "") }}</div>
+                  {% if item.get("has_delay") %}
+                    <div class="pc-delayed-badge">遅延</div>
+                  {% endif %}
+                  {% if item.get("budget_label") %}
+                    <div class="{{ item.get('budget_label_class', 'pc-warning-badge') }}">{{ item.get("budget_label", "") }}</div>
+                  {% endif %}
+                </div>
+                <div class="pc-body">
+                  <div class="pc-meta">
+                    <div class="pc-meta-item">部門：<strong>{{ item.get("department_name", "") }}</strong></div>
+                    <div class="pc-meta-item">完了予定：<strong>{{ item.get("planned_end_display", "") }}</strong></div>
+                  </div>
+                  <div class="pc-gauge-label"><span>全体進捗</span><strong>{{ item.get("progress_pct", 0) }}%</strong></div>
+                  <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:{{ item.get('progress_gauge_width', 0) }}%"></div></div>
+                  <div class="pc-gauge-label"><span>予算消費率</span><strong>{{ item.get("budget_pct", 0) }}%</strong></div>
+                  <div class="gauge-track"><div class="gauge-fill {{ item.get('budget_gauge_class', 'gf-budget-ok') }}" style="width:{{ item.get('budget_gauge_width', 0) }}%"></div></div>
+                </div>
+                <div class="pc-footer">
+                  <a class="pc-update-btn" href="{{ url_for('applicant_project_progress_detail', project_id=item.get('project_id')) }}">クイック更新</a>
+                </div>
               </div>
-              <div class="pc-gauge-label"><span>全体進捗</span><strong>58%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:58%"></div></div>
-              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-success)">62%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-budget-ok" style="width:62%"></div></div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-card project-empty-card">
+              <div class="empty-card-title">開発管理中の案件はありません</div>
+              <div class="empty-card-text">承認された案件は、ここに進捗管理用のカードとして表示されます。</div>
             </div>
-            <div class="pc-footer">
-              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
-            </div>
-          </div>
-
-          <div class="proj-card delayed">
-            <div class="pc-header">
-              <div class="pc-name">顧客管理システム刷新</div>
-              <div class="pc-delayed-badge">遅延注意</div>
-            </div>
-            <div class="pc-body">
-              <div class="pc-meta">
-                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
-                <div class="pc-meta-item">期限：<strong>2025/06/30</strong></div>
-              </div>
-              <div class="pc-gauge-label"><span>全体進捗</span><strong style="color:var(--appdash-danger)">44%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:44%"></div></div>
-              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-warning)">88%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-budget-warn" style="width:88%"></div></div>
-            </div>
-            <div class="pc-footer">
-              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
-            </div>
-          </div>
-
-          <div class="proj-card warning">
-            <div class="pc-header">
-              <div class="pc-name">API Gateway整備</div>
-              <div class="pc-warning-badge">予算注意</div>
-            </div>
-            <div class="pc-body">
-              <div class="pc-meta">
-                <div class="pc-meta-item">部門：<strong>第一開発部</strong></div>
-                <div class="pc-meta-item">期限：<strong>2025/08/15</strong></div>
-              </div>
-              <div class="pc-gauge-label"><span>全体進捗</span><strong>72%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-progress" style="width:72%"></div></div>
-              <div class="pc-gauge-label"><span>予算消費率</span><strong style="color:var(--appdash-danger)">103%</strong></div>
-              <div class="gauge-track"><div class="gauge-fill gf-budget-over" style="width:100%"></div></div>
-            </div>
-            <div class="pc-footer">
-              <button class="pc-update-btn" onclick="alert('進捗更新・予算実績入力画面へ')">クイック更新</button>
-            </div>
-          </div>
+          {% endif %}
         </div>
       </section>
     </div>
   </div>
 </div>
+<div id="applicantTopLocalToast" class="applicant-top-local-toast" role="status" aria-live="polite">修正・再申請機能は現在未実装です。</div>
 {% endblock %}
 
 {% block content_footer %}
   {% set footer_info_text = "" %}
   {% set footer_info_value = "" %}
   {% set footer_actions %}
-    <button type="button" class="applicant-dashboard-footer-new-btn" onclick="alert('新規案件申請画面へ')">＋ 新規案件申請</button>
+    <a class="applicant-dashboard-footer-new-btn" href="{{ url_for('applicant_project_new') }}">＋ 新規案件申請</a>
   {% endset %}
   {% include "partials/_content_footer.html" %}
 {% endblock %}
@@ -621,10 +579,55 @@ function toggleApplicantDashboardSideAccordion(head) {
   }
 
   body.classList.toggle("open");
+  head.setAttribute("aria-expanded", body.classList.contains("open") ? "true" : "false");
 
   if (arrow) {
     arrow.classList.toggle("open", body.classList.contains("open"));
   }
+}
+
+function resetApplicantDashboardSideAccordions() {
+  const heads = document.querySelectorAll(".mock-applicant-dashboard .side-card-accordion-head");
+  heads.forEach(function (head) {
+    const body = head.nextElementSibling;
+    const arrow = head.querySelector(".side-card-accordion-arrow");
+
+    if (body && body.classList.contains("side-card-accordion-body")) {
+      body.classList.remove("open");
+    }
+    if (arrow) {
+      arrow.classList.remove("open");
+    }
+    head.setAttribute("aria-expanded", "false");
+  });
+}
+
+let applicantTopWasMobile = window.matchMedia("(max-width: 899px)").matches;
+document.addEventListener("DOMContentLoaded", function () {
+  resetApplicantDashboardSideAccordions();
+});
+
+window.addEventListener("resize", function () {
+  const isMobile = window.matchMedia("(max-width: 899px)").matches;
+  if (isMobile !== applicantTopWasMobile) {
+    resetApplicantDashboardSideAccordions();
+    applicantTopWasMobile = isMobile;
+  }
+});
+
+let applicantTopToastTimer = null;
+function showApplicantTopToast() {
+  const toast = document.getElementById("applicantTopLocalToast");
+  if (!toast) {
+    return;
+  }
+  toast.classList.add("show");
+  if (applicantTopToastTimer) {
+    clearTimeout(applicantTopToastTimer);
+  }
+  applicantTopToastTimer = window.setTimeout(function () {
+    toast.classList.remove("show");
+  }, 2500);
 }
 </script>
 {% endblock %}
