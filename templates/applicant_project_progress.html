@@ -505,6 +505,19 @@
       </div>
     </div>
   </div>
+  <div class="dialog-overlay" id="applicantProgressDialogOverlay">
+    <div class="dialog-box">
+      <div class="dlg-title" id="applicantProgressDlgTitle">変更内容の確認</div>
+      <div class="dlg-body" id="applicantProgressDlgBody">追加入力後の予算消費率が <strong id="applicantProgressDlgPct">—</strong> になります。<br>このまま更新・報告してよろしいですか？</div>
+      <div class="dlg-btns">
+        <button type="button" class="dlg-cancel" onclick="closeApplicantProgressDialog()">見直す</button>
+        <button type="button" class="dlg-ok" id="applicantProgressDlgOkBtn" onclick="confirmApplicantProgressSubmit()">このまま報告する</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="applicantProgressToast"></div>
+</form>
+<div class="mock-applicant-project-progress">
   <div class="task-modal-overlay" id="applicantTaskModalOverlay" aria-hidden="true">
     <section class="task-modal-box" role="dialog" aria-modal="true" aria-labelledby="applicantTaskModalTitle">
       <button type="button" class="task-modal-close" id="applicantTaskModalClose" aria-label="モーダルを閉じる">×</button>
@@ -551,16 +564,8 @@
       </div>
     </section>
   </div>
-  <div class="dialog-overlay" id="applicantProgressDialogOverlay">
-    <div class="dialog-box">
-      <div class="dlg-title" id="applicantProgressDlgTitle">変更内容の確認</div>
-      <div class="dlg-body" id="applicantProgressDlgBody">追加入力後の予算消費率が <strong id="applicantProgressDlgPct">—</strong> になります。<br>このまま更新・報告してよろしいですか？</div>
-      <div class="dlg-btns">
-        <button type="button" class="dlg-cancel" onclick="closeApplicantProgressDialog()">見直す</button>
-        <button type="button" class="dlg-ok" id="applicantProgressDlgOkBtn" onclick="confirmApplicantProgressSubmit()">このまま報告する</button>
-      </div>
-    </div>
-  </div>
+</div>
+<div class="mock-applicant-project-progress">
   <div class="dialog-overlay" id="applicantTaskDeleteDialogOverlay">
     <div class="dialog-box">
       <div class="dlg-title" id="applicantTaskDeleteDialogTitle">タスク削除の確認</div>
@@ -571,8 +576,7 @@
       </div>
     </div>
   </div>
-  <div class="toast" id="applicantProgressToast"></div>
-</form>
+</div>
 {% endblock %}
 
 {% block content_footer %}
@@ -931,7 +935,7 @@ function quoteApplicantProgressLastReport(){
   showApplicantProgressToast("前回の報告を引用しました");
 }
 function updateApplicantProgressCharCount(ta,markUnsaved){const c=getApplicantProgressEl("applicantProgressCharCount");if(!ta||!c)return;c.textContent=ta.value.length+" 文字";if(markUnsaved){const monthlyReportChanged=getApplicantProgressEl("monthlyReportChanged");if(monthlyReportChanged){monthlyReportChanged.value="1";}markApplicantProgressUnsaved("report");}}
-function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges()){return;}const monthlyChanged=getApplicantProgressEl("monthlyReportChanged");const reportText=getApplicantProgressEl("reportText");if(monthlyChanged&&monthlyChanged.value==="1"&&reportText&&reportText.value.trim()===""){showApplicantProgressToast("月次報告欄が空です。報告内容を入力するか、「変更を戻す」を押してください。");return;}const pct=getApplicantProgressBudgetPct();const allTasksDone=isApplicantProgressAllTasksDone();const dlgTitle=getApplicantProgressEl("applicantProgressDlgTitle");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay){return;}if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="更新する";}let title="";let message="";let useNormalButton=false;if(allTasksDone&&pct>=100){title="全タスク完了と予算超過の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が100%を超過しますが、このまま更新してよろしいですか？";}else if(allTasksDone&&pct>=80){title="全タスク完了と予算注意の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が80%を超過しますが、このまま更新してよろしいですか？";}else if(allTasksDone){title="全タスク完了の確認";message="全タスク完了済みとして更新しますか？部門管理者に完了確認の通知が送信されます。";useNormalButton=true;}else if(pct>=100){title="予算超過リスクの確認";message="予算を超過します。このまま更新してよろしいですか？";}else if(pct>=80){title="予算注意の確認";message="予算消費率が80%以上になります。このまま更新してよろしいですか？";}else{title="変更内容の確認";message="変更を更新してよろしいですか？";useNormalButton=true;}if(dlgTitle){dlgTitle.textContent=title;}if(dlgBody){dlgBody.textContent=message;}if(okBtn&&useNormalButton){okBtn.classList.add("is-normal-update");}overlay.classList.add("open");}
+function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges()){return;}const monthlyChanged=getApplicantProgressEl("monthlyReportChanged");const reportText=getApplicantProgressEl("reportText");if(monthlyChanged&&monthlyChanged.value==="1"&&reportText&&reportText.value.trim()===""){showApplicantProgressToast("月次報告欄が空です。報告内容を入力するか、「変更を戻す」を押してください。");return;}const pct=getApplicantProgressBudgetPct();const allTasksDone=isApplicantProgressAllTasksDone();const dlgTitle=getApplicantProgressEl("applicantProgressDlgTitle");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay){return;}if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="更新する";}let title="";let message="";let useNormalButton=false;if(allTasksDone&&pct>=100){title="全タスク完了と予算超過の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が100%以上になりますが、このまま更新してよろしいですか？";}else if(allTasksDone&&pct>=80){title="全タスク完了と予算注意の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が80%以上になりますが、このまま更新してよろしいですか？";}else if(allTasksDone){title="全タスク完了の確認";message="全タスク完了済みとして更新しますか？部門管理者に完了確認の通知が送信されます。";useNormalButton=true;}else if(pct>=100){title="予算超過リスクの確認";message="予算を超過します。このまま更新してよろしいですか？";}else if(pct>=80){title="予算注意の確認";message="予算消費率が80%以上になります。このまま更新してよろしいですか？";}else{title="変更内容の確認";message="変更を更新してよろしいですか？";useNormalButton=true;}if(dlgTitle){dlgTitle.textContent=title;}if(dlgBody){dlgBody.textContent=message;}if(okBtn&&useNormalButton){okBtn.classList.add("is-normal-update");}overlay.classList.add("open");}
 function closeApplicantProgressDialog(){const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(overlay)overlay.classList.remove("open");}
 function confirmApplicantProgressSubmit(){const form=getApplicantProgressEl("applicantProgressForm");const confirmed=getApplicantProgressEl("applicantProgressConfirmed");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");const updateBtn=getApplicantProgressEl("applicantProgressFooterUpdateBtn");const resetBtn=getApplicantProgressEl("applicantProgressFooterResetBtn");if(!form||!confirmed){showApplicantProgressToast("送信準備に失敗しました。画面を再読み込みしてください。");return;}confirmed.value="1";if(okBtn){okBtn.disabled=true;okBtn.textContent="送信中...";}if(updateBtn){updateBtn.disabled=true;}if(resetBtn){resetBtn.disabled=true;}form.submit();}
 function showApplicantProgressToast(msg){const t=getApplicantProgressEl("applicantProgressToast");if(!t)return;t.textContent=escapeApplicantProgressMockHtml(msg);t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
