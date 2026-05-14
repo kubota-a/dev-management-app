@@ -35,8 +35,23 @@ load_dotenv()
 app = Flask(__name__)
 
 # 基本設定
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    raise RuntimeError("SECRET_KEY is not set. Set SECRET_KEY in environment variables.")
+
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not set. Set DATABASE_URL in environment variables.")
+
+if database_url.startswith("postgres://"):
+    database_url = "postgresql://" + database_url[len("postgres://"):]
+
+if "sslmode=" not in database_url:
+    separator = "&" if "?" in database_url else "?"
+    database_url = f"{database_url}{separator}sslmode=require"
+
+app.config["SECRET_KEY"] = secret_key
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
