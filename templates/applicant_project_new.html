@@ -225,10 +225,10 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   padding: 7px 12px; border: 1px solid #4ba8b4; background: #68bcc7; color: #fff; border-radius: 8px; cursor: pointer;
 }
 .mock-project-new .toast {
-  position: fixed; right: 20px; bottom: 96px; z-index: 230; background: #20353a; color: #fff;
-  border-radius: 8px; padding: 10px 12px; font-size: 12px; opacity: 0; pointer-events: none;
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1c2b30; color: #fff;
+  padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 900; white-space: nowrap;
 }
-.mock-project-new .toast.show { opacity: 1; }
+.mock-project-new .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .project-new-footer-progress { margin-right: 10px; color: #6b8c94; font-size: 13px; }
 .project-new-footer-draft-save {
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #d8e8ec; background: #fff;
