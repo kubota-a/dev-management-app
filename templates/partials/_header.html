@@ -16,21 +16,16 @@
     <div class="app-header-right">
         <div class="header-notification" data-notification-root data-mark-visible-read-url="{{ url_for('mark_visible_notifications_read') }}" data-csrf-token="{{ csrf_token() }}">
             <button type="button" class="header-notification-button" data-notification-toggle aria-label="通知 {{ unread_notifications_count|int }} 件" aria-haspopup="true" aria-expanded="false" aria-controls="notificationDropdown">
-                {% if unread_notifications_count|int > 0 %}
                 <svg class="header-notification-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
                     <g transform="translate(4, 4)">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="#ffffff" stroke="#ffffff" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" />
                         <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" />
                     </g>
-                    <circle class="header-notification-badge" cx="26" cy="7" r="6" />
-                    <text x="26" y="11" text-anchor="middle" class="header-notification-badge-text">{{ unread_notifications_count if unread_notifications_count|int < 10 else "9+" }}</text>
+                    {% if unread_notifications_count|int > 0 %}
+                    <circle class="header-notification-badge" cx="26" cy="7" r="7.6" />
+                    <text x="26" y="6.55" text-anchor="middle" dominant-baseline="central" class="header-notification-badge-text">{{ unread_notifications_count if unread_notifications_count|int < 10 else "9+" }}</text>
+                    {% endif %}
                 </svg>
-                {% else %}
-                <svg class="header-notification-icon" viewBox="0 0 24 24" fill="#ffffff" stroke="#ffffff" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#ffffff" stroke-width="1.8" />
-                </svg>
-                {% endif %}
             </button>
             <div id="notificationDropdown" class="notification-dropdown" data-notification-dropdown aria-hidden="true">
                 <div class="notification-dropdown-head">

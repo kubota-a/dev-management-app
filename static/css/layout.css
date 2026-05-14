@@ -160,7 +160,7 @@
 }
 
 .app-header-right .header-notification-badge {
-    fill: var(--color-status-budget-alert);
+    fill: #ef1f1f;
     stroke: var(--color-header-bg);
     stroke-width: 2;
 }
@@ -168,7 +168,7 @@
 .app-header-right .header-notification-badge-text {
     fill: #ffffff;
     font-family: sans-serif;
-    font-size: 7.5px;
+    font-size: 9.4px;
     font-weight: 700;
 }
 
