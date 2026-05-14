@@ -67,8 +67,7 @@ csrf = CSRFProtect(app)
 
 # 未ログイン時に飛ばすログイン画面のURL
 login_manager.login_view = "login"
-login_manager.login_message = "このページを表示するにはログインしてください。"
-login_manager.login_message_category = "warning"
+login_manager.login_message = None
 
 
 @login_manager.user_loader
@@ -1304,7 +1303,6 @@ def applicant_project_status_index():
     )
 
     if latest_project is None:
-        flash("確認できる申請中・却下案件はありません。", "notice")
         return redirect(url_for("applicant_top"))
 
     return redirect(url_for("applicant_project_status", project_id=latest_project.id))
@@ -1331,7 +1329,6 @@ def applicant_project_status(project_id):
         flash("対象の案件が見つかりません。", "danger")
         return redirect(url_for("applicant_top"))
     if project.status not in target_statuses:
-        flash("この画面で確認できる申請状況はありません。", "danger")
         return redirect(url_for("applicant_top"))
 
     switch_projects = (
@@ -1889,7 +1886,6 @@ def applicant_project_progress_detail(project_id):
         flash("対象の案件が見つかりません。", "danger")
         return redirect(url_for("applicant_top"))
     if project.status != "in_progress" or project.approval_stage != "approved":
-        flash("この画面で更新できる開発中案件ではありません。", "danger")
         return redirect(url_for("applicant_top"))
 
     if request.method == "POST":
@@ -3151,7 +3147,6 @@ def manager_project_monitoring_detail(project_id: int):
         flash("完了済み案件は案件モニタリング画面では表示できません。", "danger")
         return redirect(url_for("manager_project_monitoring"))
     if project.status != "in_progress" or project.approval_stage != "approved":
-        flash("この画面で確認できる開発中案件ではありません。", "danger")
         return redirect(url_for("manager_project_monitoring"))
 
     if request.method == "POST":
