@@ -127,30 +127,174 @@
       });
     }
 
-    function markAllNotificationsAsRead(root) {
+    function escapeNotificationText(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function buildNotificationItemHtml(notification) {
+      return (
+        '<div class="notification-item is-unread" data-notification-item data-notification-id="' + notification.id + '">' +
+          '<span class="notification-dot" aria-hidden="true"></span>' +
+          '<div class="notification-body">' +
+            '<div class="notification-message"><strong>' + escapeNotificationText(notification.project_title) + "</strong></div>" +
+            '<div class="notification-message">' + escapeNotificationText(notification.message) + "</div>" +
+            '<div class="notification-time">' + escapeNotificationText(notification.created_at_label) + "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderNotificationDropdown(root, unreadCount, notifications) {
       var notificationUI = getNotificationElements(root);
-      if (!notificationUI.root) return;
+      if (!notificationUI.root || !notificationUI.dropdown) return;
+      var safeUnreadCount = Number(unreadCount) || 0;
+      var safeNotifications = Array.isArray(notifications) ? notifications : [];
+      var listContainer = notificationUI.dropdown.querySelector("[data-notification-list]");
+      var markButton = notificationUI.dropdown.querySelector("[data-notification-mark-all]");
 
-      notificationUI.root.querySelectorAll(".notification-item.is-unread").forEach(function (item) {
-        item.classList.remove("is-unread");
-        var dot = item.querySelector(".notification-dot");
-        if (dot) {
-          dot.classList.add("notification-dot-read");
+      if (safeUnreadCount > 0) {
+        if (notificationUI.title) {
+          notificationUI.title.textContent = "通知（" + safeUnreadCount + "件未読）";
         }
-      });
+        if (!markButton) {
+          var head = notificationUI.dropdown.querySelector(".notification-dropdown-head");
+          if (head) {
+            markButton = document.createElement("button");
+            markButton.type = "button";
+            markButton.className = "notification-mark-all";
+            markButton.setAttribute("data-notification-mark-all", "1");
+            markButton.textContent = "表示中を既読";
+            head.appendChild(markButton);
+          }
+        } else {
+          markButton.textContent = "表示中を既読";
+        }
+      } else {
+        if (notificationUI.title) {
+          notificationUI.title.textContent = "未読なし";
+        }
+        if (markButton && markButton.parentNode) {
+          markButton.parentNode.removeChild(markButton);
+        }
+      }
 
-      notificationUI.root.querySelectorAll(".header-notification-badge, .header-notification-badge-text").forEach(function (badge) {
-        badge.setAttribute("hidden", "hidden");
-        badge.style.display = "none";
-      });
+      if (!listContainer) {
+        listContainer = document.createElement("div");
+        listContainer.setAttribute("data-notification-list", "1");
+        notificationUI.dropdown.appendChild(listContainer);
+      }
 
-      if (notificationUI.title) {
-        notificationUI.title.textContent = "通知（全て既読）";
+      if (safeNotifications.length > 0) {
+        listContainer.innerHTML = safeNotifications.map(buildNotificationItemHtml).join("");
+        listContainer.hidden = false;
+      } else {
+        listContainer.innerHTML = "";
+        listContainer.hidden = true;
       }
 
       if (notificationUI.toggle) {
-        notificationUI.toggle.setAttribute("aria-label", "通知 0 件");
+        notificationUI.toggle.setAttribute("aria-label", "通知 " + safeUnreadCount + " 件");
       }
+
+      notificationUI.root.querySelectorAll(".header-notification-badge, .header-notification-badge-text").forEach(function (badge) {
+        if (safeUnreadCount > 0) {
+          badge.removeAttribute("hidden");
+          badge.style.display = "";
+          if (badge.classList.contains("header-notification-badge-text")) {
+            badge.textContent = safeUnreadCount < 10 ? String(safeUnreadCount) : "9+";
+          }
+        } else {
+          badge.setAttribute("hidden", "hidden");
+          badge.style.display = "none";
+        }
+      });
+    }
+
+    function markVisibleNotificationsAsRead(root) {
+      var notificationUI = getNotificationElements(root);
+      if (!notificationUI.root) return;
+
+      var markButton = notificationUI.root.querySelector("[data-notification-mark-all]");
+      var visibleIds = [];
+      notificationUI.root.querySelectorAll("[data-notification-item][data-notification-id]").forEach(function (item) {
+        var rawId = item.getAttribute("data-notification-id");
+        var parsedId = Number(rawId);
+        if (Number.isInteger(parsedId) && parsedId > 0) {
+          visibleIds.push(parsedId);
+        }
+      });
+
+      if (!visibleIds.length) {
+        return;
+      }
+
+      if (markButton) {
+        markButton.disabled = true;
+      }
+
+      var requestUrl = notificationUI.root.getAttribute("data-mark-visible-read-url");
+      var csrfToken = notificationUI.root.getAttribute("data-csrf-token");
+      fetch(requestUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken || ""
+        },
+        body: JSON.stringify({ notification_ids: visibleIds })
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            return { ok: response.ok, data: data };
+          });
+        })
+        .then(function (result) {
+          if (!result.ok || !result.data || !result.data.ok) {
+            throw new Error("mark_visible_read_failed");
+          }
+          renderNotificationDropdown(notificationUI.root, result.data.unread_count, result.data.notifications);
+        })
+        .catch(function () {
+          if (typeof window.showApplicantProgressToast === "function") {
+            window.showApplicantProgressToast("通知の既読処理に失敗しました。");
+          } else {
+            window.alert("通知の既読処理に失敗しました。");
+          }
+        })
+        .finally(function () {
+          if (markButton) {
+            markButton.disabled = false;
+          }
+        });
+    }
+
+    function bindInitialNotificationState() {
+      getNotificationRoots().forEach(function (root) {
+        var notificationUI = getNotificationElements(root);
+        if (!notificationUI.root) return;
+        var unreadText = notificationUI.toggle ? (notificationUI.toggle.getAttribute("aria-label") || "").match(/[0-9]+/) : null;
+        var unreadCount = unreadText ? Number(unreadText[0]) : 0;
+        var notifications = [];
+        notificationUI.root.querySelectorAll("[data-notification-item]").forEach(function (item) {
+          var rawId = item.getAttribute("data-notification-id");
+          var titleEl = item.querySelector(".notification-message strong");
+          var messageEls = item.querySelectorAll(".notification-message");
+          var timeEl = item.querySelector(".notification-time");
+          var messageText = messageEls.length > 1 ? messageEls[1].textContent : "";
+          notifications.push({
+            id: Number(rawId) || 0,
+            project_title: titleEl ? titleEl.textContent : "",
+            message: messageText || "",
+            created_at_label: timeEl ? timeEl.textContent : ""
+          });
+        });
+        renderNotificationDropdown(notificationUI.root, unreadCount, notifications);
+      });
     }
   
     var FLASH_CLASS_MAP = {
@@ -236,7 +380,7 @@
 
       if (notificationMarkAll) {
         var markAllRoot = notificationMarkAll.closest("[data-notification-root]");
-        markAllNotificationsAsRead(markAllRoot);
+        markVisibleNotificationsAsRead(markAllRoot);
         return;
       }
 
@@ -328,5 +472,6 @@
     bindLoginPasswordToggle();
     bindToastAutoHide();
     bindDrawerBreakpointReset();
+    bindInitialNotificationState();
   })();
   

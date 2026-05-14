@@ -141,7 +141,25 @@ def inject_global_toast_messages():
     if login_success_toast:
         messages.append({"category": "success", "message": login_success_toast})
 
-    return {"global_toast_messages": messages}
+    if not current_user.is_authenticated:
+        return {
+            "global_toast_messages": messages,
+            "unread_notifications_count": 0,
+            "header_notifications": [],
+        }
+
+    try:
+        unread_count = get_unread_notifications_count()
+        header_notifications = build_header_notifications()
+    except SQLAlchemyError:
+        unread_count = 0
+        header_notifications = []
+
+    return {
+        "global_toast_messages": messages,
+        "unread_notifications_count": unread_count,
+        "header_notifications": header_notifications,
+    }
 
 
 def require_applicant():
@@ -165,6 +183,86 @@ def require_hq():
     return None
 
 
+# =============================
+# ■ 共通：通知
+# =============================
+def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
+    db.session.add(
+        Notification(
+            user_id=user_id,
+            project_id=project_id,
+            type=notif_type,
+            message=message,
+            is_read=False,
+            created_at=utc_now(),
+        )
+    )
+
+
+def _parse_notification_ids_from_request() -> list[int]:
+    """既読化対象ID一覧を安全に抽出する。"""
+    payload = request.get_json(silent=True)
+    if isinstance(payload, dict):
+        raw_ids = payload.get("notification_ids", [])
+    else:
+        raw_ids = request.form.getlist("notification_ids")
+
+    if not isinstance(raw_ids, list):
+        return []
+
+    parsed_ids: list[int] = []
+    for raw_id in raw_ids:
+        try:
+            parsed_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if parsed_id > 0:
+            parsed_ids.append(parsed_id)
+    return list(dict.fromkeys(parsed_ids))
+
+
+@app.route("/notifications/mark-visible-read", methods=["POST"])
+@login_required
+def mark_visible_notifications_read():
+    """通知ドロップダウンで表示中の未読通知だけを既読化する。"""
+    if current_user.role not in {"applicant", "manager", "hq"}:
+        return jsonify({"ok": False, "message": "この操作を実行する権限がありません。"}), 403
+
+    notification_ids = _parse_notification_ids_from_request()
+    if not notification_ids:
+        return jsonify(
+            {
+                "ok": True,
+                "unread_count": get_unread_notifications_count(),
+                "notifications": build_header_notifications(),
+            }
+        )
+
+    try:
+        target_notifications = (
+            Notification.query.filter(
+                Notification.id.in_(notification_ids),
+                Notification.user_id == current_user.id,
+                Notification.is_read.is_(False),
+            )
+            .all()
+        )
+        for notification in target_notifications:
+            notification.is_read = True
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"ok": False, "message": "通知の既読処理に失敗しました。"}), 500
+
+    return jsonify(
+        {
+            "ok": True,
+            "unread_count": get_unread_notifications_count(),
+            "notifications": build_header_notifications(),
+        }
+    )
+
+
 def parse_date_value(value: str):
     """YYYY-MM-DD文字列をdateへ変換。空文字はNone。"""
     raw = (value or "").strip()
@@ -178,7 +276,58 @@ def parse_date_value(value: str):
 
 def get_unread_notifications_count() -> int:
     """ログインユーザーの未読通知件数。"""
+    if not current_user.is_authenticated:
+        return 0
     return Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+
+
+def format_notification_time_label(created_at: datetime | None) -> str:
+    """通知作成日時をJST基準の相対表記へ変換する。"""
+    if created_at is None:
+        return "たった今"
+
+    now_jst = datetime.now(ZoneInfo("Asia/Tokyo"))
+    created_at_jst = created_at.astimezone(ZoneInfo("Asia/Tokyo"))
+    diff_seconds = int((now_jst - created_at_jst).total_seconds())
+    if diff_seconds < 60:
+        return "たった今"
+
+    minutes = diff_seconds // 60
+    if minutes < 60:
+        return f"{minutes}分前"
+
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours}時間前"
+
+    days = hours // 24
+    return f"{days}日前"
+
+
+def build_header_notifications(limit: int = 5) -> list[dict]:
+    """ヘッダー通知ドロップダウン用の未読通知データを作成する。"""
+    if not current_user.is_authenticated:
+        return []
+
+    notifications = (
+        Notification.query.options(joinedload(Notification.project))
+        .filter(
+            Notification.user_id == current_user.id,
+            Notification.is_read.is_(False),
+        )
+        .order_by(Notification.created_at.desc(), Notification.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": notification.id,
+            "project_title": notification.project.title if notification.project else "案件名未設定",
+            "message": notification.message,
+            "created_at_label": format_notification_time_label(notification.created_at),
+        }
+        for notification in notifications
+    ]
 
 
 def format_jst_date(dt: datetime | None, pattern: str = "%Y/%m/%d") -> str:
@@ -1023,14 +1172,11 @@ def applicant_project_new():
                     User.is_active.is_(True),
                 ).all()
                 for manager in managers:
-                    db.session.add(
-                        Notification(
-                            user_id=manager.id,
-                            project_id=project.id,
-                            type="department_pending",
-                            message=f"新しい開発案件「{project.title}」が申請されました。内容を確認してください。",
-                            is_read=False,
-                        )
+                    create_notification(
+                        user_id=manager.id,
+                        project_id=project.id,
+                        notif_type="department_pending",
+                        message="新しい開発案件が申請されました。",
                     )
 
                 if draft_to_delete is not None:
@@ -1797,15 +1943,11 @@ def applicant_project_progress_detail(project_id):
                     User.is_active.is_(True),
                 ).all()
                 for manager in managers:
-                    db.session.add(
-                        Notification(
-                            user_id=manager.id,
-                            project_id=project.id,
-                            type="completed",
-                            message=f"「{project.title}」の全タスクが完了しました。案件完了の確認を行ってください。",
-                            is_read=False,
-                            created_at=utc_now(),
-                        )
+                    create_notification(
+                        user_id=manager.id,
+                        project_id=project.id,
+                        notif_type="completed",
+                        message="全タスクが完了しました。案件完了の確認を行ってください。",
                     )
             db.session.commit()
             flash("進捗情報を更新しました。", "success")
@@ -2262,19 +2404,6 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
 # =============================
 # ■ 部門管理者：承認審査画面
 # =============================
-def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
-    db.session.add(
-        Notification(
-            user_id=user_id,
-            project_id=project_id,
-            type=notif_type,
-            message=message,
-            is_read=False,
-            created_at=utc_now(),
-        )
-    )
-
-
 def _get_latest_submit_log(project: Project) -> ProjectStatusLog | None:
     submit_logs = [log for log in project.project_status_logs if log.action == "submit"]
     if not submit_logs:
@@ -2646,22 +2775,19 @@ def manager_project_review(project_id: int):
 
             hq_users = User.query.filter_by(role="hq", is_active=True).all()
             for user in hq_users:
-                if user.id == current_user.id:
-                    continue
                 create_notification(
                     user_id=user.id,
                     project_id=project.id,
                     notif_type="hq_pending",
-                    message=f"部門承認済み案件「{project.title}」が本部承認待ちになりました。",
+                    message="本部承認待ちの案件があります。",
                 )
 
-            if project.applicant_id != current_user.id:
-                create_notification(
-                    user_id=project.applicant_id,
-                    project_id=project.id,
-                    notif_type="hq_pending",
-                    message=f"申請した案件「{project.title}」が部門承認を通過しました。本部承認待ちです。",
-                )
+            create_notification(
+                user_id=project.applicant_id,
+                project_id=project.id,
+                notif_type="hq_pending",
+                message="部門承認され、本部承認待ちになりました。",
+            )
 
             db.session.commit()
             flash(f"「{project.title}」を承認し、本部管理者へ送付しました。", "success")
@@ -2688,7 +2814,7 @@ def manager_project_review(project_id: int):
                     user_id=project.applicant_id,
                     project_id=project.id,
                     notif_type="rejected",
-                    message=f"申請した案件「{project.title}」が部門審査で却下されました。理由を確認してください。",
+                    message="部門管理者に申請が却下されました。",
                 )
 
             db.session.commit()
@@ -3055,15 +3181,11 @@ def manager_project_monitoring_detail(project_id: int):
                 )
             )
 
-            db.session.add(
-                Notification(
-                    user_id=project.applicant_id,
-                    project_id=project.id,
-                    type="completed",
-                    message=f"担当案件「{project.title}」が部門管理者により完了認定されました。",
-                    is_read=False,
-                    created_at=now_utc,
-                )
+            create_notification(
+                user_id=project.applicant_id,
+                project_id=project.id,
+                notif_type="completed",
+                message="案件が完了認定されました。",
             )
             db.session.commit()
             flash(f"「{project.title}」を完了認定し、主担当者へ通知しました。", "success")
@@ -4078,7 +4200,7 @@ def hq_project_final_review(project_id: int):
                 user_id=project.applicant_id,
                 project_id=project.id,
                 notif_type="approved",
-                message=f"開発案件「{current_title}」が本部承認されました。開発管理フェーズへ進みます。",
+                message="申請が承認され、開発管理を開始できます。",
             )
             flash(f"「{current_title}」を最終承認し、予算を確定しました。", "success")
         else:
@@ -4104,7 +4226,7 @@ def hq_project_final_review(project_id: int):
                 user_id=project.applicant_id,
                 project_id=project.id,
                 notif_type="rejected",
-                message=f"開発案件「{current_title}」が本部で却下されました。却下理由を確認してください。",
+                message="本部管理者に申請が却下されました。",
             )
             flash(f"「{current_title}」を却下し、申請者へ通知しました。", "success")
 

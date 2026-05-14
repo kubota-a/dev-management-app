@@ -644,47 +644,8 @@ def create_budget_actual_logs(mode: str, projects_by_key: dict[str, Project]) ->
 
 
 def create_notifications(mode: str, users_by_key: dict[str, User], projects_by_key: dict[str, Project]) -> list[Notification]:
-    specs = [
-        ("tajiri", "proj_02", "hq_pending", "REQ-2026-00002 が本部承認待ちです。", False, "notif_recent_a"),
-        ("tajiri", "proj_06", "hq_pending", "REQ-2026-00006 が本部承認待ちです。", False, "notif_recent_b"),
-        ("yamamoto", "proj_01", "department_pending", "REQ-2026-00001 が部門承認待ちです。", False, "notif_mid_a"),
-        ("yamamoto", "proj_03", "approved", "REQ-2026-00003 が承認されました。", True, "notif_mid_b"),
-        ("nakamura", "proj_05", "department_pending", "REQ-2026-00005 が部門承認待ちです。", False, "notif_old_a"),
-        ("nakamura", "proj_07", "approved", "REQ-2026-00007 が承認されました。", True, "notif_mid_b"),
-        ("kobayashi", "proj_09", "department_pending", "REQ-2026-00009 が部門承認待ちです。", False, "notif_mid_a"),
-        ("kobayashi", "proj_10", "approved", "REQ-2026-00010 が承認されました。", True, "notif_old_a"),
-        ("sato", "proj_03", "approved", "REQ-2026-00003 が承認されました。", False, "notif_recent_b"),
-        ("sato", "proj_02", "hq_pending", "REQ-2026-00002 は本部承認待ちに進みました。", False, "notif_mid_a"),
-        ("watanabe", "proj_10", "approved", "REQ-2026-00010 が承認されました。", False, "notif_recent_a"),
-        ("watanabe", "proj_12", "rejected", "REQ-2026-00012 は却下されました。", False, "notif_recent_b"),
-        ("tanaka", "proj_04", "completed", "REQ-2026-00004 が完了しました。", True, "notif_mid_b"),
-        ("takahashi", "proj_08", "completed", "REQ-2026-00008 が完了しました。", True, "notif_old_a"),
-        ("suzuki", "proj_07", "approved", "REQ-2026-00007 が承認されました。", True, "notif_mid_a"),
-        ("ito", "proj_11", "approved", "REQ-2026-00011 が承認されました。", True, "notif_mid_b"),
-        ("ito", "proj_09", "application_received", "REQ-2026-00009 の申請を受け付けました。", False, "notif_old_a"),
-        ("tanaka", "proj_01", "application_received", "REQ-2026-00001 の申請を受け付けました。", True, "notif_old_a"),
-        ("sato", "proj_02", "application_received", "REQ-2026-00002 の申請を受け付けました。", True, "notif_mid_b"),
-        ("watanabe", "proj_10", "application_received", "REQ-2026-00010 の申請を受け付けました。", True, "notif_mid_a"),
-        ("watanabe", "proj_13", "application_received", "REQ-2026-00013 の申請を受け付けました。", False, "notif_recent_a"),
-        ("kobayashi", "proj_13", "department_pending", "REQ-2026-00013 が部門承認待ちです。", False, "notif_recent_a"),
-        ("watanabe", "proj_14", "approved", "REQ-2026-00014 が承認されました。", False, "notif_recent_b"),
-        ("watanabe", "proj_15", "completed", "REQ-2026-00015 が完了しました。", False, "notif_mid_a"),
-    ]
-
     rows: list[Notification] = []
-    for user_key, project_key, notif_type, message, is_read, date_role in specs:
-        row = Notification(
-            user_id=users_by_key[user_key].id,
-            project_id=projects_by_key[project_key].id,
-            type=notif_type,
-            message=message,
-            is_read=is_read,
-            created_at=resolve_notification_created_at(mode, date_role),
-        )
-        db.session.add(row)
-        rows.append(row)
-    db.session.flush()
-    print(f"notifications: {len(rows)}件作成")
+    print("notifications: 0件作成")
     return rows
 
 
@@ -911,7 +872,7 @@ def main() -> None:
         db.session.commit()
         print("seed完了")
         print("投入モード:", SEED_MODE)
-        print("投入件数: departments=3, department_yearly_budgets=3, users=10, project_drafts=5, projects=15, tasks=50, budget_actual_logs=32, notifications=24, project_status_logs=37")
+        print("投入件数: departments=3, department_yearly_budgets=3, users=10, project_drafts=5, projects=15, tasks=50, budget_actual_logs=32, notifications=0, project_status_logs=37")
 
 
 if __name__ == "__main__":
