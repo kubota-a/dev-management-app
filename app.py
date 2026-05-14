@@ -1412,8 +1412,8 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "prev_project_id": prev_project_id,
         "next_project_id": next_project_id,
         "footer_project_name": project.title,
-        "base_budget_amount": int(base_budget),
-        "current_actual_amount": int(current_actual),
+        "base_budget_amount": str(base_budget or Decimal("0")),
+        "current_actual_amount": str(current_actual or Decimal("0")),
     }
 
 
@@ -1473,6 +1473,7 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     payload: dict = {
         "budget_actual_amount": None,
         "monthly_report_comment": (form_data.get("monthly_report_comment") or "").strip(),
+        "monthly_report_changed": (form_data.get("monthly_report_changed") or "").strip() == "1",
         "task_updates": {},
     }
 
@@ -1721,18 +1722,22 @@ def applicant_project_progress_detail(project_id):
         return access_error
 
     progress_projects = get_applicant_progress_projects(current_user.id)
-    project = (
-        Project.query.options(
-            joinedload(Project.department),
-            joinedload(Project.tasks),
-            joinedload(Project.budget_actual_logs),
+    project = None
+    if request.method == "GET":
+        project = next((p for p in progress_projects if p.id == project_id), None)
+    else:
+        project = (
+            Project.query.options(
+                joinedload(Project.department),
+                joinedload(Project.tasks),
+                joinedload(Project.budget_actual_logs),
+            )
+            .filter(
+                Project.id == project_id,
+                Project.applicant_id == current_user.id,
+            )
+            .first()
         )
-        .filter(
-            Project.id == project_id,
-            Project.applicant_id == current_user.id,
-        )
-        .first()
-    )
 
     if project is None:
         flash("対象の案件が見つかりません。", "danger")
@@ -1761,7 +1766,7 @@ def applicant_project_progress_detail(project_id):
                 )
             )
 
-        if (project.monthly_report_comment or "") != payload["monthly_report_comment"]:
+        if payload["monthly_report_changed"]:
             changed = True
             project.monthly_report_comment = payload["monthly_report_comment"]
             project.monthly_report_updated_at = utc_now()
@@ -1776,6 +1781,7 @@ def applicant_project_progress_detail(project_id):
                 changed = True
                 task.status = update_data["status"]
                 task.progress_rate = int(update_data["progress_rate"])
+                task.updated_at = utc_now()
 
         if not changed:
             flash("更新する変更はありません。", "warning")
