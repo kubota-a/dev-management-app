@@ -11,6 +11,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
     <style>
+        .login-flash-area {
+            width: min(100% - 32px, 960px);
+            margin: 16px auto 16px;
+        }
+        .login-flash-area:empty {
+            display: none;
+        }
+        .login-flash-area .alert {
+            width: 100%;
+            margin: 0;
+        }
         .login-toast {
             position: fixed;
             bottom: 80px;
@@ -36,9 +47,11 @@
 </head>
 <body class="login-page">
     <main class="login-page-main">
+        <div class="login-flash-area">
+            {% include "partials/_flash.html" %}
+        </div>
         <h1 class="login-page-title">開発案件管理システム</h1>
         <section class="login-card" aria-label="ログインフォーム">
-            {% include "partials/_flash.html" %}
             <form class="login-form" action="{{ url_for('login') }}" method="post" novalidate>
                 {{ form.hidden_tag() }}
                 {% if inline_error %}
