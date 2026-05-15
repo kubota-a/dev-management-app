@@ -1221,7 +1221,7 @@ def applicant_project_new():
 def applicant_project_drafts_create():
     access_error = require_applicant()
     if access_error:
-        return jsonify({"ok": False, "message": "この画面を表示する権限がありません。"}), 403
+        return jsonify({"ok": False, "message": "下書きを保存する権限がありません。"}), 403
 
     payload = request.get_json(silent=True) or {}
     errors, normalized = validate_project_draft_form(payload)
@@ -1270,7 +1270,7 @@ def applicant_project_drafts_create():
 def applicant_project_drafts_delete(draft_id):
     access_error = require_applicant()
     if access_error:
-        return jsonify({"ok": False, "message": "この画面を表示する権限がありません。"}), 403
+        return jsonify({"ok": False, "message": "下書きを削除する権限がありません。"}), 403
 
     draft = ProjectDraft.query.filter_by(id=draft_id, user_id=current_user.id).first()
     if draft is None:
