@@ -658,7 +658,7 @@ function updateProjectCC(el, id, max) {
 const piChecks = [
   { id: "pi0", ok: function() { return getProjectEl("projName").value.trim().length >= 3; } },
   { id: "pi1", ok: function() { return getProjectEl("dept").value !== ""; } },
-  { id: "pi2", ok: function() { return getProjectEl("projDesc").value.trim().length >= 10; } },
+  { id: "pi2", ok: function() { return getProjectEl("projDesc").value.trim().length >= 5; } },
   { id: "pi3", ok: function() { return parseInt(getProjectEl("budgetAmount").value, 10) > 0; } },
   { id: "pi4", ok: function() { return parseFloat(getProjectEl("manmonth").value) > 0; } }
 ];
@@ -673,7 +673,7 @@ function updateProjectProgress() {
   piChecks.forEach(function(c, idx) {
     const ok = idx === 0 ? projName.value.trim().length >= 3
       : idx === 1 ? dept.value !== ""
-      : idx === 2 ? projDesc.value.trim().length >= 10
+      : idx === 2 ? projDesc.value.trim().length >= 5
       : idx === 3 ? parseInt(budgetAmount.value, 10) > 0
       : parseFloat(manmonth.value) > 0;
     if (ok) done += 1;
