@@ -346,6 +346,14 @@ def format_jst_date_ja(dt: datetime | None) -> str:
     return f"{jst_dt.year}年{jst_dt.month}月{jst_dt.day}日"
 
 
+def calculate_project_progress_pct(tasks) -> int:
+    """案件に紐づく全タスクの進捗率平均を返す。"""
+    task_list = list(tasks or [])
+    if not task_list:
+        return 0
+    return int(round(sum(int(task.progress_rate or 0) for task in task_list) / len(task_list)))
+
+
 def format_business_date(d: date | None, pattern: str = "%Y/%m/%d") -> str:
     """Date型を業務日付として表示整形する。"""
     if d is None:
@@ -850,10 +858,7 @@ def build_applicant_top_in_progress_projects(projects: list[Project]) -> list[di
         has_delay = len(overdue_days) > 0
         delay_days_max = max(overdue_days) if overdue_days else 0
 
-        total_tasks = len(project.tasks)
-        progress_pct = 0
-        if total_tasks > 0:
-            progress_pct = int(round(sum(int(task.progress_rate or 0) for task in project.tasks) / total_tasks))
+        progress_pct = calculate_project_progress_pct(project.tasks)
 
         base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
         base_budget = Decimal(base_budget or 0)
@@ -1528,7 +1533,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
     )
     done_count = sum(1 for t in sorted_tasks if t.status == "done")
     total_count = len(sorted_tasks)
-    avg_progress = round(sum((int(t.progress_rate) for t in sorted_tasks), 0) / total_count) if total_count else 0
+    avg_progress = calculate_project_progress_pct(sorted_tasks)
 
     budget_pct = 0
     if base_budget > 0:
@@ -2182,8 +2187,8 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
             continue
         total_tasks = len(p.tasks)
         done_tasks = sum(1 for task in p.tasks if task.status == "done")
-        progress_pct = int((done_tasks / total_tasks) * 100) if total_tasks else 0
-        progress_width = min(max(progress_pct, 0), 100)
+        progress_pct = calculate_project_progress_pct(p.tasks)
+        progress_width = max(0, min(progress_pct, 100))
         budget_rate = p.budget_consumption_rate or Decimal("0")
         budget_pct = float(budget_rate)
         budget_width = min(max(budget_pct, 0), 100)
@@ -3488,8 +3493,7 @@ def build_hq_top_view_data() -> dict:
         elif project.status in {"department_pending", "hq_pending"}:
             progress_percent = None
         elif project.tasks:
-            done_count = sum(1 for task in project.tasks if task.status == "done")
-            progress_percent = int(round((done_count / len(project.tasks)) * 100))
+            progress_percent = calculate_project_progress_pct(project.tasks)
 
         progress_fill_class = "mf-prog" if progress_percent == 100 else "mf-ok"
         progress_text_class = "mp-blue"
