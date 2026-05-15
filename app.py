@@ -2874,10 +2874,20 @@ def _get_monitoring_overdue_metrics(project: Project, today: date) -> dict:
 
 
 def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict:
+    progress_updated_at = None
+    if project.updated_at:
+        if project.approved_at is None or project.updated_at > project.approved_at:
+            progress_updated_at = project.updated_at
+
+    latest_budget_log_created_at = max(
+        (log.created_at for log in project.budget_actual_logs if log.created_at),
+        default=None,
+    )
+
     candidate_timestamps = [
-        project.updated_at,
+        progress_updated_at,
         project.monthly_report_updated_at,
-        max((log.created_at for log in project.budget_actual_logs if log.created_at), default=None),
+        latest_budget_log_created_at,
     ]
     latest_updated_at = max((dt for dt in candidate_timestamps if dt is not None), default=None)
     if latest_updated_at is None:

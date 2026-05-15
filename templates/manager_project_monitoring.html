@@ -169,6 +169,7 @@
 .mock-manager-project-monitoring .ap-title { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
 .mock-manager-project-monitoring .ap-alerts { display: flex; flex-direction: column; gap: 8px; }
 .mock-manager-project-monitoring .ap-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; font-size: 13px; font-weight: 600; }
+.mock-manager-project-monitoring .api-normal { background: transparent; color: rgba(255,255,255,.78); border: 1px solid rgba(255,255,255,.32); }
 .mock-manager-project-monitoring .api-danger { background: transparent; color: #fca5a5; border: 1px solid #fca5a5; }
 .mock-manager-project-monitoring .api-warning { background: transparent; color: #fcd34d; border: 1px solid #fcd34d; }
 .mock-manager-project-monitoring .api-info { background: transparent; color: #93c5fd; border: 1px solid #93c5fd; }
@@ -408,7 +409,7 @@
           <div class="alert-panel">
             <div class="ap-title">現在のアラート状況</div>
             <div class="ap-alerts">
-              <div class="ap-item api-danger">
+              <div class="ap-item {% if view_data.overdue_count > 0 %}api-danger{% else %}api-normal{% endif %}">
                 {% if view_data.overdue_count > 0 %}
                 <div class="ap-text">期限超過タスク<small>最大{{ view_data.max_overdue_days }}日超過</small></div>
                 <div class="ap-val">{{ view_data.overdue_count }}件</div>
@@ -417,11 +418,11 @@
                 <div class="ap-val">0件</div>
                 {% endif %}
               </div>
-              <div class="ap-item api-warning">
+              <div class="ap-item {% if view_data.is_progress_stale %}api-warning{% else %}api-normal{% endif %}">
                 <div class="ap-text">最終進捗更新<small>{{ view_data.last_progress_meta }}</small></div>
                 <div class="ap-val">{{ view_data.last_progress_label }}</div>
               </div>
-              <div class="ap-item api-info">
+              <div class="ap-item {% if view_data.report_submitted %}api-info{% else %}api-warning{% endif %}">
                 {% if view_data.report_submitted %}
                 <div class="ap-text">月次進捗報告<small>{{ view_data.report_month_label }}を提出済み</small></div>
                 <div class="ap-val">提出済</div>
@@ -480,7 +481,7 @@
                 {% if view_data.tasks %}
                   {% for task in view_data.tasks %}
                   <tr class="{{ task.row_class }}" data-status="{{ task.filter_status }}" data-overdue="{{ 1 if task.is_overdue else 0 }}">
-                    <td>{% if task.is_overdue %}<strong>{{ task.title }}</strong>{% else %}{{ task.title }}{% endif %}</td>
+                    <td>{% if task.is_overdue or task.status == "in_progress" %}<strong>{{ task.title }}</strong>{% else %}{{ task.title }}{% endif %}</td>
                     <td><span class="s-badge {{ task.status_badge_class }}">{{ task.status_label }}</span></td>
                     <td><div class="member-chip">{{ task.assignee_name }}</div></td>
                     <td><span class="{{ task.due_class }}">{{ task.due_display }}</span></td>
