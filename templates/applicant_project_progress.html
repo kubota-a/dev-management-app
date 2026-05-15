@@ -279,7 +279,7 @@
 .applicant-progress-footer-update:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
 .applicant-progress-footer-update:disabled:hover { background: #9ca3af; }
 @media (max-width: 900px) {
-  .mock-applicant-project-progress .applicant-progress-content { padding: 16px 14px 110px; }
+  .mock-applicant-project-progress .applicant-progress-content { padding: 8px 14px 110px; }
   .mock-applicant-project-progress .applicant-progress-proj-tabbar { width: 100%; max-width: 100%; padding: 10px 14px; }
   .mock-applicant-project-progress .two-col-layout, .mock-applicant-project-progress .summary-kpi-row { grid-template-columns: 1fr; }
   .mock-applicant-project-progress .summary-kpi { border-right: none; border-bottom: 1px solid var(--app-prog-border); }
@@ -294,6 +294,11 @@
     top: var(--header-height);
     z-index: 690;
     background: var(--app-prog-card);
+  }
+}
+@media (max-width: 899px) {
+  .app-content:has(#applicantProgressForm) {
+    padding-top: 8px;
   }
 }
 @media (max-width: 899px) {
