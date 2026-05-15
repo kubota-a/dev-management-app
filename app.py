@@ -2447,6 +2447,36 @@ def find_next_manager_review_project(department_id: int, exclude_project_id: int
 
 
 def build_department_budget_simulation(project: Project) -> dict:
+    this_project_amount = Decimal(project.estimated_budget_amount or 0)
+
+    def _build_missing_budget_result(message: str) -> dict:
+        return {
+            "is_budget_missing": True,
+            "annual_budget_display": "—",
+            "actual_amount_display": "—",
+            "this_project_amount_display": format_decimal_amount(this_project_amount),
+            "remaining_amount_display": "—",
+            "remaining_result_display": "—",
+            "consume_rate": "—",
+            "occupy_rate": "—",
+            "remaining_rate": "—",
+            "seg_used": 0.0,
+            "seg_this": 0.0,
+            "seg_remaining": 100.0,
+            "result_class": "warn",
+            "result_title": "予算シミュレーションを表示できません",
+            "result_message": message,
+            "consume_rate_class": "ibv-purple",
+            "remaining_amount_class": "ibv-purple",
+            "occupy_rate_class": "ibv-purple",
+            "axis_labels": ["0%", "50%", "100%"],
+        }
+
+    if project.planned_start_date is None:
+        return _build_missing_budget_result(
+            "開始予定日または対象年度の部門年間予算が登録されていないため、シミュレーションを表示できません。"
+        )
+
     fiscal_year = get_fiscal_year(project.planned_start_date)
     fiscal_start = date(fiscal_year, 4, 1)
     fiscal_end = date(fiscal_year + 1, 3, 31)
@@ -2458,6 +2488,10 @@ def build_department_budget_simulation(project: Project) -> dict:
         ).first()
     )
     annual_budget = Decimal(yearly_budget.annual_budget_amount or 0) if yearly_budget else Decimal("0")
+    if yearly_budget is None or annual_budget <= 0:
+        return _build_missing_budget_result(
+            "対象年度の部門年間予算が登録されていないため、シミュレーションを表示できません。"
+        )
 
     actual_sum = (
         db.session.query(func.coalesce(func.sum(BudgetActualLog.amount), 0))
@@ -2471,7 +2505,6 @@ def build_department_budget_simulation(project: Project) -> dict:
         .scalar()
     )
     actual_amount = Decimal(actual_sum or 0)
-    this_project_amount = Decimal(project.estimated_budget_amount or 0)
     remaining_amount = annual_budget - actual_amount - this_project_amount
 
     consume_rate = Decimal("0")
@@ -2482,9 +2515,9 @@ def build_department_budget_simulation(project: Project) -> dict:
         occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
         remaining_rate = (remaining_amount / annual_budget) * Decimal("100")
 
-    if annual_budget <= 0 or remaining_amount < 0:
+    if remaining_amount < 0:
         result_class = "danger"
-    elif consume_rate >= Decimal("80"):
+    elif consume_rate >= Decimal("80") or remaining_rate < Decimal("20"):
         result_class = "warn"
     else:
         result_class = "ok"
@@ -2538,6 +2571,7 @@ def build_department_budget_simulation(project: Project) -> dict:
         axis_labels = ["0", "25%", "50%", "75%", "100%"]
 
     return {
+        "is_budget_missing": False,
         "annual_budget_display": format_decimal_amount(annual_budget),
         "actual_amount_display": format_decimal_amount(actual_amount),
         "this_project_amount_display": format_decimal_amount(this_project_amount),
@@ -2597,19 +2631,22 @@ def build_manager_review_view_data(
         )
 
     budget_sim = build_department_budget_simulation(project)
-    fiscal_year = get_fiscal_year(project.planned_start_date)
-    fiscal_start = date(fiscal_year, 4, 1)
-    fiscal_end = date(fiscal_year + 1, 3, 31)
-    dept_project_amounts = (
-        db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
-        .filter(
-            Project.department_id == project.department_id,
-            Project.planned_start_date >= fiscal_start,
-            Project.planned_start_date <= fiscal_end,
-            Project.status != "rejected",
+    if project.planned_start_date is None:
+        dept_project_amounts = []
+    else:
+        fiscal_year = get_fiscal_year(project.planned_start_date)
+        fiscal_start = date(fiscal_year, 4, 1)
+        fiscal_end = date(fiscal_year + 1, 3, 31)
+        dept_project_amounts = (
+            db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
+            .filter(
+                Project.department_id == project.department_id,
+                Project.planned_start_date >= fiscal_start,
+                Project.planned_start_date <= fiscal_end,
+                Project.status != "rejected",
+            )
+            .all()
         )
-        .all()
-    )
     sorted_by_amount = sorted(
         dept_project_amounts,
         key=lambda row: Decimal(
@@ -2751,6 +2788,18 @@ def manager_project_review(project_id: int):
                 review_data=review_data,
                 unread_notifications_count=get_unread_notifications_count(),
             )
+
+    db.session.refresh(project)
+    if not (
+        project.status == "department_pending"
+        and project.approval_stage == "department_pending"
+        and project.department_id == current_user.department_id
+    ):
+        flash("この案件はすでに審査済みです。", "warning")
+        next_project = find_next_manager_review_project(current_user.department_id, exclude_project_id=project.id)
+        if next_project:
+            return redirect(url_for("manager_project_review", project_id=next_project.id))
+        return redirect(url_for("manager_top"))
 
     try:
         if action == "approve":

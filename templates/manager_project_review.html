@@ -432,10 +432,15 @@
             <p style="font-size:12px;color:var(--mpr-muted);margin-bottom:14px;line-height:1.6;">
               この案件（{{ review_data.budget_simulation.this_project_amount_display }}）を承認した場合、部門の年間予算にどう影響するかを示します。
             </p>
+            {% if review_data.budget_simulation.is_budget_missing %}
+            <p style="font-size:12px;color:var(--mpr-muted);margin-bottom:14px;line-height:1.6;">
+              対象年度の部門年間予算が登録されていないため、シミュレーションを表示できません。
+            </p>
+            {% endif %}
             <div class="impact-row">
               <div class="impact-box">
                 <div class="ib-label">予算消化率（承認後予測）</div>
-                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate }}{% if not review_data.budget_simulation.is_budget_missing %}%{% endif %}</div>
                 <div class="ib-sub">承認後の予測値</div>
               </div>
               <div class="impact-box">
@@ -445,7 +450,7 @@
               </div>
               <div class="impact-box">
                 <div class="ib-label">本案件の部門占有率</div>
-                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate }}{% if not review_data.budget_simulation.is_budget_missing %}%{% endif %}</div>
                 <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
               </div>
               <div class="impact-box">
