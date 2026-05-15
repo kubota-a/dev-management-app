@@ -114,8 +114,8 @@
 .mock-applicant-project-status .dlg-ok { flex: 2; padding: 10px 0; border-radius: 9px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
 .mock-applicant-project-status .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1c2b30; color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 900; white-space: nowrap; }
 .mock-applicant-project-status .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.applicant-project-status-footer-info { font-size: 12px; color: #6b8c94; }
-.applicant-project-status-footer-info strong { color: #1c2b30; }
+.applicant-project-status-footer-info { font-size: 13px; font-weight: 700; color: #5f8790; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(52vw, 520px); }
+.applicant-project-status-footer-info strong { color: inherit; }
 .applicant-project-status-footer-btns { display: flex; gap: 10px; }
 .applicant-project-status-footer-btns.is-hidden { display: none; }
 .applicant-project-status-footer-btn-withdraw { padding: 10px 20px; border-radius: 9px; border: 1.5px solid #d8e8ec; background: #fff; font-size: 13px; font-weight: 700; color: #6b8c94; cursor: pointer; }
@@ -134,6 +134,9 @@
 }
 @media (max-width: 480px) {
   .mock-applicant-project-status .sw-count { display: none; }
+}
+@media (max-width: 640px) {
+  .applicant-project-status-footer-info { max-width: 42vw; }
 }
 @media (max-width: 899px) {
   .app-content:has(.mock-applicant-project-status) {
@@ -215,9 +218,10 @@
 
 {% block content_footer %}
   {% set footer_info_text = "" %}
-  {% set footer_info_value = "" %}
+  {% set footer_info_value %}
+    <div class="applicant-project-status-footer-info"><strong id="footerProjectName">{{ status_view.project_name }}</strong></div>
+  {% endset %}
   {% set footer_actions %}
-    <div class="applicant-project-status-footer-info">案件名：<strong id="footerProjectName">{{ status_view.project_name }}</strong></div>
     <div class="applicant-project-status-footer-btns {% if not status_view.show_reject_panel %}is-hidden{% endif %}" id="applicantProjectStatusFooterBtns">
       <button type="button" class="applicant-project-status-footer-btn-withdraw">削除</button>
       <button type="button" class="applicant-project-status-footer-btn-reapply">修正して再申請</button>

@@ -320,6 +320,19 @@
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #0a7c57; background: #0d9469; color: #fff;
   font-size: 12px; font-weight: 700; cursor: pointer;
 }
+.manager-review-footer-project {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a6480;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(52vw, 520px);
+}
+@media (max-width: 640px) {
+  .manager-review-footer-project { max-width: 42vw; }
+}
 
 @media (max-width: 1024px) {
   .mock-manager-project-review .review-layout { grid-template-columns: 1fr; }
@@ -571,8 +584,10 @@
 {% endblock %}
 
 {% block content_footer %}
-  {% set footer_info_text = "案件名" %}
-  {% set footer_info_value = review_data.project_name %}
+  {% set footer_info_text = "" %}
+  {% set footer_info_value %}
+    <span class="manager-review-footer-project">{{ review_data.project_name }}</span>
+  {% endset %}
   {% set footer_actions %}
     <button type="button" class="manager-review-footer-reject" onclick="confirmManagerReviewAction('reject')">却下</button>
     <button type="button" class="manager-review-footer-approve" onclick="confirmManagerReviewAction('approve')">承認</button>

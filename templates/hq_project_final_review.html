@@ -299,6 +299,19 @@
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #0a7c57; background: #0d9469;
   color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
 }
+.hq-final-review-footer-project {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a7291;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(52vw, 520px);
+}
+@media (max-width: 640px) {
+  .hq-final-review-footer-project { max-width: 42vw; }
+}
 
 @media (max-width: 1100px) {
   .mock-hq-final-review .three-col { grid-template-columns: 1fr 1fr; }
@@ -552,8 +565,10 @@
 {% endblock %}
 
 {% block content_footer %}
-  {% set footer_info_text = "案件名" %}
-  {% set footer_info_value = review_data.project_name %}
+  {% set footer_info_text = "" %}
+  {% set footer_info_value %}
+    <span class="hq-final-review-footer-project">{{ review_data.project_name }}</span>
+  {% endset %}
   {% set footer_actions %}
     <button type="button" class="hq-final-review-footer-reject" onclick="confirmHqFinalReviewVerdict('reject')">却下</button>
     <button type="button" class="hq-final-review-footer-approve" onclick="confirmHqFinalReviewVerdict('approve')">最終承認（予算確定）</button>

@@ -303,12 +303,15 @@
   width: 100%;
 }
 .mock-manager-project-monitoring .manager-complete-dialog-ok:hover { background: var(--mpm-header-dark); }
-.manager-project-monitoring-footer-info { font-size: 13px; color: #7a6480; margin-right: 8px; }
+.manager-project-monitoring-footer-info { font-size: 13px; font-weight: 700; color: #7a6480; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(52vw, 520px); }
 .manager-project-monitoring-footer-complete {
   height: 36px; padding: 0 16px; border-radius: 8px; background: #3d2040; color: #fff; border: none; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 .manager-project-monitoring-footer-complete:hover { background: #2e1830; }
 .manager-project-monitoring-footer-complete:disabled { background: #b9b0bc; cursor: not-allowed; }
+@media (max-width: 640px) {
+  .manager-project-monitoring-footer-info { max-width: 42vw; }
+}
 @media (max-width: 1100px) {
   .mock-manager-project-monitoring .monitor-grid { grid-template-columns: 1fr; }
 }
@@ -533,9 +536,10 @@
 
 {% block content_footer %}
     {% set footer_info_text = "" %}
-    {% set footer_info_value = "" %}
+    {% set footer_info_value %}
+        <span class="manager-project-monitoring-footer-info"><span id="managerProjectMonitoringFooterProject">{{ view_data.project_name }}</span></span>
+    {% endset %}
     {% set footer_actions %}
-        <span class="manager-project-monitoring-footer-info">案件名：<span id="managerProjectMonitoringFooterProject">{{ view_data.project_name }}</span></span>
         <button type="button" class="manager-project-monitoring-footer-complete" onclick="completeManagerProjectMonitoringProject()"{% if not view_data.can_complete %} disabled title="{{ view_data.complete_disabled_reason }}"{% endif %}>完了認定</button>
     {% endset %}
     {% include "partials/_content_footer.html" %}

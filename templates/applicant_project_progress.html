@@ -269,7 +269,7 @@
 .mock-applicant-project-progress .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1c2b30; color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 900; white-space: nowrap; }
 .mock-applicant-project-progress .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .applicant-progress-footer-info { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
-.applicant-progress-footer-project { color: #6b8c94; font-size: 13px; }
+.applicant-progress-footer-project { font-size: 13px; font-weight: 700; color: #5f8790; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(52vw, 520px); }
 .applicant-progress-footer-reset { height: 36px; padding: 0 16px; border-radius: 8px; background: #fff; color: #1a7585; border: 1.5px solid #1a7585; font-size: 13px; font-weight: 700; cursor: pointer; }
 .applicant-progress-footer-reset:hover { background: #e0f5f8; }
 .applicant-progress-footer-reset:disabled { background: #f3f4f6; color: #9ca3af; border-color: #9ca3af; cursor: not-allowed; box-shadow: none; }
@@ -308,6 +308,9 @@
   .mock-applicant-project-progress .task-modal-box { max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); border-radius: 14px; }
   .mock-applicant-project-progress .task-modal-actions { position: sticky; bottom: 0; background: #fff; padding-top: 10px; padding-bottom: 2px; flex-direction: column-reverse; }
   .mock-applicant-project-progress .task-modal-btn { width: 100%; }
+}
+@media (max-width: 640px) {
+  .applicant-progress-footer-project { max-width: 42vw; }
 }
 </style>
 {% endblock %}
@@ -580,11 +583,12 @@
 
 {% block content_footer %}
   {% set footer_info_text = "" %}
-  {% set footer_info_value = "" %}
-  {% set footer_actions %}
+  {% set footer_info_value %}
     <div class="applicant-progress-footer-info">
-      <span class="applicant-progress-footer-project">案件名：{{ view_data.project_name }}</span>
+      <span class="applicant-progress-footer-project">{{ view_data.project_name }}</span>
     </div>
+  {% endset %}
+  {% set footer_actions %}
     <button type="button" class="applicant-progress-footer-reset" id="applicantProgressFooterResetBtn" onclick="resetApplicantProgressChanges()" disabled>変更を戻す</button>
     <button type="button" class="applicant-progress-footer-update" id="applicantProgressFooterUpdateBtn" onclick="submitApplicantProgressReport()" disabled>更新する</button>
   {% endset %}
