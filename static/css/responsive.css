@@ -189,10 +189,11 @@
     }
 
     .content-footer-actions {
-        flex: 1 1 100%;
+        flex: 0 1 auto;
         min-width: 0;
         max-width: 100%;
-        justify-content: flex-start;
+        justify-content: flex-end;
+        margin-left: auto;
     }
 
     .content-footer-actions .btn {

@@ -231,6 +231,10 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 }
 .mock-project-new .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .project-new-footer-progress { margin-right: 10px; color: #6b8c94; font-size: 13px; }
+.project-new-footer-progress-suffix { display: inline; }
+@media (max-width: 899px) {
+  .project-new-footer-progress-suffix { display: none; }
+}
 .project-new-footer-draft-save {
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #d8e8ec; background: #fff;
   color: #1c2b30; font-size: 12px; font-weight: 700; cursor: pointer;
@@ -425,7 +429,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   {% set footer_info_text = "" %}
   {% set footer_info_value = "" %}
   {% set footer_actions %}
-    <span class="project-new-footer-progress"><span id="footerPct">0％</span>入力済み</span>
+    <span class="project-new-footer-progress"><span id="footerPct">0％</span><span class="project-new-footer-progress-suffix">入力済み</span></span>
     <button type="button" class="project-new-footer-draft-save" id="draftSaveBtn">下書き保存</button>
     <button type="button" class="project-new-footer-submit" id="submitOpenBtn" {% if not departments %}disabled{% endif %}>この内容で申請する</button>
   {% endset %}
