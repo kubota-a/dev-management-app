@@ -78,8 +78,10 @@ def load_user(user_id):
 
 @app.route("/")
 def index():
-    """動作確認トップページ。"""
-    return "Hello, quest_1!"
+    """ルートアクセス時はログイン状態に応じて適切な画面へ遷移する。"""
+    if current_user.is_authenticated:
+        return redirect(redirect_by_role(current_user.role))
+    return redirect(url_for("login"))
 
 
 # =============================
