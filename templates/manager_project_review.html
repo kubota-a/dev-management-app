@@ -306,9 +306,9 @@
 }
 
 .mock-manager-project-review .toast {
-  position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--mpr-text);
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1c2b30;
   color: #fff; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s;
-  pointer-events: none; z-index: 600; white-space: nowrap;
+  pointer-events: none; z-index: 900; white-space: nowrap;
 }
 .mock-manager-project-review .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -319,6 +319,19 @@
 .manager-review-footer-approve {
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #0a7c57; background: #0d9469; color: #fff;
   font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.manager-review-footer-project {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a6480;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(52vw, 520px);
+}
+@media (max-width: 640px) {
+  .manager-review-footer-project { max-width: 42vw; }
 }
 
 @media (max-width: 1024px) {
@@ -385,7 +398,7 @@
       <div class="col-content">
         <div class="review-card">
           <div class="rc-head">
-            <div class="rc-title">申請内容（基本情報）</div>
+            <div class="rc-title">申請内容</div>
             <div class="rc-readonly">読み取り専用</div>
           </div>
           <div class="rc-body">
@@ -432,10 +445,15 @@
             <p style="font-size:12px;color:var(--mpr-muted);margin-bottom:14px;line-height:1.6;">
               この案件（{{ review_data.budget_simulation.this_project_amount_display }}）を承認した場合、部門の年間予算にどう影響するかを示します。
             </p>
+            {% if review_data.budget_simulation.is_budget_missing %}
+            <p style="font-size:12px;color:var(--mpr-muted);margin-bottom:14px;line-height:1.6;">
+              対象年度の部門年間予算が登録されていないため、シミュレーションを表示できません。
+            </p>
+            {% endif %}
             <div class="impact-row">
               <div class="impact-box">
                 <div class="ib-label">予算消化率（承認後予測）</div>
-                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate }}{% if not review_data.budget_simulation.is_budget_missing %}%{% endif %}</div>
                 <div class="ib-sub">承認後の予測値</div>
               </div>
               <div class="impact-box">
@@ -445,7 +463,7 @@
               </div>
               <div class="impact-box">
                 <div class="ib-label">本案件の部門占有率</div>
-                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate }}{% if not review_data.budget_simulation.is_budget_missing %}%{% endif %}</div>
                 <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
               </div>
               <div class="impact-box">
@@ -566,8 +584,10 @@
 {% endblock %}
 
 {% block content_footer %}
-  {% set footer_info_text = "案件名" %}
-  {% set footer_info_value = review_data.project_name %}
+  {% set footer_info_text = "" %}
+  {% set footer_info_value %}
+    <span class="manager-review-footer-project">{{ review_data.project_name }}</span>
+  {% endset %}
   {% set footer_actions %}
     <button type="button" class="manager-review-footer-reject" onclick="confirmManagerReviewAction('reject')">却下</button>
     <button type="button" class="manager-review-footer-approve" onclick="confirmManagerReviewAction('approve')">承認</button>

@@ -39,14 +39,15 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 }
 .mock-project-new .mock-page-action-row { margin-bottom: 14px; display: flex; justify-content: flex-end; }
 .mock-project-new .project-new-draft-open-btn {
-  display: inline-flex; align-items: center; gap: 7px; background: #6fc1cc; color: #fff;
-  border: 1.5px solid rgba(255,255,255,.4); padding: 7px 16px; border-radius: 9px;
+  display: inline-flex; align-items: center; gap: 7px; background: #e0f5f8; color: #1a7585;
+  border: 1.5px solid #1a7585; padding: 7px 16px; border-radius: 9px;
   font-size: 13px; font-weight: 700; cursor: pointer; position: relative;
 }
+.mock-project-new .project-new-draft-open-btn:hover { background: #fff; }
 .mock-project-new .project-new-draft-badge {
   position: absolute; top: -6px; right: -6px; background: #fbbf24; color: #1c2b30;
   font-size: 9px; font-weight: 900; min-width: 16px; height: 16px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; border: 2px solid #6fc1cc; padding: 0 3px;
+  display: flex; align-items: center; justify-content: center; border: 2px solid #fbbf24; padding: 0 3px;
 }
 .mock-project-new .drawer-overlay {
   position: fixed; inset: 0; background: rgba(28,43,48,.38); z-index: 200; opacity: 0;
@@ -225,19 +226,24 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   padding: 7px 12px; border: 1px solid #4ba8b4; background: #68bcc7; color: #fff; border-radius: 8px; cursor: pointer;
 }
 .mock-project-new .toast {
-  position: fixed; right: 20px; bottom: 96px; z-index: 230; background: #20353a; color: #fff;
-  border-radius: 8px; padding: 10px 12px; font-size: 12px; opacity: 0; pointer-events: none;
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1c2b30; color: #fff;
+  padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .3s; pointer-events: none; z-index: 900; white-space: nowrap;
 }
-.mock-project-new .toast.show { opacity: 1; }
+.mock-project-new .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .project-new-footer-progress { margin-right: 10px; color: #6b8c94; font-size: 13px; }
 .project-new-footer-draft-save {
   height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #d8e8ec; background: #fff;
   color: #1c2b30; font-size: 12px; font-weight: 700; cursor: pointer;
 }
 .project-new-footer-submit {
-  height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #4ba8b4; background: #68bcc7;
+  height: 36px; padding: 0 12px; border-radius: 8px; border: none; background: #1a7585;
   color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
 }
+.project-new-footer-submit:hover { background: #155f6d; }
+.project-new-footer-submit:disabled {
+  background: #9ca3af; cursor: not-allowed; box-shadow: none;
+}
+.project-new-footer-submit:disabled:hover { background: #9ca3af; }
 @media (min-width: 601px) {
   .mock-project-new { margin-top: -16px; }
 }
@@ -258,7 +264,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   <div class="mock-page-action-row">
     <button type="button" class="project-new-draft-open-btn" data-draft-drawer-open>
       <span>下書きから作成</span>
-      <span class="project-new-draft-badge" id="draftBadge">3</span>
+      <span class="project-new-draft-badge" id="draftBadge">{{ draft_count }}</span>
     </button>
   </div>
 
@@ -266,7 +272,7 @@ body.is-project-draft-drawer-open { overflow: hidden; }
   <aside class="drawer" id="draftDrawer">
     <div class="drawer-handle"><div class="drawer-handle-bar"></div></div>
     <div class="drawer-header">
-      <div class="drawer-title">保存した下書き <span id="draftCountBadge">3件</span></div>
+      <div class="drawer-title">保存した下書き <span id="draftCountBadge">{{ draft_count }}件</span></div>
       <button type="button" class="drawer-close" onclick="closeProjectDraftDrawer()">×</button>
     </div>
     <div class="drawer-search-wrap">
@@ -342,11 +348,11 @@ body.is-project-draft-drawer-open { overflow: hidden; }
           </div>
           <div class="field">
             <div class="field-label">開始予定日 <span class="req-badge">必須</span></div>
-            <input type="date" class="f-input" id="startDate" name="planned_start_date" value="{{ form_data.planned_start_date|default('') }}">
+            <input type="date" class="f-input" id="startDate" name="planned_start_date" value="{{ form_data.planned_start_date|default('') }}" onchange="updateProjectProgress()">
           </div>
           <div class="field">
             <div class="field-label">完了予定日 <span class="opt-badge">任意</span></div>
-            <input type="date" class="f-input" id="endDate" name="planned_end_date" value="{{ form_data.planned_end_date|default('') }}">
+            <input type="date" class="f-input" id="endDate" name="planned_end_date" value="{{ form_data.planned_end_date|default('') }}" onchange="updateProjectProgress()">
           </div>
         </div>
         <div class="field-error{% if form_errors.planned_dates %} show{% endif %}" id="dateErr">{{ form_errors.planned_dates|default("") }}</div>
@@ -430,6 +436,28 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 <script>
 function getProjectEl(id) { return document.getElementById(id); }
 function escapeProjectMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+function formatProjectNewJapaneseAmount(value) {
+  if (value === null || value === undefined) return "—";
+  const raw = String(value).replace(/,/g, "").trim();
+  if (!raw || !/^[0-9]+$/.test(raw)) return "—";
+  const amount = parseInt(raw, 10);
+  if (amount === 0) return "0円";
+
+  const oku = Math.floor(amount / 100000000);
+  const man = Math.floor((amount % 100000000) / 10000);
+  const yen = amount % 10000;
+
+  if (oku > 0) {
+    if (man > 0) return oku.toLocaleString() + "億" + man.toLocaleString() + "万円";
+    if (yen > 0) return oku.toLocaleString() + "億" + yen.toLocaleString() + "円";
+    return oku.toLocaleString() + "億円";
+  }
+  if (man > 0) {
+    if (yen > 0) return man.toLocaleString() + "万" + yen.toLocaleString() + "円";
+    return man.toLocaleString() + "万円";
+  }
+  return yen.toLocaleString() + "円";
+}
 let projectDrafts = {{ drafts_json|tojson }};
 let pendingApplyId = null;
 
@@ -468,7 +496,7 @@ function renderProjectDraftList(list) {
     const dept = escapeProjectMockHtml(d.department_name || "");
     const desc = escapeProjectMockHtml(d.purpose || "");
     const savedAt = escapeProjectMockHtml(d.updated_at_display || "");
-    const budgetPart = d.estimated_budget_amount != null ? ("¥" + Number(d.estimated_budget_amount).toLocaleString()) : "金額未入力";
+    const budgetPart = d.estimated_budget_amount != null ? formatProjectNewJapaneseAmount(d.estimated_budget_amount) : "金額未入力";
     const mmPart = d.estimated_person_months != null ? (d.estimated_person_months + "人月") : "工数未入力";
     const budget = budgetPart + " / " + mmPart;
     const preview = (d.purpose_preview || "");
@@ -652,7 +680,7 @@ function updateProjectCC(el, id, max) {
 const piChecks = [
   { id: "pi0", ok: function() { return getProjectEl("projName").value.trim().length >= 3; } },
   { id: "pi1", ok: function() { return getProjectEl("dept").value !== ""; } },
-  { id: "pi2", ok: function() { return getProjectEl("projDesc").value.trim().length >= 10; } },
+  { id: "pi2", ok: function() { return getProjectEl("projDesc").value.trim().length >= 5; } },
   { id: "pi3", ok: function() { return parseInt(getProjectEl("budgetAmount").value, 10) > 0; } },
   { id: "pi4", ok: function() { return parseFloat(getProjectEl("manmonth").value) > 0; } }
 ];
@@ -667,7 +695,7 @@ function updateProjectProgress() {
   piChecks.forEach(function(c, idx) {
     const ok = idx === 0 ? projName.value.trim().length >= 3
       : idx === 1 ? dept.value !== ""
-      : idx === 2 ? projDesc.value.trim().length >= 10
+      : idx === 2 ? projDesc.value.trim().length >= 5
       : idx === 3 ? parseInt(budgetAmount.value, 10) > 0
       : parseFloat(manmonth.value) > 0;
     if (ok) done += 1;
@@ -691,13 +719,31 @@ function validateProjectNewMock() {
   const projDesc = getProjectEl("projDesc");
   const budgetAmount = getProjectEl("budgetAmount");
   const manmonth = getProjectEl("manmonth");
-  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth) return false;
+  const startDate = getProjectEl("startDate");
+  if (!projName || !dept || !projDesc || !budgetAmount || !manmonth || !startDate) return false;
   const checks = [
-    { fid: "projName", eid: "nameErr", fail: function() { return !projName.value.trim(); } },
-    { fid: "dept", eid: "deptErr", fail: function() { return !dept.value; } },
-    { fid: "projDesc", eid: "descErr", fail: function() { return projDesc.value.trim().length < 5; } },
-    { fid: "budgetAmount", eid: "amtErr", fail: function() { return !(parseInt(budgetAmount.value, 10) > 0); } },
-    { fid: "manmonth", eid: "mmErr", fail: function() { return !manmonth.value || !(parseFloat(manmonth.value) > 0); } }
+    { fid: "projName", eid: "nameErr", fail: function() { return !projName.value.trim(); }, message: "案件名を入力してください。" },
+    { fid: "dept", eid: "deptErr", fail: function() { return !dept.value; }, message: "担当部門を選択してください。" },
+    { fid: "projDesc", eid: "descErr", fail: function() { return projDesc.value.trim().length < 5; }, message: "目的・概要は5文字以上で入力してください。" },
+    {
+      fid: "budgetAmount",
+      eid: "amtErr",
+      fail: function() {
+        const value = String(budgetAmount.value || "");
+        return !/^[0-9]+$/.test(value) || parseInt(value, 10) < 1;
+      },
+      message: "金額（予算）は1円以上で入力してください。"
+    },
+    {
+      fid: "manmonth",
+      eid: "mmErr",
+      fail: function() {
+        const value = String(manmonth.value || "").trim();
+        return !value || Number.isNaN(parseFloat(value)) || parseFloat(value) < 0.1;
+      },
+      message: "工数（人月）は0.1以上で入力してください。"
+    },
+    { fid: "startDate", eid: "dateErr", fail: function() { return !startDate.value; }, message: "開始予定日を入力してください。" }
   ];
   let ok = true;
   checks.forEach(function(c) {
@@ -705,7 +751,10 @@ function validateProjectNewMock() {
     const field = getProjectEl(c.fid);
     if (field) field.classList.toggle("error", fail);
     const err = getProjectEl(c.eid);
-    if (err) err.classList.toggle("show", fail);
+    if (err) {
+      if (c.message) err.textContent = c.message;
+      err.classList.toggle("show", fail);
+    }
     if (fail) ok = false;
   });
   return ok;
@@ -716,7 +765,7 @@ function submitProjectNewMockForm() {
   const confirmed = getProjectEl("confirmed");
   if (confirmed) confirmed.value = "0";
   if (!validateProjectNewMock()) {
-    showProjectNewToast("必須項目を入力してください");
+    showProjectNewToast("入力内容を確認してください");
     const firstErr = document.querySelector(".f-input.error, .f-select.error, .f-textarea.error");
     if (firstErr) firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
     return;

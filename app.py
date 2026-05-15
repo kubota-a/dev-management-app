@@ -67,8 +67,7 @@ csrf = CSRFProtect(app)
 
 # 未ログイン時に飛ばすログイン画面のURL
 login_manager.login_view = "login"
-login_manager.login_message = "このページを表示するにはログインしてください。"
-login_manager.login_message_category = "warning"
+login_manager.login_message = None
 
 
 @login_manager.user_loader
@@ -79,8 +78,10 @@ def load_user(user_id):
 
 @app.route("/")
 def index():
-    """動作確認トップページ。"""
-    return "Hello, quest_1!"
+    """ルートアクセス時はログイン状態に応じて適切な画面へ遷移する。"""
+    if current_user.is_authenticated:
+        return redirect(redirect_by_role(current_user.role))
+    return redirect(url_for("login"))
 
 
 # =============================
@@ -141,7 +142,25 @@ def inject_global_toast_messages():
     if login_success_toast:
         messages.append({"category": "success", "message": login_success_toast})
 
-    return {"global_toast_messages": messages}
+    if not current_user.is_authenticated:
+        return {
+            "global_toast_messages": messages,
+            "unread_notifications_count": 0,
+            "header_notifications": [],
+        }
+
+    try:
+        unread_count = get_unread_notifications_count()
+        header_notifications = build_header_notifications()
+    except SQLAlchemyError:
+        unread_count = 0
+        header_notifications = []
+
+    return {
+        "global_toast_messages": messages,
+        "unread_notifications_count": unread_count,
+        "header_notifications": header_notifications,
+    }
 
 
 def require_applicant():
@@ -165,6 +184,86 @@ def require_hq():
     return None
 
 
+# =============================
+# ■ 共通：通知
+# =============================
+def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
+    db.session.add(
+        Notification(
+            user_id=user_id,
+            project_id=project_id,
+            type=notif_type,
+            message=message,
+            is_read=False,
+            created_at=utc_now(),
+        )
+    )
+
+
+def _parse_notification_ids_from_request() -> list[int]:
+    """既読化対象ID一覧を安全に抽出する。"""
+    payload = request.get_json(silent=True)
+    if isinstance(payload, dict):
+        raw_ids = payload.get("notification_ids", [])
+    else:
+        raw_ids = request.form.getlist("notification_ids")
+
+    if not isinstance(raw_ids, list):
+        return []
+
+    parsed_ids: list[int] = []
+    for raw_id in raw_ids:
+        try:
+            parsed_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if parsed_id > 0:
+            parsed_ids.append(parsed_id)
+    return list(dict.fromkeys(parsed_ids))
+
+
+@app.route("/notifications/mark-visible-read", methods=["POST"])
+@login_required
+def mark_visible_notifications_read():
+    """通知ドロップダウンで表示中の未読通知だけを既読化する。"""
+    if current_user.role not in {"applicant", "manager", "hq"}:
+        return jsonify({"ok": False, "message": "この操作を実行する権限がありません。"}), 403
+
+    notification_ids = _parse_notification_ids_from_request()
+    if not notification_ids:
+        return jsonify(
+            {
+                "ok": True,
+                "unread_count": get_unread_notifications_count(),
+                "notifications": build_header_notifications(),
+            }
+        )
+
+    try:
+        target_notifications = (
+            Notification.query.filter(
+                Notification.id.in_(notification_ids),
+                Notification.user_id == current_user.id,
+                Notification.is_read.is_(False),
+            )
+            .all()
+        )
+        for notification in target_notifications:
+            notification.is_read = True
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"ok": False, "message": "通知の既読処理に失敗しました。"}), 500
+
+    return jsonify(
+        {
+            "ok": True,
+            "unread_count": get_unread_notifications_count(),
+            "notifications": build_header_notifications(),
+        }
+    )
+
+
 def parse_date_value(value: str):
     """YYYY-MM-DD文字列をdateへ変換。空文字はNone。"""
     raw = (value or "").strip()
@@ -178,7 +277,58 @@ def parse_date_value(value: str):
 
 def get_unread_notifications_count() -> int:
     """ログインユーザーの未読通知件数。"""
+    if not current_user.is_authenticated:
+        return 0
     return Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+
+
+def format_notification_time_label(created_at: datetime | None) -> str:
+    """通知作成日時をJST基準の相対表記へ変換する。"""
+    if created_at is None:
+        return "たった今"
+
+    now_jst = datetime.now(ZoneInfo("Asia/Tokyo"))
+    created_at_jst = created_at.astimezone(ZoneInfo("Asia/Tokyo"))
+    diff_seconds = int((now_jst - created_at_jst).total_seconds())
+    if diff_seconds < 60:
+        return "たった今"
+
+    minutes = diff_seconds // 60
+    if minutes < 60:
+        return f"{minutes}分前"
+
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours}時間前"
+
+    days = hours // 24
+    return f"{days}日前"
+
+
+def build_header_notifications(limit: int = 5) -> list[dict]:
+    """ヘッダー通知ドロップダウン用の未読通知データを作成する。"""
+    if not current_user.is_authenticated:
+        return []
+
+    notifications = (
+        Notification.query.options(joinedload(Notification.project))
+        .filter(
+            Notification.user_id == current_user.id,
+            Notification.is_read.is_(False),
+        )
+        .order_by(Notification.created_at.desc(), Notification.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": notification.id,
+            "project_title": notification.project.title if notification.project else "案件名未設定",
+            "message": notification.message,
+            "created_at_label": format_notification_time_label(notification.created_at),
+        }
+        for notification in notifications
+    ]
 
 
 def format_jst_date(dt: datetime | None, pattern: str = "%Y/%m/%d") -> str:
@@ -194,6 +344,14 @@ def format_jst_date_ja(dt: datetime | None) -> str:
         return "—"
     jst_dt = dt.astimezone(ZoneInfo("Asia/Tokyo"))
     return f"{jst_dt.year}年{jst_dt.month}月{jst_dt.day}日"
+
+
+def calculate_project_progress_pct(tasks) -> int:
+    """案件に紐づく全タスクの進捗率平均を返す。"""
+    task_list = list(tasks or [])
+    if not task_list:
+        return 0
+    return int(round(sum(int(task.progress_rate or 0) for task in task_list) / len(task_list)))
 
 
 def format_business_date(d: date | None, pattern: str = "%Y/%m/%d") -> str:
@@ -215,6 +373,37 @@ def format_decimal_amount(value: Decimal | None) -> str:
     if value is None:
         return "¥0"
     return f"¥{int(value):,}"
+
+
+def format_japanese_amount(value: Decimal | int | float | None, none_label: str = "—") -> str:
+    """金額を日本語の億円・万円表記に整形する。"""
+    if value is None:
+        return none_label
+
+    amount = int(Decimal(str(value)))
+    if amount == 0:
+        return "0円"
+
+    sign = "-" if amount < 0 else ""
+    amount = abs(amount)
+
+    oku = amount // 100_000_000
+    man = (amount % 100_000_000) // 10_000
+    yen = amount % 10_000
+
+    if oku > 0:
+        if man > 0:
+            return f"{sign}{oku:,}億{man:,}万円"
+        if yen > 0:
+            return f"{sign}{oku:,}億{yen:,}円"
+        return f"{sign}{oku:,}億円"
+
+    if man > 0:
+        if yen > 0:
+            return f"{sign}{man:,}万{yen:,}円"
+        return f"{sign}{man:,}万円"
+
+    return f"{sign}{yen:,}円"
 
 
 def format_person_months(value: Decimal | None) -> str:
@@ -331,9 +520,15 @@ def build_project_status_view_data(project: Project) -> dict:
 
     rejection_comment = (project.rejection_comment or "").strip() or "却下理由は登録されていません。"
     reject_who = "—"
-    if rejection_log:
-        actor_name = rejection_log.actor.display_name if rejection_log.actor else "不明"
-        reject_who = f"{actor_name} / {format_jst_date(rejection_log.acted_at, '%m/%d')}"
+    if project.status == "rejected":
+        if rejection_log:
+            actor_name = rejection_log.actor.display_name if rejection_log.actor else "確認者"
+            rejected_at = rejection_log.acted_at or project.final_rejected_at
+        else:
+            actor_name = "確認者"
+            rejected_at = project.final_rejected_at
+        rejected_date = format_jst_date(rejected_at, "%m/%d") if rejected_at else "未記録"
+        reject_who = f"{actor_name} / {rejected_date}"
 
     return {
         "project_id": project.id,
@@ -347,7 +542,7 @@ def build_project_status_view_data(project: Project) -> dict:
         "applicant_name": project.applicant.display_name if project.applicant else "—",
         "department_name": project.department.name if project.department else "—",
         "purpose": project.purpose,
-        "budget_display": format_decimal_amount(project.estimated_budget_amount),
+        "budget_display": format_japanese_amount(project.estimated_budget_amount),
         "person_months_display": format_person_months(project.estimated_person_months),
         "planned_period_display": planned_period,
         "show_reject_panel": project.status == "rejected",
@@ -694,10 +889,7 @@ def build_applicant_top_in_progress_projects(projects: list[Project]) -> list[di
         has_delay = len(overdue_days) > 0
         delay_days_max = max(overdue_days) if overdue_days else 0
 
-        total_tasks = len(project.tasks)
-        progress_pct = 0
-        if total_tasks > 0:
-            progress_pct = int(round(sum(int(task.progress_rate or 0) for task in project.tasks) / total_tasks))
+        progress_pct = calculate_project_progress_pct(project.tasks)
 
         base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
         base_budget = Decimal(base_budget or 0)
@@ -1023,14 +1215,11 @@ def applicant_project_new():
                     User.is_active.is_(True),
                 ).all()
                 for manager in managers:
-                    db.session.add(
-                        Notification(
-                            user_id=manager.id,
-                            project_id=project.id,
-                            type="department_pending",
-                            message=f"新しい開発案件「{project.title}」が申請されました。内容を確認してください。",
-                            is_read=False,
-                        )
+                    create_notification(
+                        user_id=manager.id,
+                        project_id=project.id,
+                        notif_type="department_pending",
+                        message="新しい開発案件が申請されました。",
                     )
 
                 if draft_to_delete is not None:
@@ -1063,7 +1252,7 @@ def applicant_project_new():
 def applicant_project_drafts_create():
     access_error = require_applicant()
     if access_error:
-        return jsonify({"ok": False, "message": "この画面を表示する権限がありません。"}), 403
+        return jsonify({"ok": False, "message": "下書きを保存する権限がありません。"}), 403
 
     payload = request.get_json(silent=True) or {}
     errors, normalized = validate_project_draft_form(payload)
@@ -1112,7 +1301,7 @@ def applicant_project_drafts_create():
 def applicant_project_drafts_delete(draft_id):
     access_error = require_applicant()
     if access_error:
-        return jsonify({"ok": False, "message": "この画面を表示する権限がありません。"}), 403
+        return jsonify({"ok": False, "message": "下書きを削除する権限がありません。"}), 403
 
     draft = ProjectDraft.query.filter_by(id=draft_id, user_id=current_user.id).first()
     if draft is None:
@@ -1158,7 +1347,6 @@ def applicant_project_status_index():
     )
 
     if latest_project is None:
-        flash("確認できる申請中・却下案件はありません。", "notice")
         return redirect(url_for("applicant_top"))
 
     return redirect(url_for("applicant_project_status", project_id=latest_project.id))
@@ -1185,7 +1373,6 @@ def applicant_project_status(project_id):
         flash("対象の案件が見つかりません。", "danger")
         return redirect(url_for("applicant_top"))
     if project.status not in target_statuses:
-        flash("この画面で確認できる申請状況はありません。", "danger")
         return redirect(url_for("applicant_top"))
 
     switch_projects = (
@@ -1377,7 +1564,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
     )
     done_count = sum(1 for t in sorted_tasks if t.status == "done")
     total_count = len(sorted_tasks)
-    avg_progress = round(sum((int(t.progress_rate) for t in sorted_tasks), 0) / total_count) if total_count else 0
+    avg_progress = calculate_project_progress_pct(sorted_tasks)
 
     budget_pct = 0
     if base_budget > 0:
@@ -1397,8 +1584,8 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "overall_progress_pct": avg_progress,
         "done_count": done_count,
         "task_count": total_count,
-        "budget_amount_display": format_decimal_amount(base_budget),
-        "current_actual_display": format_decimal_amount(current_actual),
+        "budget_amount_display": format_japanese_amount(base_budget),
+        "current_actual_display": format_japanese_amount(current_actual),
         "budget_pct": budget_pct,
         "budget_gauge_class": "gf-over" if budget_pct >= 100 else "gf-warn" if budget_pct >= 80 else "gf-ok",
         "budget_pct_color": "var(--app-prog-danger)" if budget_pct >= 100 else "var(--app-prog-warning)" if budget_pct >= 80 else "var(--app-prog-success)",
@@ -1412,8 +1599,8 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "prev_project_id": prev_project_id,
         "next_project_id": next_project_id,
         "footer_project_name": project.title,
-        "base_budget_amount": int(base_budget),
-        "current_actual_amount": int(current_actual),
+        "base_budget_amount": str(base_budget or Decimal("0")),
+        "current_actual_amount": str(current_actual or Decimal("0")),
     }
 
 
@@ -1473,6 +1660,7 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     payload: dict = {
         "budget_actual_amount": None,
         "monthly_report_comment": (form_data.get("monthly_report_comment") or "").strip(),
+        "monthly_report_changed": (form_data.get("monthly_report_changed") or "").strip() == "1",
         "task_updates": {},
     }
 
@@ -1721,24 +1909,27 @@ def applicant_project_progress_detail(project_id):
         return access_error
 
     progress_projects = get_applicant_progress_projects(current_user.id)
-    project = (
-        Project.query.options(
-            joinedload(Project.department),
-            joinedload(Project.tasks),
-            joinedload(Project.budget_actual_logs),
+    project = None
+    if request.method == "GET":
+        project = next((p for p in progress_projects if p.id == project_id), None)
+    else:
+        project = (
+            Project.query.options(
+                joinedload(Project.department),
+                joinedload(Project.tasks),
+                joinedload(Project.budget_actual_logs),
+            )
+            .filter(
+                Project.id == project_id,
+                Project.applicant_id == current_user.id,
+            )
+            .first()
         )
-        .filter(
-            Project.id == project_id,
-            Project.applicant_id == current_user.id,
-        )
-        .first()
-    )
 
     if project is None:
         flash("対象の案件が見つかりません。", "danger")
         return redirect(url_for("applicant_top"))
     if project.status != "in_progress" or project.approval_stage != "approved":
-        flash("この画面で更新できる開発中案件ではありません。", "danger")
         return redirect(url_for("applicant_top"))
 
     if request.method == "POST":
@@ -1761,7 +1952,7 @@ def applicant_project_progress_detail(project_id):
                 )
             )
 
-        if (project.monthly_report_comment or "") != payload["monthly_report_comment"]:
+        if payload["monthly_report_changed"]:
             changed = True
             project.monthly_report_comment = payload["monthly_report_comment"]
             project.monthly_report_updated_at = utc_now()
@@ -1776,6 +1967,7 @@ def applicant_project_progress_detail(project_id):
                 changed = True
                 task.status = update_data["status"]
                 task.progress_rate = int(update_data["progress_rate"])
+                task.updated_at = utc_now()
 
         if not changed:
             flash("更新する変更はありません。", "warning")
@@ -1791,15 +1983,11 @@ def applicant_project_progress_detail(project_id):
                     User.is_active.is_(True),
                 ).all()
                 for manager in managers:
-                    db.session.add(
-                        Notification(
-                            user_id=manager.id,
-                            project_id=project.id,
-                            type="completed",
-                            message=f"「{project.title}」の全タスクが完了しました。案件完了の確認を行ってください。",
-                            is_read=False,
-                            created_at=utc_now(),
-                        )
+                    create_notification(
+                        user_id=manager.id,
+                        project_id=project.id,
+                        notif_type="completed",
+                        message="全タスクが完了しました。案件完了の確認を行ってください。",
                     )
             db.session.commit()
             flash("進捗情報を更新しました。", "success")
@@ -1881,10 +2069,10 @@ def _build_manager_empty_top_view_data() -> dict:
             "over_arc_percent": 0.0,
             "usage_percent_display": "0%",
             "usage_class": "normal",
-            "annual_budget_display": format_decimal_amount(Decimal("0")),
-            "actual_display": format_decimal_amount(Decimal("0")),
-            "over_display": format_decimal_amount(Decimal("0")),
-            "remaining_display": format_decimal_amount(Decimal("0")),
+            "annual_budget_display": format_japanese_amount(Decimal("0")),
+            "actual_display": format_japanese_amount(Decimal("0")),
+            "over_display": format_japanese_amount(Decimal("0")),
+            "remaining_display": format_japanese_amount(Decimal("0")),
         },
     }
 
@@ -1961,7 +2149,7 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
                 "submitted_sort_key": submitted_at or p.created_at,
                 "project_name": p.title,
                 "applicant_name": p.applicant.display_name if p.applicant else "—",
-                "budget_display": format_decimal_amount(Decimal(p.estimated_budget_amount or 0)),
+                "budget_display": format_japanese_amount(Decimal(p.estimated_budget_amount or 0)),
                 "is_waiting_long": wait_days >= 3,
                 "status_label": f"{wait_days}日待機" if wait_days >= 3 else "部門承認待ち",
             }
@@ -2030,8 +2218,8 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
             continue
         total_tasks = len(p.tasks)
         done_tasks = sum(1 for task in p.tasks if task.status == "done")
-        progress_pct = int((done_tasks / total_tasks) * 100) if total_tasks else 0
-        progress_width = min(max(progress_pct, 0), 100)
+        progress_pct = calculate_project_progress_pct(p.tasks)
+        progress_width = max(0, min(progress_pct, 100))
         budget_rate = p.budget_consumption_rate or Decimal("0")
         budget_pct = float(budget_rate)
         budget_width = min(max(budget_pct, 0), 100)
@@ -2245,10 +2433,10 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
             "over_arc_percent": over_arc_percent,
             "usage_percent_display": f"{format_percent_value(usage_percent)}%",
             "usage_class": usage_class,
-            "annual_budget_display": format_decimal_amount(annual_budget),
-            "actual_display": format_decimal_amount(actual_amount),
-            "over_display": format_decimal_amount(over_amount),
-            "remaining_display": format_decimal_amount(remaining_amount),
+            "annual_budget_display": format_japanese_amount(annual_budget),
+            "actual_display": format_japanese_amount(actual_amount),
+            "over_display": format_japanese_amount(over_amount),
+            "remaining_display": format_japanese_amount(remaining_amount),
         },
     }
 
@@ -2256,19 +2444,6 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
 # =============================
 # ■ 部門管理者：承認審査画面
 # =============================
-def create_notification(user_id: int, project_id: int | None, notif_type: str, message: str):
-    db.session.add(
-        Notification(
-            user_id=user_id,
-            project_id=project_id,
-            type=notif_type,
-            message=message,
-            is_read=False,
-            created_at=utc_now(),
-        )
-    )
-
-
 def _get_latest_submit_log(project: Project) -> ProjectStatusLog | None:
     submit_logs = [log for log in project.project_status_logs if log.action == "submit"]
     if not submit_logs:
@@ -2314,6 +2489,36 @@ def find_next_manager_review_project(department_id: int, exclude_project_id: int
 
 
 def build_department_budget_simulation(project: Project) -> dict:
+    this_project_amount = Decimal(project.estimated_budget_amount or 0)
+
+    def _build_missing_budget_result(message: str) -> dict:
+        return {
+            "is_budget_missing": True,
+            "annual_budget_display": "—",
+            "actual_amount_display": "—",
+            "this_project_amount_display": format_japanese_amount(this_project_amount),
+            "remaining_amount_display": "—",
+            "remaining_result_display": "—",
+            "consume_rate": "—",
+            "occupy_rate": "—",
+            "remaining_rate": "—",
+            "seg_used": 0.0,
+            "seg_this": 0.0,
+            "seg_remaining": 100.0,
+            "result_class": "warn",
+            "result_title": "予算シミュレーションを表示できません",
+            "result_message": message,
+            "consume_rate_class": "ibv-purple",
+            "remaining_amount_class": "ibv-purple",
+            "occupy_rate_class": "ibv-purple",
+            "axis_labels": ["0%", "50%", "100%"],
+        }
+
+    if project.planned_start_date is None:
+        return _build_missing_budget_result(
+            "開始予定日または対象年度の部門年間予算が登録されていないため、シミュレーションを表示できません。"
+        )
+
     fiscal_year = get_fiscal_year(project.planned_start_date)
     fiscal_start = date(fiscal_year, 4, 1)
     fiscal_end = date(fiscal_year + 1, 3, 31)
@@ -2325,6 +2530,10 @@ def build_department_budget_simulation(project: Project) -> dict:
         ).first()
     )
     annual_budget = Decimal(yearly_budget.annual_budget_amount or 0) if yearly_budget else Decimal("0")
+    if yearly_budget is None or annual_budget <= 0:
+        return _build_missing_budget_result(
+            "対象年度の部門年間予算が登録されていないため、シミュレーションを表示できません。"
+        )
 
     actual_sum = (
         db.session.query(func.coalesce(func.sum(BudgetActualLog.amount), 0))
@@ -2338,7 +2547,6 @@ def build_department_budget_simulation(project: Project) -> dict:
         .scalar()
     )
     actual_amount = Decimal(actual_sum or 0)
-    this_project_amount = Decimal(project.estimated_budget_amount or 0)
     remaining_amount = annual_budget - actual_amount - this_project_amount
 
     consume_rate = Decimal("0")
@@ -2349,9 +2557,9 @@ def build_department_budget_simulation(project: Project) -> dict:
         occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
         remaining_rate = (remaining_amount / annual_budget) * Decimal("100")
 
-    if annual_budget <= 0 or remaining_amount < 0:
+    if remaining_amount < 0:
         result_class = "danger"
-    elif consume_rate >= Decimal("80"):
+    elif consume_rate >= Decimal("80") or remaining_rate < Decimal("20"):
         result_class = "warn"
     else:
         result_class = "ok"
@@ -2372,10 +2580,10 @@ def build_department_budget_simulation(project: Project) -> dict:
     else:
         occupy_rate_class = "ibv-ok"
 
-    remaining_amount_display = format_decimal_amount(remaining_amount)
+    remaining_amount_display = format_japanese_amount(remaining_amount)
     remaining_result_display = remaining_amount_display
     if remaining_amount < 0:
-        remaining_amount_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+        remaining_amount_display = f"-{format_japanese_amount(abs(remaining_amount))}"
         remaining_result_display = remaining_amount_display
 
     consume_rate_display = format_percent_value(consume_rate)
@@ -2392,22 +2600,13 @@ def build_department_budget_simulation(project: Project) -> dict:
         result_title = f"承認後の予算残高：{remaining_result_display}（予算超過）"
         result_message = "本案件を承認すると部門年間予算を超過します。本部承認前に予算調整が必要です。"
 
-    if annual_budget > 0:
-        axis_labels = []
-        for pct in [0, 25, 50, 75, 100]:
-            if pct == 0:
-                axis_labels.append("0")
-                continue
-            amount = (annual_budget * Decimal(pct)) / Decimal("100")
-            man_yen = int(amount / Decimal("10000"))
-            axis_labels.append(f"{pct}%（{man_yen:,}万円）")
-    else:
-        axis_labels = ["0", "25%", "50%", "75%", "100%"]
+    axis_labels = ["0%", "25%", "50%", "75%", "100%"]
 
     return {
-        "annual_budget_display": format_decimal_amount(annual_budget),
-        "actual_amount_display": format_decimal_amount(actual_amount),
-        "this_project_amount_display": format_decimal_amount(this_project_amount),
+        "is_budget_missing": False,
+        "annual_budget_display": format_japanese_amount(annual_budget),
+        "actual_amount_display": format_japanese_amount(actual_amount),
+        "this_project_amount_display": format_japanese_amount(this_project_amount),
         "remaining_amount_display": remaining_amount_display,
         "remaining_result_display": remaining_result_display,
         "consume_rate": consume_rate_display,
@@ -2464,19 +2663,22 @@ def build_manager_review_view_data(
         )
 
     budget_sim = build_department_budget_simulation(project)
-    fiscal_year = get_fiscal_year(project.planned_start_date)
-    fiscal_start = date(fiscal_year, 4, 1)
-    fiscal_end = date(fiscal_year + 1, 3, 31)
-    dept_project_amounts = (
-        db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
-        .filter(
-            Project.department_id == project.department_id,
-            Project.planned_start_date >= fiscal_start,
-            Project.planned_start_date <= fiscal_end,
-            Project.status != "rejected",
+    if project.planned_start_date is None:
+        dept_project_amounts = []
+    else:
+        fiscal_year = get_fiscal_year(project.planned_start_date)
+        fiscal_start = date(fiscal_year, 4, 1)
+        fiscal_end = date(fiscal_year + 1, 3, 31)
+        dept_project_amounts = (
+            db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
+            .filter(
+                Project.department_id == project.department_id,
+                Project.planned_start_date >= fiscal_start,
+                Project.planned_start_date <= fiscal_end,
+                Project.status != "rejected",
+            )
+            .all()
         )
-        .all()
-    )
     sorted_by_amount = sorted(
         dept_project_amounts,
         key=lambda row: Decimal(
@@ -2498,7 +2700,7 @@ def build_manager_review_view_data(
         "submitted_date": format_jst_date(submitted_at),
         "submitted_date_ja": format_jst_date_ja(submitted_at),
         "wait_badge_text": f"{waiting_days}日待機" if waiting_days >= 3 else "",
-        "estimated_budget_display": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+        "estimated_budget_display": format_japanese_amount(Decimal(project.estimated_budget_amount or 0)),
         "estimated_person_months_display": format_person_months(project.estimated_person_months),
         "planned_period_display": f"{format_business_date(project.planned_start_date)} ～ {format_business_date(project.planned_end_date)}",
         "queue_position": current_index + 1,
@@ -2619,6 +2821,18 @@ def manager_project_review(project_id: int):
                 unread_notifications_count=get_unread_notifications_count(),
             )
 
+    db.session.refresh(project)
+    if not (
+        project.status == "department_pending"
+        and project.approval_stage == "department_pending"
+        and project.department_id == current_user.department_id
+    ):
+        flash("この案件はすでに審査済みです。", "warning")
+        next_project = find_next_manager_review_project(current_user.department_id, exclude_project_id=project.id)
+        if next_project:
+            return redirect(url_for("manager_project_review", project_id=next_project.id))
+        return redirect(url_for("manager_top"))
+
     try:
         if action == "approve":
             project.status = "hq_pending"
@@ -2640,22 +2854,19 @@ def manager_project_review(project_id: int):
 
             hq_users = User.query.filter_by(role="hq", is_active=True).all()
             for user in hq_users:
-                if user.id == current_user.id:
-                    continue
                 create_notification(
                     user_id=user.id,
                     project_id=project.id,
                     notif_type="hq_pending",
-                    message=f"部門承認済み案件「{project.title}」が本部承認待ちになりました。",
+                    message="本部承認待ちの案件があります。",
                 )
 
-            if project.applicant_id != current_user.id:
-                create_notification(
-                    user_id=project.applicant_id,
-                    project_id=project.id,
-                    notif_type="hq_pending",
-                    message=f"申請した案件「{project.title}」が部門承認を通過しました。本部承認待ちです。",
-                )
+            create_notification(
+                user_id=project.applicant_id,
+                project_id=project.id,
+                notif_type="hq_pending",
+                message="部門承認され、本部承認待ちになりました。",
+            )
 
             db.session.commit()
             flash(f"「{project.title}」を承認し、本部管理者へ送付しました。", "success")
@@ -2682,7 +2893,7 @@ def manager_project_review(project_id: int):
                     user_id=project.applicant_id,
                     project_id=project.id,
                     notif_type="rejected",
-                    message=f"申請した案件「{project.title}」が部門審査で却下されました。理由を確認してください。",
+                    message="部門管理者に申請が却下されました。",
                 )
 
             db.session.commit()
@@ -2746,10 +2957,20 @@ def _get_monitoring_overdue_metrics(project: Project, today: date) -> dict:
 
 
 def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict:
+    progress_updated_at = None
+    if project.updated_at:
+        if project.approved_at is None or project.updated_at > project.approved_at:
+            progress_updated_at = project.updated_at
+
+    latest_budget_log_created_at = max(
+        (log.created_at for log in project.budget_actual_logs if log.created_at),
+        default=None,
+    )
+
     candidate_timestamps = [
-        project.updated_at,
+        progress_updated_at,
         project.monthly_report_updated_at,
-        max((log.created_at for log in project.budget_actual_logs if log.created_at), default=None),
+        latest_budget_log_created_at,
     ]
     latest_updated_at = max((dt for dt in candidate_timestamps if dt is not None), default=None)
     if latest_updated_at is None:
@@ -2952,8 +3173,8 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
         "overall_progress_pct": avg_progress,
         "done_count": done_tasks,
         "task_count": total_tasks,
-        "budget_actual_display": format_decimal_amount(budget_metrics["actual_total"]),
-        "budget_base_display": format_decimal_amount(budget_metrics["budget_base"]),
+        "budget_actual_display": format_japanese_amount(budget_metrics["actual_total"]),
+        "budget_base_display": format_japanese_amount(budget_metrics["budget_base"]),
         "budget_pct": budget_pct,
         "budget_gauge_class": budget_gauge_class,
         "budget_pct_class": budget_pct_class,
@@ -3019,7 +3240,6 @@ def manager_project_monitoring_detail(project_id: int):
         flash("完了済み案件は案件モニタリング画面では表示できません。", "danger")
         return redirect(url_for("manager_project_monitoring"))
     if project.status != "in_progress" or project.approval_stage != "approved":
-        flash("この画面で確認できる開発中案件ではありません。", "danger")
         return redirect(url_for("manager_project_monitoring"))
 
     if request.method == "POST":
@@ -3049,15 +3269,11 @@ def manager_project_monitoring_detail(project_id: int):
                 )
             )
 
-            db.session.add(
-                Notification(
-                    user_id=project.applicant_id,
-                    project_id=project.id,
-                    type="completed",
-                    message=f"担当案件「{project.title}」が部門管理者により完了認定されました。",
-                    is_read=False,
-                    created_at=now_utc,
-                )
+            create_notification(
+                user_id=project.applicant_id,
+                project_id=project.id,
+                notif_type="completed",
+                message="案件が完了認定されました。",
             )
             db.session.commit()
             flash(f"「{project.title}」を完了認定し、主担当者へ通知しました。", "success")
@@ -3092,7 +3308,7 @@ def _build_hq_top_empty_view_data() -> dict:
             "department_projects": {"value": 0, "unit": "件", "meta": "0部門合計", "number_class": "sb-number-normal"},
             "final_approval_requests": {"value": 0, "unit": "件", "meta": "待機中なし", "number_class": "sb-number-normal"},
             "budget_alert_departments": {"value": 0, "unit": "部門", "meta": "注意0/超過0", "number_class": "sb-number-normal"},
-            "company_budget_rate": {"value": 0, "unit": "%", "meta": "¥0/¥0", "number_class": "sb-number-normal"},
+            "company_budget_rate": {"value": 0, "unit": "%", "meta": "0円/0円", "number_class": "sb-number-normal"},
             "delayed_projects": {"value": 0, "unit": "件", "meta": "最長遅延なし", "number_class": "sb-number-normal"},
             "budget_alert_projects": {"value": 0, "unit": "件", "meta": "注意0/超過0", "number_class": "sb-number-normal"},
         },
@@ -3147,14 +3363,10 @@ def _truncate_with_ellipsis(text: str, limit: int) -> str:
 
 
 def _format_summary_amount_short(value: Decimal) -> str:
-    """サマリー用の金額を短縮表記に整形する。"""
-    amount = int(value or 0)
-    if amount == 0:
-        return "¥0"
-    million = amount // 1_000_000
-    if million > 0:
-        return f"¥{million:,}M"
-    return f"¥{amount:,}"
+    """サマリー用の金額を百万円単位の短縮表記に整形する。"""
+    amount = Decimal(value or 0)
+    million = (amount / Decimal("1000000")).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return f"¥{int(million):,}M"
 
 
 def build_hq_top_view_data() -> dict:
@@ -3272,7 +3484,7 @@ def build_hq_top_view_data() -> dict:
                     "department_badge_class": _get_hq_department_badge_class(project.department.name if project.department else None),
                     "department_name": project.department.name if project.department else "未所属",
                     "project_name": project.title,
-                    "estimated_budget_text": format_decimal_amount(
+                    "estimated_budget_text": format_japanese_amount(
                         Decimal(
                             (
                                 project.approved_budget_amount
@@ -3298,8 +3510,7 @@ def build_hq_top_view_data() -> dict:
         elif project.status in {"department_pending", "hq_pending"}:
             progress_percent = None
         elif project.tasks:
-            done_count = sum(1 for task in project.tasks if task.status == "done")
-            progress_percent = int(round((done_count / len(project.tasks)) * 100))
+            progress_percent = calculate_project_progress_pct(project.tasks)
 
         progress_fill_class = "mf-prog" if progress_percent == 100 else "mf-ok"
         progress_text_class = "mp-blue"
@@ -3485,7 +3696,7 @@ def build_hq_top_view_data() -> dict:
         department_items.append(
             {
                 "department_name": dept.name,
-                "amount_text": f"{format_decimal_amount(actual_amount)} / {format_decimal_amount(annual_amount)}",
+                "amount_text": f"{format_japanese_amount(actual_amount)} / {format_japanese_amount(annual_amount)}",
                 "rate_text": f"{_format_hq_percent_int(rate)}%",
                 "rate_class": rate_class,
                 "fill_class": fill_class,
@@ -3539,10 +3750,10 @@ def build_hq_top_view_data() -> dict:
             "over_dashoffset": over_dashoffset,
             "rate_class": "dp-danger" if company_rate >= Decimal("100") else ("dp-warn" if company_rate >= Decimal("80") else ""),
             "rate_text": f"{_format_hq_percent_int(company_rate)}%",
-            "used_amount_text": format_decimal_amount(company_actual),
-            "over_amount_text": format_decimal_amount(over_amount),
-            "remaining_amount_text": format_decimal_amount(remaining_amount),
-            "total_amount_text": format_decimal_amount(company_budget_total),
+            "used_amount_text": format_japanese_amount(company_actual),
+            "over_amount_text": format_japanese_amount(over_amount),
+            "remaining_amount_text": format_japanese_amount(remaining_amount),
+            "total_amount_text": format_japanese_amount(company_budget_total),
         }
 
     phase_segments = []
@@ -3731,10 +3942,37 @@ def _format_axis_amount(value: Decimal) -> str:
         return f"{oku:,}億円"
     if man > 0:
         return f"{man:,}万円"
-    return f"¥{amount:,}"
+    return f"{amount:,}円"
 
 
 def _build_hq_budget_simulation(project: Project) -> dict:
+    this_project_amount = Decimal(project.estimated_budget_amount or 0)
+
+    if project.planned_start_date is None:
+        return {
+            "is_budget_missing": True,
+            "annual_budget_display": "—",
+            "actual_amount_display": "—",
+            "this_project_amount_display": format_japanese_amount(this_project_amount),
+            "remaining_amount_display": "—",
+            "consume_rate_display": "—",
+            "actual_rate_display": "—",
+            "occupy_rate_display": "—",
+            "remaining_rate_display": "—",
+            "result_class": "warn",
+            "result_title": "予算シミュレーションを表示できません",
+            "result_message": "対象年度の全社年間予算が登録されていないため、シミュレーションを表示できません。",
+            "consume_rate_class": "ibv-blue",
+            "remaining_amount_class": "ibv-blue",
+            "occupy_rate_class": "ibv-blue",
+            "axis_labels": ["0%", "50%", "100%"],
+            "seg_used": 0.0,
+            "seg_this": 0.0,
+            "seg_remaining": 100.0,
+            "budget_rank": "—",
+            "project_count": 0,
+        }
+
     fiscal_year = get_fiscal_year(project.planned_start_date)
     fiscal_start = date(fiscal_year, 4, 1)
     fiscal_end = date(fiscal_year + 1, 3, 31)
@@ -3757,22 +3995,45 @@ def _build_hq_budget_simulation(project: Project) -> dict:
         .scalar()
     )
     actual_amount = Decimal(actual_sum or 0)
-    this_project_amount = Decimal(project.estimated_budget_amount or 0)
     remaining_amount = annual_budget - actual_amount - this_project_amount
+
+    if annual_budget <= 0:
+        return {
+            "is_budget_missing": True,
+            "annual_budget_display": "—",
+            "actual_amount_display": "—",
+            "this_project_amount_display": format_japanese_amount(this_project_amount),
+            "remaining_amount_display": "—",
+            "consume_rate_display": "—",
+            "actual_rate_display": "—",
+            "occupy_rate_display": "—",
+            "remaining_rate_display": "—",
+            "result_class": "warn",
+            "result_title": "予算シミュレーションを表示できません",
+            "result_message": "対象年度の全社年間予算が登録されていないため、シミュレーションを表示できません。",
+            "consume_rate_class": "ibv-blue",
+            "remaining_amount_class": "ibv-blue",
+            "occupy_rate_class": "ibv-blue",
+            "axis_labels": ["0%", "50%", "100%"],
+            "seg_used": 0.0,
+            "seg_this": 0.0,
+            "seg_remaining": 100.0,
+            "budget_rank": "—",
+            "project_count": 0,
+        }
 
     consume_rate = Decimal("0")
     actual_rate = Decimal("0")
     occupy_rate = Decimal("0")
     remaining_rate = Decimal("0")
-    if annual_budget > 0:
-        consume_rate = ((actual_amount + this_project_amount) / annual_budget) * Decimal("100")
-        actual_rate = (actual_amount / annual_budget) * Decimal("100")
-        occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
-        remaining_rate = Decimal("100") - actual_rate - occupy_rate
+    consume_rate = ((actual_amount + this_project_amount) / annual_budget) * Decimal("100")
+    actual_rate = (actual_amount / annual_budget) * Decimal("100")
+    occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
+    remaining_rate = Decimal("100") - actual_rate - occupy_rate
 
-    if annual_budget <= 0 or remaining_amount < 0:
+    if remaining_amount < 0:
         result_class = "danger"
-    elif consume_rate >= Decimal("80"):
+    elif consume_rate >= Decimal("80") or remaining_rate < Decimal("20"):
         result_class = "warn"
     else:
         result_class = "ok"
@@ -3797,14 +4058,11 @@ def _build_hq_budget_simulation(project: Project) -> dict:
     actual_rate_display = format_percent_value(actual_rate)
     occupy_rate_display = format_percent_value(occupy_rate)
     remaining_rate_display = format_percent_value(remaining_rate)
-    remaining_amount_display = format_decimal_amount(remaining_amount)
+    remaining_amount_display = format_japanese_amount(remaining_amount)
     if remaining_amount < 0:
-        remaining_amount_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+        remaining_amount_display = f"-{format_japanese_amount(abs(remaining_amount))}"
 
-    if annual_budget <= 0:
-        result_title = "全社年間予算が登録されていません"
-        result_message = "予算シミュレーションを表示できません。年度予算データを確認してください。"
-    elif result_class == "ok":
+    if result_class == "ok":
         result_title = f"承認後の予算残高：{remaining_amount_display}（{remaining_rate_display}%）"
         result_message = "本案件を承認しても、全社年間予算には十分な残余があります。"
     elif result_class == "warn":
@@ -3814,13 +4072,7 @@ def _build_hq_budget_simulation(project: Project) -> dict:
         result_title = f"承認後の予算残高：{remaining_amount_display}（予算超過）"
         result_message = "本案件を承認すると全社年間予算を超過します。予算調整が必要です。"
 
-    if annual_budget > 0:
-        axis_labels = ["0"]
-        for pct in [25, 50, 75, 100]:
-            amount = (annual_budget * Decimal(pct)) / Decimal("100")
-            axis_labels.append(f"{pct}%（{_format_axis_amount(amount)}）")
-    else:
-        axis_labels = ["0", "25%", "50%", "75%", "100%"]
+    axis_labels = ["0%", "25%", "50%", "75%", "100%"]
 
     all_project_amounts = (
         db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
@@ -3842,9 +4094,10 @@ def _build_hq_budget_simulation(project: Project) -> dict:
     budget_rank = rank_map.get(project.id, 1)
 
     return {
-        "annual_budget_display": format_decimal_amount(annual_budget),
-        "actual_amount_display": format_decimal_amount(actual_amount),
-        "this_project_amount_display": format_decimal_amount(this_project_amount),
+        "is_budget_missing": False,
+        "annual_budget_display": format_japanese_amount(annual_budget),
+        "actual_amount_display": format_japanese_amount(actual_amount),
+        "this_project_amount_display": format_japanese_amount(this_project_amount),
         "remaining_amount_display": remaining_amount_display,
         "consume_rate_display": consume_rate_display,
         "actual_rate_display": actual_rate_display,
@@ -3924,7 +4177,7 @@ def _build_hq_final_review_view_data(
         "submitted_date_ja": format_jst_date_ja(submitted_at),
         "dept_approved_display": f"{format_jst_date(dept_approved_at)}（{dept_approver_name}）" if dept_approved_at else "—",
         "wait_badge_text": f"{waiting_days}日待機" if waiting_days >= 3 else "",
-        "estimated_budget_display": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+        "estimated_budget_display": format_japanese_amount(Decimal(project.estimated_budget_amount or 0)),
         "estimated_person_months_display": format_person_months(project.estimated_person_months),
         "planned_period_display": f"{format_business_date_ja(project.planned_start_date)}〜{format_business_date_ja(project.planned_end_date)}（{duration_months}ヶ月）" if duration_months else "未設定",
         "queue_position": current_index + 1,
@@ -4051,11 +4304,23 @@ def hq_project_final_review(project_id: int):
 
     current_title = project.title
     try:
+        db.session.refresh(project)
+        is_pending_target = project.status == "hq_pending" and project.approval_stage == "hq_pending"
+        if not is_pending_target:
+            flash("この案件はすでに審査済みです。", "warning")
+            next_project = _find_next_hq_pending_project(exclude_project_id=project.id)
+            if next_project:
+                return redirect(url_for("hq_project_final_review", project_id=next_project.id))
+            return redirect(url_for("hq_project_final_review_entry"))
+
         if action == "approve":
+            now = utc_now()
             project.status = "in_progress"
             project.approval_stage = "approved"
             project.approved_budget_amount = project.estimated_budget_amount
-            project.approved_at = utc_now()
+            project.approved_at = now
+            project.rejection_comment = None
+            project.final_rejected_at = None
 
             db.session.add(
                 ProjectStatusLog(
@@ -4065,21 +4330,22 @@ def hq_project_final_review(project_id: int):
                     to_status="in_progress",
                     action="approve_hq",
                     comment=None,
-                    acted_at=utc_now(),
+                    acted_at=now,
                 )
             )
             create_notification(
                 user_id=project.applicant_id,
                 project_id=project.id,
                 notif_type="approved",
-                message=f"開発案件「{current_title}」が本部承認されました。開発管理フェーズへ進みます。",
+                message="申請が承認され、開発管理を開始できます。",
             )
             flash(f"「{current_title}」を最終承認し、予算を確定しました。", "success")
         else:
+            now = utc_now()
             project.status = "rejected"
             project.approval_stage = "rejected"
             project.rejection_comment = rejection_comment
-            project.final_rejected_at = utc_now()
+            project.final_rejected_at = now
             project.approved_budget_amount = None
             project.approved_at = None
 
@@ -4091,14 +4357,14 @@ def hq_project_final_review(project_id: int):
                     to_status="rejected",
                     action="reject_hq",
                     comment=rejection_comment,
-                    acted_at=utc_now(),
+                    acted_at=now,
                 )
             )
             create_notification(
                 user_id=project.applicant_id,
                 project_id=project.id,
                 notif_type="rejected",
-                message=f"開発案件「{current_title}」が本部で却下されました。却下理由を確認してください。",
+                message="本部管理者に申請が却下されました。",
             )
             flash(f"「{current_title}」を却下し、申請者へ通知しました。", "success")
 
