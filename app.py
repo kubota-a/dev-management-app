@@ -481,9 +481,15 @@ def build_project_status_view_data(project: Project) -> dict:
 
     rejection_comment = (project.rejection_comment or "").strip() or "却下理由は登録されていません。"
     reject_who = "—"
-    if rejection_log:
-        actor_name = rejection_log.actor.display_name if rejection_log.actor else "不明"
-        reject_who = f"{actor_name} / {format_jst_date(rejection_log.acted_at, '%m/%d')}"
+    if project.status == "rejected":
+        if rejection_log:
+            actor_name = rejection_log.actor.display_name if rejection_log.actor else "確認者"
+            rejected_at = rejection_log.acted_at or project.final_rejected_at
+        else:
+            actor_name = "確認者"
+            rejected_at = project.final_rejected_at
+        rejected_date = format_jst_date(rejected_at, "%m/%d") if rejected_at else "未記録"
+        reject_who = f"{actor_name} / {rejected_date}"
 
     return {
         "project_id": project.id,
