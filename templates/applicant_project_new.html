@@ -436,6 +436,28 @@ body.is-project-draft-drawer-open { overflow: hidden; }
 <script>
 function getProjectEl(id) { return document.getElementById(id); }
 function escapeProjectMockHtml(value) { return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+function formatProjectNewJapaneseAmount(value) {
+  if (value === null || value === undefined) return "—";
+  const raw = String(value).replace(/,/g, "").trim();
+  if (!raw || !/^[0-9]+$/.test(raw)) return "—";
+  const amount = parseInt(raw, 10);
+  if (amount === 0) return "0円";
+
+  const oku = Math.floor(amount / 100000000);
+  const man = Math.floor((amount % 100000000) / 10000);
+  const yen = amount % 10000;
+
+  if (oku > 0) {
+    if (man > 0) return oku.toLocaleString() + "億" + man.toLocaleString() + "万円";
+    if (yen > 0) return oku.toLocaleString() + "億" + yen.toLocaleString() + "円";
+    return oku.toLocaleString() + "億円";
+  }
+  if (man > 0) {
+    if (yen > 0) return man.toLocaleString() + "万" + yen.toLocaleString() + "円";
+    return man.toLocaleString() + "万円";
+  }
+  return yen.toLocaleString() + "円";
+}
 let projectDrafts = {{ drafts_json|tojson }};
 let pendingApplyId = null;
 
@@ -474,7 +496,7 @@ function renderProjectDraftList(list) {
     const dept = escapeProjectMockHtml(d.department_name || "");
     const desc = escapeProjectMockHtml(d.purpose || "");
     const savedAt = escapeProjectMockHtml(d.updated_at_display || "");
-    const budgetPart = d.estimated_budget_amount != null ? ("¥" + Number(d.estimated_budget_amount).toLocaleString()) : "金額未入力";
+    const budgetPart = d.estimated_budget_amount != null ? formatProjectNewJapaneseAmount(d.estimated_budget_amount) : "金額未入力";
     const mmPart = d.estimated_person_months != null ? (d.estimated_person_months + "人月") : "工数未入力";
     const budget = budgetPart + " / " + mmPart;
     const preview = (d.purpose_preview || "");

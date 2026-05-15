@@ -850,6 +850,24 @@ function validateApplicantProgressBudgetInput(rawValue){
   if(!Number.isInteger(amount)||amount<1||amount>999999999){return {ok:false,amount:0};}
   return {ok:true,amount:amount};
 }
+function formatApplicantProgressJapaneseAmount(value){
+  if(value===null||value===undefined||Number.isNaN(Number(value))){return "—";}
+  const amount=Math.max(0,Math.trunc(Number(value)));
+  if(amount===0){return "0円";}
+  const oku=Math.floor(amount/100000000);
+  const man=Math.floor((amount%100000000)/10000);
+  const yen=amount%10000;
+  if(oku>0){
+    if(man>0){return oku.toLocaleString()+"億"+man.toLocaleString()+"万円";}
+    if(yen>0){return oku.toLocaleString()+"億"+yen.toLocaleString()+"円";}
+    return oku.toLocaleString()+"億円";
+  }
+  if(man>0){
+    if(yen>0){return man.toLocaleString()+"万"+yen.toLocaleString()+"円";}
+    return man.toLocaleString()+"万円";
+  }
+  return yen.toLocaleString()+"円";
+}
 function setApplicantProgressBudgetPreviewInvalid(isInvalid){
   const box=getApplicantProgressEl("applicantProgressBudgetPreviewBox");
   if(!box){return;}
@@ -861,7 +879,7 @@ function updateApplicantProgressBudgetPreviewByTotal(total){
   const fill=getApplicantProgressEl("applicantProgressPreviewGaugeFill");
   if(!pt||!pp||!fill){return;}
   const pct=APPLICANT_PROGRESS_BUDGET>0?Math.round(total/APPLICANT_PROGRESS_BUDGET*100):0;
-  pt.textContent="¥"+total.toLocaleString();
+  pt.textContent=formatApplicantProgressJapaneseAmount(total);
   pp.textContent=pct+"%";
   fill.style.width=Math.min(pct,100)+"%";
   if(pct>=100){fill.className="preview-gauge-fill gf-over";pp.style.color="var(--app-prog-danger)";}
@@ -900,9 +918,9 @@ function applyApplicantProgressBudget(){
   const pctDisplay=getApplicantProgressEl("applicantProgressBudgetPctDisplay");
   const amountDisplay=getApplicantProgressEl("applicantProgressBudgetAmountDisplay");
   const gauge=getApplicantProgressEl("applicantProgressBudgetGauge");
-  if(totalActual){totalActual.textContent="¥"+applicantProgressCurrentActual.toLocaleString();totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}
+  if(totalActual){totalActual.textContent=formatApplicantProgressJapaneseAmount(applicantProgressCurrentActual);totalActual.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}
   if(pctDisplay){pctDisplay.textContent=pct+"%";pctDisplay.style.color=pct>=100?"var(--app-prog-danger)":pct>=80?"var(--app-prog-warning)":"var(--app-prog-success)";}
-  if(amountDisplay){amountDisplay.textContent="¥"+applicantProgressCurrentActual.toLocaleString()+" / ¥"+APPLICANT_PROGRESS_BUDGET.toLocaleString();}
+  if(amountDisplay){amountDisplay.textContent=formatApplicantProgressJapaneseAmount(applicantProgressCurrentActual)+" / "+formatApplicantProgressJapaneseAmount(APPLICANT_PROGRESS_BUDGET);}
   if(gauge){gauge.style.width=Math.min(pct,100)+"%";gauge.className="kpi-gauge-fill "+(pct>=100?"gf-over":pct>=80?"gf-warn":"gf-ok");}
   input.value="";
   setApplicantProgressBudgetPreviewInvalid(false);

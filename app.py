@@ -375,6 +375,37 @@ def format_decimal_amount(value: Decimal | None) -> str:
     return f"¥{int(value):,}"
 
 
+def format_japanese_amount(value: Decimal | int | float | None, none_label: str = "—") -> str:
+    """金額を日本語の億円・万円表記に整形する。"""
+    if value is None:
+        return none_label
+
+    amount = int(Decimal(str(value)))
+    if amount == 0:
+        return "0円"
+
+    sign = "-" if amount < 0 else ""
+    amount = abs(amount)
+
+    oku = amount // 100_000_000
+    man = (amount % 100_000_000) // 10_000
+    yen = amount % 10_000
+
+    if oku > 0:
+        if man > 0:
+            return f"{sign}{oku:,}億{man:,}万円"
+        if yen > 0:
+            return f"{sign}{oku:,}億{yen:,}円"
+        return f"{sign}{oku:,}億円"
+
+    if man > 0:
+        if yen > 0:
+            return f"{sign}{man:,}万{yen:,}円"
+        return f"{sign}{man:,}万円"
+
+    return f"{sign}{yen:,}円"
+
+
 def format_person_months(value: Decimal | None) -> str:
     """工数を不要な末尾0を落として人月表記に整形する。"""
     if value is None:
@@ -511,7 +542,7 @@ def build_project_status_view_data(project: Project) -> dict:
         "applicant_name": project.applicant.display_name if project.applicant else "—",
         "department_name": project.department.name if project.department else "—",
         "purpose": project.purpose,
-        "budget_display": format_decimal_amount(project.estimated_budget_amount),
+        "budget_display": format_japanese_amount(project.estimated_budget_amount),
         "person_months_display": format_person_months(project.estimated_person_months),
         "planned_period_display": planned_period,
         "show_reject_panel": project.status == "rejected",
@@ -1553,8 +1584,8 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "overall_progress_pct": avg_progress,
         "done_count": done_count,
         "task_count": total_count,
-        "budget_amount_display": format_decimal_amount(base_budget),
-        "current_actual_display": format_decimal_amount(current_actual),
+        "budget_amount_display": format_japanese_amount(base_budget),
+        "current_actual_display": format_japanese_amount(current_actual),
         "budget_pct": budget_pct,
         "budget_gauge_class": "gf-over" if budget_pct >= 100 else "gf-warn" if budget_pct >= 80 else "gf-ok",
         "budget_pct_color": "var(--app-prog-danger)" if budget_pct >= 100 else "var(--app-prog-warning)" if budget_pct >= 80 else "var(--app-prog-success)",
@@ -2038,10 +2069,10 @@ def _build_manager_empty_top_view_data() -> dict:
             "over_arc_percent": 0.0,
             "usage_percent_display": "0%",
             "usage_class": "normal",
-            "annual_budget_display": format_decimal_amount(Decimal("0")),
-            "actual_display": format_decimal_amount(Decimal("0")),
-            "over_display": format_decimal_amount(Decimal("0")),
-            "remaining_display": format_decimal_amount(Decimal("0")),
+            "annual_budget_display": format_japanese_amount(Decimal("0")),
+            "actual_display": format_japanese_amount(Decimal("0")),
+            "over_display": format_japanese_amount(Decimal("0")),
+            "remaining_display": format_japanese_amount(Decimal("0")),
         },
     }
 
@@ -2118,7 +2149,7 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
                 "submitted_sort_key": submitted_at or p.created_at,
                 "project_name": p.title,
                 "applicant_name": p.applicant.display_name if p.applicant else "—",
-                "budget_display": format_decimal_amount(Decimal(p.estimated_budget_amount or 0)),
+                "budget_display": format_japanese_amount(Decimal(p.estimated_budget_amount or 0)),
                 "is_waiting_long": wait_days >= 3,
                 "status_label": f"{wait_days}日待機" if wait_days >= 3 else "部門承認待ち",
             }
@@ -2402,10 +2433,10 @@ def build_manager_top_view_data(department_id: int | None) -> dict:
             "over_arc_percent": over_arc_percent,
             "usage_percent_display": f"{format_percent_value(usage_percent)}%",
             "usage_class": usage_class,
-            "annual_budget_display": format_decimal_amount(annual_budget),
-            "actual_display": format_decimal_amount(actual_amount),
-            "over_display": format_decimal_amount(over_amount),
-            "remaining_display": format_decimal_amount(remaining_amount),
+            "annual_budget_display": format_japanese_amount(annual_budget),
+            "actual_display": format_japanese_amount(actual_amount),
+            "over_display": format_japanese_amount(over_amount),
+            "remaining_display": format_japanese_amount(remaining_amount),
         },
     }
 
@@ -2465,7 +2496,7 @@ def build_department_budget_simulation(project: Project) -> dict:
             "is_budget_missing": True,
             "annual_budget_display": "—",
             "actual_amount_display": "—",
-            "this_project_amount_display": format_decimal_amount(this_project_amount),
+            "this_project_amount_display": format_japanese_amount(this_project_amount),
             "remaining_amount_display": "—",
             "remaining_result_display": "—",
             "consume_rate": "—",
@@ -2549,10 +2580,10 @@ def build_department_budget_simulation(project: Project) -> dict:
     else:
         occupy_rate_class = "ibv-ok"
 
-    remaining_amount_display = format_decimal_amount(remaining_amount)
+    remaining_amount_display = format_japanese_amount(remaining_amount)
     remaining_result_display = remaining_amount_display
     if remaining_amount < 0:
-        remaining_amount_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+        remaining_amount_display = f"-{format_japanese_amount(abs(remaining_amount))}"
         remaining_result_display = remaining_amount_display
 
     consume_rate_display = format_percent_value(consume_rate)
@@ -2569,23 +2600,13 @@ def build_department_budget_simulation(project: Project) -> dict:
         result_title = f"承認後の予算残高：{remaining_result_display}（予算超過）"
         result_message = "本案件を承認すると部門年間予算を超過します。本部承認前に予算調整が必要です。"
 
-    if annual_budget > 0:
-        axis_labels = []
-        for pct in [0, 25, 50, 75, 100]:
-            if pct == 0:
-                axis_labels.append("0")
-                continue
-            amount = (annual_budget * Decimal(pct)) / Decimal("100")
-            man_yen = int(amount / Decimal("10000"))
-            axis_labels.append(f"{pct}%（{man_yen:,}万円）")
-    else:
-        axis_labels = ["0", "25%", "50%", "75%", "100%"]
+    axis_labels = ["0%", "25%", "50%", "75%", "100%"]
 
     return {
         "is_budget_missing": False,
-        "annual_budget_display": format_decimal_amount(annual_budget),
-        "actual_amount_display": format_decimal_amount(actual_amount),
-        "this_project_amount_display": format_decimal_amount(this_project_amount),
+        "annual_budget_display": format_japanese_amount(annual_budget),
+        "actual_amount_display": format_japanese_amount(actual_amount),
+        "this_project_amount_display": format_japanese_amount(this_project_amount),
         "remaining_amount_display": remaining_amount_display,
         "remaining_result_display": remaining_result_display,
         "consume_rate": consume_rate_display,
@@ -2679,7 +2700,7 @@ def build_manager_review_view_data(
         "submitted_date": format_jst_date(submitted_at),
         "submitted_date_ja": format_jst_date_ja(submitted_at),
         "wait_badge_text": f"{waiting_days}日待機" if waiting_days >= 3 else "",
-        "estimated_budget_display": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+        "estimated_budget_display": format_japanese_amount(Decimal(project.estimated_budget_amount or 0)),
         "estimated_person_months_display": format_person_months(project.estimated_person_months),
         "planned_period_display": f"{format_business_date(project.planned_start_date)} ～ {format_business_date(project.planned_end_date)}",
         "queue_position": current_index + 1,
@@ -3152,8 +3173,8 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
         "overall_progress_pct": avg_progress,
         "done_count": done_tasks,
         "task_count": total_tasks,
-        "budget_actual_display": format_decimal_amount(budget_metrics["actual_total"]),
-        "budget_base_display": format_decimal_amount(budget_metrics["budget_base"]),
+        "budget_actual_display": format_japanese_amount(budget_metrics["actual_total"]),
+        "budget_base_display": format_japanese_amount(budget_metrics["budget_base"]),
         "budget_pct": budget_pct,
         "budget_gauge_class": budget_gauge_class,
         "budget_pct_class": budget_pct_class,
@@ -3287,7 +3308,7 @@ def _build_hq_top_empty_view_data() -> dict:
             "department_projects": {"value": 0, "unit": "件", "meta": "0部門合計", "number_class": "sb-number-normal"},
             "final_approval_requests": {"value": 0, "unit": "件", "meta": "待機中なし", "number_class": "sb-number-normal"},
             "budget_alert_departments": {"value": 0, "unit": "部門", "meta": "注意0/超過0", "number_class": "sb-number-normal"},
-            "company_budget_rate": {"value": 0, "unit": "%", "meta": "¥0/¥0", "number_class": "sb-number-normal"},
+            "company_budget_rate": {"value": 0, "unit": "%", "meta": "0円/0円", "number_class": "sb-number-normal"},
             "delayed_projects": {"value": 0, "unit": "件", "meta": "最長遅延なし", "number_class": "sb-number-normal"},
             "budget_alert_projects": {"value": 0, "unit": "件", "meta": "注意0/超過0", "number_class": "sb-number-normal"},
         },
@@ -3342,14 +3363,10 @@ def _truncate_with_ellipsis(text: str, limit: int) -> str:
 
 
 def _format_summary_amount_short(value: Decimal) -> str:
-    """サマリー用の金額を短縮表記に整形する。"""
-    amount = int(value or 0)
-    if amount == 0:
-        return "¥0"
-    million = amount // 1_000_000
-    if million > 0:
-        return f"¥{million:,}M"
-    return f"¥{amount:,}"
+    """サマリー用の金額を百万円単位の短縮表記に整形する。"""
+    amount = Decimal(value or 0)
+    million = (amount / Decimal("1000000")).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return f"¥{int(million):,}M"
 
 
 def build_hq_top_view_data() -> dict:
@@ -3467,7 +3484,7 @@ def build_hq_top_view_data() -> dict:
                     "department_badge_class": _get_hq_department_badge_class(project.department.name if project.department else None),
                     "department_name": project.department.name if project.department else "未所属",
                     "project_name": project.title,
-                    "estimated_budget_text": format_decimal_amount(
+                    "estimated_budget_text": format_japanese_amount(
                         Decimal(
                             (
                                 project.approved_budget_amount
@@ -3679,7 +3696,7 @@ def build_hq_top_view_data() -> dict:
         department_items.append(
             {
                 "department_name": dept.name,
-                "amount_text": f"{format_decimal_amount(actual_amount)} / {format_decimal_amount(annual_amount)}",
+                "amount_text": f"{format_japanese_amount(actual_amount)} / {format_japanese_amount(annual_amount)}",
                 "rate_text": f"{_format_hq_percent_int(rate)}%",
                 "rate_class": rate_class,
                 "fill_class": fill_class,
@@ -3733,10 +3750,10 @@ def build_hq_top_view_data() -> dict:
             "over_dashoffset": over_dashoffset,
             "rate_class": "dp-danger" if company_rate >= Decimal("100") else ("dp-warn" if company_rate >= Decimal("80") else ""),
             "rate_text": f"{_format_hq_percent_int(company_rate)}%",
-            "used_amount_text": format_decimal_amount(company_actual),
-            "over_amount_text": format_decimal_amount(over_amount),
-            "remaining_amount_text": format_decimal_amount(remaining_amount),
-            "total_amount_text": format_decimal_amount(company_budget_total),
+            "used_amount_text": format_japanese_amount(company_actual),
+            "over_amount_text": format_japanese_amount(over_amount),
+            "remaining_amount_text": format_japanese_amount(remaining_amount),
+            "total_amount_text": format_japanese_amount(company_budget_total),
         }
 
     phase_segments = []
@@ -3925,7 +3942,7 @@ def _format_axis_amount(value: Decimal) -> str:
         return f"{oku:,}億円"
     if man > 0:
         return f"{man:,}万円"
-    return f"¥{amount:,}"
+    return f"{amount:,}円"
 
 
 def _build_hq_budget_simulation(project: Project) -> dict:
@@ -3936,7 +3953,7 @@ def _build_hq_budget_simulation(project: Project) -> dict:
             "is_budget_missing": True,
             "annual_budget_display": "—",
             "actual_amount_display": "—",
-            "this_project_amount_display": format_decimal_amount(this_project_amount),
+            "this_project_amount_display": format_japanese_amount(this_project_amount),
             "remaining_amount_display": "—",
             "consume_rate_display": "—",
             "actual_rate_display": "—",
@@ -3985,7 +4002,7 @@ def _build_hq_budget_simulation(project: Project) -> dict:
             "is_budget_missing": True,
             "annual_budget_display": "—",
             "actual_amount_display": "—",
-            "this_project_amount_display": format_decimal_amount(this_project_amount),
+            "this_project_amount_display": format_japanese_amount(this_project_amount),
             "remaining_amount_display": "—",
             "consume_rate_display": "—",
             "actual_rate_display": "—",
@@ -4041,9 +4058,9 @@ def _build_hq_budget_simulation(project: Project) -> dict:
     actual_rate_display = format_percent_value(actual_rate)
     occupy_rate_display = format_percent_value(occupy_rate)
     remaining_rate_display = format_percent_value(remaining_rate)
-    remaining_amount_display = format_decimal_amount(remaining_amount)
+    remaining_amount_display = format_japanese_amount(remaining_amount)
     if remaining_amount < 0:
-        remaining_amount_display = f"-{format_decimal_amount(abs(remaining_amount))}"
+        remaining_amount_display = f"-{format_japanese_amount(abs(remaining_amount))}"
 
     if result_class == "ok":
         result_title = f"承認後の予算残高：{remaining_amount_display}（{remaining_rate_display}%）"
@@ -4055,10 +4072,7 @@ def _build_hq_budget_simulation(project: Project) -> dict:
         result_title = f"承認後の予算残高：{remaining_amount_display}（予算超過）"
         result_message = "本案件を承認すると全社年間予算を超過します。予算調整が必要です。"
 
-    axis_labels = ["0"]
-    for pct in [25, 50, 75, 100]:
-        amount = (annual_budget * Decimal(pct)) / Decimal("100")
-        axis_labels.append(f"{pct}%（{_format_axis_amount(amount)}）")
+    axis_labels = ["0%", "25%", "50%", "75%", "100%"]
 
     all_project_amounts = (
         db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
@@ -4081,9 +4095,9 @@ def _build_hq_budget_simulation(project: Project) -> dict:
 
     return {
         "is_budget_missing": False,
-        "annual_budget_display": format_decimal_amount(annual_budget),
-        "actual_amount_display": format_decimal_amount(actual_amount),
-        "this_project_amount_display": format_decimal_amount(this_project_amount),
+        "annual_budget_display": format_japanese_amount(annual_budget),
+        "actual_amount_display": format_japanese_amount(actual_amount),
+        "this_project_amount_display": format_japanese_amount(this_project_amount),
         "remaining_amount_display": remaining_amount_display,
         "consume_rate_display": consume_rate_display,
         "actual_rate_display": actual_rate_display,
@@ -4163,7 +4177,7 @@ def _build_hq_final_review_view_data(
         "submitted_date_ja": format_jst_date_ja(submitted_at),
         "dept_approved_display": f"{format_jst_date(dept_approved_at)}（{dept_approver_name}）" if dept_approved_at else "—",
         "wait_badge_text": f"{waiting_days}日待機" if waiting_days >= 3 else "",
-        "estimated_budget_display": format_decimal_amount(Decimal(project.estimated_budget_amount or 0)),
+        "estimated_budget_display": format_japanese_amount(Decimal(project.estimated_budget_amount or 0)),
         "estimated_person_months_display": format_person_months(project.estimated_person_months),
         "planned_period_display": f"{format_business_date_ja(project.planned_start_date)}〜{format_business_date_ja(project.planned_end_date)}（{duration_months}ヶ月）" if duration_months else "未設定",
         "queue_position": current_index + 1,
