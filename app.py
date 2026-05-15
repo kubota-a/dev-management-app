@@ -3919,6 +3919,33 @@ def _format_axis_amount(value: Decimal) -> str:
 
 
 def _build_hq_budget_simulation(project: Project) -> dict:
+    this_project_amount = Decimal(project.estimated_budget_amount or 0)
+
+    if project.planned_start_date is None:
+        return {
+            "is_budget_missing": True,
+            "annual_budget_display": "—",
+            "actual_amount_display": "—",
+            "this_project_amount_display": format_decimal_amount(this_project_amount),
+            "remaining_amount_display": "—",
+            "consume_rate_display": "—",
+            "actual_rate_display": "—",
+            "occupy_rate_display": "—",
+            "remaining_rate_display": "—",
+            "result_class": "warn",
+            "result_title": "予算シミュレーションを表示できません",
+            "result_message": "対象年度の全社年間予算が登録されていないため、シミュレーションを表示できません。",
+            "consume_rate_class": "ibv-blue",
+            "remaining_amount_class": "ibv-blue",
+            "occupy_rate_class": "ibv-blue",
+            "axis_labels": ["0%", "50%", "100%"],
+            "seg_used": 0.0,
+            "seg_this": 0.0,
+            "seg_remaining": 100.0,
+            "budget_rank": "—",
+            "project_count": 0,
+        }
+
     fiscal_year = get_fiscal_year(project.planned_start_date)
     fiscal_start = date(fiscal_year, 4, 1)
     fiscal_end = date(fiscal_year + 1, 3, 31)
@@ -3941,22 +3968,45 @@ def _build_hq_budget_simulation(project: Project) -> dict:
         .scalar()
     )
     actual_amount = Decimal(actual_sum or 0)
-    this_project_amount = Decimal(project.estimated_budget_amount or 0)
     remaining_amount = annual_budget - actual_amount - this_project_amount
+
+    if annual_budget <= 0:
+        return {
+            "is_budget_missing": True,
+            "annual_budget_display": "—",
+            "actual_amount_display": "—",
+            "this_project_amount_display": format_decimal_amount(this_project_amount),
+            "remaining_amount_display": "—",
+            "consume_rate_display": "—",
+            "actual_rate_display": "—",
+            "occupy_rate_display": "—",
+            "remaining_rate_display": "—",
+            "result_class": "warn",
+            "result_title": "予算シミュレーションを表示できません",
+            "result_message": "対象年度の全社年間予算が登録されていないため、シミュレーションを表示できません。",
+            "consume_rate_class": "ibv-blue",
+            "remaining_amount_class": "ibv-blue",
+            "occupy_rate_class": "ibv-blue",
+            "axis_labels": ["0%", "50%", "100%"],
+            "seg_used": 0.0,
+            "seg_this": 0.0,
+            "seg_remaining": 100.0,
+            "budget_rank": "—",
+            "project_count": 0,
+        }
 
     consume_rate = Decimal("0")
     actual_rate = Decimal("0")
     occupy_rate = Decimal("0")
     remaining_rate = Decimal("0")
-    if annual_budget > 0:
-        consume_rate = ((actual_amount + this_project_amount) / annual_budget) * Decimal("100")
-        actual_rate = (actual_amount / annual_budget) * Decimal("100")
-        occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
-        remaining_rate = Decimal("100") - actual_rate - occupy_rate
+    consume_rate = ((actual_amount + this_project_amount) / annual_budget) * Decimal("100")
+    actual_rate = (actual_amount / annual_budget) * Decimal("100")
+    occupy_rate = (this_project_amount / annual_budget) * Decimal("100")
+    remaining_rate = Decimal("100") - actual_rate - occupy_rate
 
-    if annual_budget <= 0 or remaining_amount < 0:
+    if remaining_amount < 0:
         result_class = "danger"
-    elif consume_rate >= Decimal("80"):
+    elif consume_rate >= Decimal("80") or remaining_rate < Decimal("20"):
         result_class = "warn"
     else:
         result_class = "ok"
@@ -3985,10 +4035,7 @@ def _build_hq_budget_simulation(project: Project) -> dict:
     if remaining_amount < 0:
         remaining_amount_display = f"-{format_decimal_amount(abs(remaining_amount))}"
 
-    if annual_budget <= 0:
-        result_title = "全社年間予算が登録されていません"
-        result_message = "予算シミュレーションを表示できません。年度予算データを確認してください。"
-    elif result_class == "ok":
+    if result_class == "ok":
         result_title = f"承認後の予算残高：{remaining_amount_display}（{remaining_rate_display}%）"
         result_message = "本案件を承認しても、全社年間予算には十分な残余があります。"
     elif result_class == "warn":
@@ -3998,13 +4045,10 @@ def _build_hq_budget_simulation(project: Project) -> dict:
         result_title = f"承認後の予算残高：{remaining_amount_display}（予算超過）"
         result_message = "本案件を承認すると全社年間予算を超過します。予算調整が必要です。"
 
-    if annual_budget > 0:
-        axis_labels = ["0"]
-        for pct in [25, 50, 75, 100]:
-            amount = (annual_budget * Decimal(pct)) / Decimal("100")
-            axis_labels.append(f"{pct}%（{_format_axis_amount(amount)}）")
-    else:
-        axis_labels = ["0", "25%", "50%", "75%", "100%"]
+    axis_labels = ["0"]
+    for pct in [25, 50, 75, 100]:
+        amount = (annual_budget * Decimal(pct)) / Decimal("100")
+        axis_labels.append(f"{pct}%（{_format_axis_amount(amount)}）")
 
     all_project_amounts = (
         db.session.query(Project.id, Project.estimated_budget_amount, Project.approved_budget_amount)
@@ -4026,6 +4070,7 @@ def _build_hq_budget_simulation(project: Project) -> dict:
     budget_rank = rank_map.get(project.id, 1)
 
     return {
+        "is_budget_missing": False,
         "annual_budget_display": format_decimal_amount(annual_budget),
         "actual_amount_display": format_decimal_amount(actual_amount),
         "this_project_amount_display": format_decimal_amount(this_project_amount),
@@ -4235,11 +4280,23 @@ def hq_project_final_review(project_id: int):
 
     current_title = project.title
     try:
+        db.session.refresh(project)
+        is_pending_target = project.status == "hq_pending" and project.approval_stage == "hq_pending"
+        if not is_pending_target:
+            flash("この案件はすでに審査済みです。", "warning")
+            next_project = _find_next_hq_pending_project(exclude_project_id=project.id)
+            if next_project:
+                return redirect(url_for("hq_project_final_review", project_id=next_project.id))
+            return redirect(url_for("hq_project_final_review_entry"))
+
         if action == "approve":
+            now = utc_now()
             project.status = "in_progress"
             project.approval_stage = "approved"
             project.approved_budget_amount = project.estimated_budget_amount
-            project.approved_at = utc_now()
+            project.approved_at = now
+            project.rejection_comment = None
+            project.final_rejected_at = None
 
             db.session.add(
                 ProjectStatusLog(
@@ -4249,7 +4306,7 @@ def hq_project_final_review(project_id: int):
                     to_status="in_progress",
                     action="approve_hq",
                     comment=None,
-                    acted_at=utc_now(),
+                    acted_at=now,
                 )
             )
             create_notification(
@@ -4260,10 +4317,11 @@ def hq_project_final_review(project_id: int):
             )
             flash(f"「{current_title}」を最終承認し、予算を確定しました。", "success")
         else:
+            now = utc_now()
             project.status = "rejected"
             project.approval_stage = "rejected"
             project.rejection_comment = rejection_comment
-            project.final_rejected_at = utc_now()
+            project.final_rejected_at = now
             project.approved_budget_amount = None
             project.approved_at = None
 
@@ -4275,7 +4333,7 @@ def hq_project_final_review(project_id: int):
                     to_status="rejected",
                     action="reject_hq",
                     comment=rejection_comment,
-                    acted_at=utc_now(),
+                    acted_at=now,
                 )
             )
             create_notification(

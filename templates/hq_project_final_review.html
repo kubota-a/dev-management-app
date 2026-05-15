@@ -414,7 +414,7 @@
             <div class="impact-row">
               <div class="impact-box">
                 <div class="ib-label">予算消化率（承認後予測）</div>
-                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{{ review_data.budget_simulation.consume_rate_display }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.consume_rate_class }}">{% if review_data.budget_simulation.is_budget_missing %}{{ review_data.budget_simulation.consume_rate_display }}{% else %}{{ review_data.budget_simulation.consume_rate_display }}%{% endif %}</div>
                 <div class="ib-sub">承認後予測</div>
               </div>
               <div class="impact-box">
@@ -424,7 +424,7 @@
               </div>
               <div class="impact-box">
                 <div class="ib-label">本案件の全社占有率</div>
-                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{{ review_data.budget_simulation.occupy_rate_display }}%</div>
+                <div class="ib-val {{ review_data.budget_simulation.occupy_rate_class }}">{% if review_data.budget_simulation.is_budget_missing %}{{ review_data.budget_simulation.occupy_rate_display }}{% else %}{{ review_data.budget_simulation.occupy_rate_display }}%{% endif %}</div>
                 <div class="ib-sub">{{ review_data.budget_simulation.this_project_amount_display }} / {{ review_data.budget_simulation.annual_budget_display }}</div>
               </div>
               <div class="impact-box">
@@ -446,9 +446,9 @@
             </div>
 
             <div class="stack-legend">
-              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">{{ review_data.budget_simulation.actual_amount_display }}（{{ review_data.budget_simulation.actual_rate_display }}%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-warning)"></div><span class="sl-key">本案件</span><span class="sl-val">{{ review_data.budget_simulation.this_project_amount_display }}（{{ review_data.budget_simulation.occupy_rate_display }}%）</span></div>
-              <div class="sl-item"><div class="sl-dot" style="background:#dce8f0"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">{{ review_data.budget_simulation.remaining_amount_display }}（{{ review_data.budget_simulation.remaining_rate_display }}%）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-sidebar)"></div><span class="sl-key">実績額</span><span class="sl-val">{{ review_data.budget_simulation.actual_amount_display }}（{% if review_data.budget_simulation.is_budget_missing %}{{ review_data.budget_simulation.actual_rate_display }}{% else %}{{ review_data.budget_simulation.actual_rate_display }}%{% endif %}）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:var(--hfr-warning)"></div><span class="sl-key">本案件</span><span class="sl-val">{{ review_data.budget_simulation.this_project_amount_display }}（{% if review_data.budget_simulation.is_budget_missing %}{{ review_data.budget_simulation.occupy_rate_display }}{% else %}{{ review_data.budget_simulation.occupy_rate_display }}%{% endif %}）</span></div>
+              <div class="sl-item"><div class="sl-dot" style="background:#dce8f0"></div><span class="sl-key">承認後の残予算</span><span class="sl-val">{{ review_data.budget_simulation.remaining_amount_display }}（{% if review_data.budget_simulation.is_budget_missing %}{{ review_data.budget_simulation.remaining_rate_display }}{% else %}{{ review_data.budget_simulation.remaining_rate_display }}%{% endif %}）</span></div>
             </div>
 
             <div class="sim-result sr-{{ review_data.budget_simulation.result_class }}">
