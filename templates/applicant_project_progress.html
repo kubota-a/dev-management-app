@@ -471,7 +471,7 @@
                         <div class="progress-pct" id="pct{{ task.idx }}" style="color:{{ task.pct_color }}">{{ task.progress_rate }}%</div>
                       </div>
                       <div class="slider-wrap">
-                        <input type="range" class="pct-slider" name="task_progress_{{ task.id }}" min="0" max="100" step="5" value="{{ task.progress_rate }}" oninput="updateApplicantProgressSlider(this,'pct{{ task.idx }}')" style="background: linear-gradient(to right, {{ task.slider_color }} {{ task.progress_rate }}%, #e6eff1 {{ task.progress_rate }}%)">
+                        <input type="range" class="pct-slider" name="task_progress_{{ task.id }}" min="0" max="100" step="5" value="{{ task.progress_rate }}" oninput="updateApplicantProgressSlider(this,'pct{{ task.idx }}')">
                       </div>
                       <div class="quick-btns">
                         <button type="button" class="qb" onclick="setApplicantProgressQuick('pct{{ task.idx }}',{{ task.idx }},25)">25%</button>
@@ -632,11 +632,13 @@ function captureApplicantProgressInitialState(){
   document.querySelectorAll(".mock-applicant-project-progress [id^='applicantProgressTaskCard']").forEach(function(card){
     const slider=card.querySelector("input[type=range]");
     const pctEl=card.querySelector("[id^='pct']");
+    const statusInput=card.querySelector("input[type='hidden'][id^='taskStatus']");
     const btns=card.querySelectorAll(".st-btn");
     taskStates.push({
       id: card.id,
       className: card.className,
       overdue: card.dataset.overdue || "",
+      statusValue: statusInput ? statusInput.value : "",
       sliderValue: slider ? slider.value : "",
       sliderBackground: slider ? slider.style.background : "",
       pctText: pctEl ? pctEl.textContent : "",
@@ -713,10 +715,18 @@ function resetApplicantProgressChanges(){
     if(!card)return;
     card.className=state.className;
     card.dataset.overdue=state.overdue;
+    const statusInput=card.querySelector("input[type='hidden'][id^='taskStatus']");
+    if(statusInput){
+      statusInput.value=state.statusValue;
+    }
     const slider=card.querySelector("input[type=range]");
     const pctEl=card.querySelector("[id^='pct']");
     const btns=card.querySelectorAll(".st-btn");
-    if(slider){slider.value=state.sliderValue;slider.style.background=state.sliderBackground;}
+    if(slider){
+      slider.value=state.sliderValue;
+      const type=getApplicantProgressSliderTypeFromDbStatus(state.statusValue,state.sliderValue);
+      updateApplicantProgressSliderBackground(slider,state.sliderValue,type);
+    }
     if(pctEl){pctEl.textContent=state.pctText;pctEl.style.color=state.pctColor;}
     btns.forEach(function(btn,idx){
       if(state.buttonClasses[idx]!==undefined){
@@ -746,8 +756,28 @@ function getApplicantProgressDbStatus(type){
 }
 function updateApplicantProgressSliderBackground(slider,value,type){
   if(!slider)return;
-  const color=getApplicantProgressSliderColor(type,value);
-  slider.style.background="linear-gradient(to right, "+color+" "+value+"%, #e6eff1 "+value+"%)";
+  const numericValue=Math.max(0,Math.min(100,Number(value)||0));
+  const ratio=numericValue/100;
+  const color=getApplicantProgressSliderColor(type,numericValue);
+  const stop="calc(10px + (100% - 20px) * "+ratio+")";
+  slider.style.background="linear-gradient(to right, "+color+" 0, "+color+" "+stop+", #e6eff1 "+stop+", #e6eff1 100%)";
+}
+function getApplicantProgressSliderTypeFromDbStatus(dbStatus,value){
+  if(dbStatus==="done"){return "done";}
+  if(dbStatus==="not_started"){return "notstarted";}
+  const numericValue=Number(value)||0;
+  if(numericValue===100){return "done";}
+  if(numericValue===0){return "notstarted";}
+  return "progress";
+}
+function initApplicantProgressSliderBackgrounds(){
+  document.querySelectorAll(".mock-applicant-project-progress .pct-slider").forEach(function(slider){
+    const card=slider.closest(".task-card");
+    const statusInput=card?card.querySelector("input[type='hidden'][id^='taskStatus']"):null;
+    const dbStatus=statusInput?statusInput.value:"";
+    const type=getApplicantProgressSliderTypeFromDbStatus(dbStatus,slider.value);
+    updateApplicantProgressSliderBackground(slider,slider.value,type);
+  });
 }
 function recalcApplicantProgressDoneCount(){const sliders=document.querySelectorAll(".mock-applicant-project-progress .pct-slider");const doneCountEl=getApplicantProgressEl("applicantProgressDoneCount");const taskCountEl=getApplicantProgressEl("applicantProgressTaskCount");const listDoneCountEl=getApplicantProgressEl("applicantProgressListDoneCount");const listTaskCountEl=getApplicantProgressEl("applicantProgressListTaskCount");let doneCount=0;sliders.forEach(function(slider){if(Number(slider.value)===100){doneCount+=1;}});if(doneCountEl){doneCountEl.textContent=String(doneCount);}if(taskCountEl){taskCountEl.textContent=String(sliders.length);}if(listDoneCountEl){listDoneCountEl.textContent=String(doneCount);}if(listTaskCountEl){listTaskCountEl.textContent=String(sliders.length);}}
 function getApplicantProgressTodayJstIso(){return APPLICANT_PROGRESS_TODAY_ISO;}
@@ -1156,6 +1186,6 @@ function initApplicantTaskModal(){
   if(deleteOverlay){deleteOverlay.addEventListener("click",function(event){if(event.target===deleteOverlay){closeApplicantTaskDeleteDialog();}});}
   if(deleteBox){deleteBox.addEventListener("click",function(event){event.stopPropagation();});}
 }
-(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();initApplicantTaskModal();const loginSuccessToast={{ login_success_toast|tojson }};if(loginSuccessToast){showApplicantProgressToast(loginSuccessToast);}})();
+(function initApplicantProgress(){const ta=getApplicantProgressEl("reportText");if(ta)updateApplicantProgressCharCount(ta,false);initApplicantProgressResponsiveAccordions();recalcApplicantProgressOverall();initApplicantProgressSliderBackgrounds();captureApplicantProgressInitialState();updateApplicantProgressFooterUnsaved();initApplicantTaskModal();const loginSuccessToast={{ login_success_toast|tojson }};if(loginSuccessToast){showApplicantProgressToast(loginSuccessToast);}})();
 </script>
 {% endblock %}
