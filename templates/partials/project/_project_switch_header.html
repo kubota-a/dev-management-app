@@ -1,0 +1,13 @@
+<div class="project-switch-header {{ project_switch_theme_class }}">
+  <div class="project-switch-bar">
+    <div class="project-switch-label">{{ project_switch_label }}</div>
+    {% for item in project_switch_items %}
+    <a href="{{ item.url }}" class="project-switch-tab{% if item.is_active %} is-active{% endif %}">
+      {{ item.title }}
+      {% for badge in item.badges %}
+      <span class="project-switch-badge {{ badge.class_name }}">{{ badge.label }}</span>
+      {% endfor %}
+    </a>
+    {% endfor %}
+  </div>
+</div>

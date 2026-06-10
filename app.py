@@ -3199,6 +3199,31 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
     }
 
 
+def build_project_switch_items(monitoring_projects: list[dict], current_project_id: int) -> list[dict]:
+    """案件切り替えサブヘッダー用の共通データを作る。"""
+    project_switch_items = []
+    for item in monitoring_projects:
+        badges = []
+        if item.get("can_complete"):
+            badges.append({"label": "完了可", "class_name": "is-complete"})
+        if item.get("has_delay"):
+            badges.append({"label": "遅延", "class_name": "is-delay"})
+        if item.get("has_budget_alert"):
+            badges.append({"label": "予算", "class_name": "is-budget"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("manager_project_monitoring_detail", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
 @app.route("/manager/projects/monitoring")
 @login_required
 def manager_project_monitoring():
@@ -3289,9 +3314,11 @@ def manager_project_monitoring_detail(project_id: int):
 
     monitoring_projects = get_manager_monitoring_projects(current_user.department_id)
     view_data = build_manager_monitoring_view_data(project, monitoring_projects)
+    project_switch_items = build_project_switch_items(view_data["monitoring_projects"], project.id)
     return render_template(
         "manager_project_monitoring.html",
         view_data=view_data,
+        project_switch_items=project_switch_items,
         monitoring_projects=view_data["monitoring_projects"],
         current_project_id=project.id,
         unread_notifications_count=get_unread_notifications_count(),
