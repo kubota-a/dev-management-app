@@ -1654,6 +1654,34 @@ def build_applicant_progress_switcher_data(projects: list[Project], current_proj
     return items
 
 
+def build_applicant_project_switch_items(
+    progress_switcher_projects: list[dict],
+    current_progress_project_id: int,
+) -> list[dict]:
+    """申請者向け案件切り替えサブヘッダー用の共通データを作る。"""
+    project_switch_items = []
+    for item in progress_switcher_projects:
+        badges = []
+        if item.get("has_delay"):
+            badges.append({"label": "遅延", "class_name": "is-delay"})
+        if item.get("has_budget_alert"):
+            badges.append({"label": "予算", "class_name": "is-budget"})
+        if item.get("can_complete_wait"):
+            badges.append({"label": "完了待ち", "class_name": "is-complete"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("applicant_project_progress_detail", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_progress_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
 def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[str], dict]:
     """案件進捗管理画面のPOST値を検証する。"""
     errors: list[str] = []
@@ -1998,9 +2026,11 @@ def applicant_project_progress_detail(project_id):
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
     progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
+    project_switch_items = build_applicant_project_switch_items(progress_switcher_projects, project.id)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
+        project_switch_items=project_switch_items,
         progress_switcher_projects=progress_switcher_projects,
         current_progress_project_id=project.id,
         login_success_toast=None,
