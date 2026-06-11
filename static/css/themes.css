@@ -1,3 +1,14 @@
+.theme-hq,
+.theme-manager,
+.theme-applicant {
+    --color-status-label-executable-bg: #dcfce7;
+    --color-status-label-executable-text: #166534;
+    --color-status-label-delay-bg: #fee2e2;
+    --color-status-label-delay-text: #dc3545;
+    --color-status-label-budget-warning-bg: #ffedd5;
+    --color-status-label-budget-warning-text: #c2410c;
+}
+
 .theme-hq {
     --color-header-bg: #31475E;    /* ヘッダー背景 */
     --color-sidebar-bg: #45617c;    /* サイドバー背景 */
