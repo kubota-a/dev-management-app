@@ -2688,6 +2688,7 @@ def build_manager_review_view_data(
                 "title": item.title,
                 "submitted_date": format_jst_date(item_submitted, "%m/%d") if item_submitted else "—",
                 "is_current": item.id == project.id,
+                "wait_days": item_wait_days,
                 "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
             }
         )
@@ -2799,9 +2800,11 @@ def manager_project_review(project_id: int):
             return redirect(url_for("manager_top"))
 
         review_data = build_manager_review_view_data(project, queue_projects)
+        project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "manager_project_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
@@ -2832,9 +2835,11 @@ def manager_project_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "manager_project_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
         if len(rejection_comment) > 500:
@@ -2845,9 +2850,11 @@ def manager_project_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "manager_project_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
 
@@ -2938,9 +2945,11 @@ def manager_project_review(project_id: int):
             rejection_comment=rejection_comment if action == "reject" else "",
             force_reject_mode=(action == "reject"),
         )
+        project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "manager_project_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
@@ -3246,6 +3255,28 @@ def build_project_switch_items(monitoring_projects: list[dict], current_project_
                 "project_id": item["project_id"],
                 "title": item["title"],
                 "url": url_for("manager_project_monitoring_detail", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
+def build_manager_review_project_switch_items(queue_items: list[dict], current_project_id: int) -> list[dict]:
+    """部門管理者の承認審査画面向け案件切り替えサブヘッダー用データを作る。"""
+    project_switch_items = []
+    for item in queue_items:
+        badges = []
+        wait_days = item.get("wait_days")
+        if item.get("wait_badge_text") and wait_days is not None:
+            badges.append({"label": f"+{wait_days}", "class_name": "is-delay"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("manager_project_review", project_id=item["project_id"]),
                 "is_active": item["project_id"] == current_project_id,
                 "badges": badges,
             }

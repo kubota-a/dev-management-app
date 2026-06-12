@@ -331,6 +331,10 @@
         padding-top: 23px;
     }
 
+    .app-content:has(.mock-manager-project-review) {
+        padding-top: 23px;
+    }
+
     .app-content:has(#applicantProgressForm) {
         padding-top: 8px;
     }
