@@ -304,6 +304,21 @@
     color: var(--color-status-label-budget-warning-text, #c2410c);
 }
 
+.project-switch-badge.is-department-pending {
+    background: var(--color-status-label-department-pending-bg, #e0f5f8);
+    color: var(--color-status-label-department-pending-text, #1a7585);
+}
+
+.project-switch-badge.is-hq-pending {
+    background: var(--color-status-label-hq-pending-bg, #dbeafe);
+    color: var(--color-status-label-hq-pending-text, #1d4ed8);
+}
+
+.project-switch-badge.is-rejected {
+    background: var(--color-status-label-delay-bg, #fee2e2);
+    color: var(--color-status-label-delay-text, #dc3545);
+}
+
 @media (max-width: 820px) {
     .project-switch-bar {
         width: 100%;
@@ -336,6 +351,10 @@
     }
 
     .app-content:has(.mock-hq-final-review) {
+        padding-top: 23px;
+    }
+
+    .app-content:has(.mock-applicant-project-status) {
         padding-top: 23px;
     }
 

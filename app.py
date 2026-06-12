@@ -1397,13 +1397,18 @@ def applicant_project_status(project_id):
         switcher_options.append(
             {
                 "project_id": item.id,
+                "title": item.title,
                 "label": f"{item.title} — {status_label_map.get(item.status, item.status)}",
+                "status": item.status,
             }
         )
+
+    project_switch_items = build_applicant_status_project_switch_items(switcher_options, project.id)
 
     return render_template(
         "applicant_project_status.html",
         status_view=build_project_status_view_data(project),
+        project_switch_items=project_switch_items,
         switcher_options=switcher_options,
         switcher_count=len(switcher_options),
         unread_notifications_count=get_unread_notifications_count(),
@@ -3300,6 +3305,32 @@ def build_hq_final_review_project_switch_items(queue_items: list[dict], current_
                 "title": item["title"],
                 "url": url_for("hq_project_final_review", project_id=item["project_id"]),
                 "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
+def build_applicant_status_project_switch_items(switcher_options: list[dict], current_project_id: int) -> list[dict]:
+    """申請者の申請状況確認画面向け案件切り替えサブヘッダー用データを作る。"""
+    project_switch_items = []
+    for option in switcher_options:
+        badges = []
+        status = option.get("status")
+        if status == "department_pending":
+            badges.append({"label": "部門待ち", "class_name": "is-department-pending"})
+        elif status == "hq_pending":
+            badges.append({"label": "本部待ち", "class_name": "is-hq-pending"})
+        elif status == "rejected":
+            badges.append({"label": "却下", "class_name": "is-rejected"})
+
+        project_switch_items.append(
+            {
+                "project_id": option["project_id"],
+                "title": option.get("title") or option.get("project_name") or option.get("label"),
+                "url": url_for("applicant_project_status", project_id=option["project_id"]),
+                "is_active": option["project_id"] == current_project_id,
                 "badges": badges,
             }
         )
