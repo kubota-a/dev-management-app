@@ -335,6 +335,10 @@
         padding-top: 23px;
     }
 
+    .app-content:has(.mock-hq-final-review) {
+        padding-top: 23px;
+    }
+
     .app-content:has(#applicantProgressForm) {
         padding-top: 8px;
     }

@@ -3285,6 +3285,28 @@ def build_manager_review_project_switch_items(queue_items: list[dict], current_p
     return project_switch_items
 
 
+def build_hq_final_review_project_switch_items(queue_items: list[dict], current_project_id: int) -> list[dict]:
+    """本部管理者の最終承認審査画面向け案件切り替えサブヘッダー用データを作る。"""
+    project_switch_items = []
+    for item in queue_items:
+        badges = []
+        wait_days = item.get("wait_days")
+        if item.get("wait_badge_text") and wait_days is not None:
+            badges.append({"label": f"+{wait_days}", "class_name": "is-delay"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("hq_project_final_review", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
 @app.route("/manager/projects/monitoring")
 @login_required
 def manager_project_monitoring():
@@ -4244,6 +4266,7 @@ def _build_hq_final_review_view_data(
                 "department_name": item.department.name if item.department else "—",
                 "department_approved_date_display": item_dept_approved_date_display,
                 "is_current": item.id == project.id,
+                "wait_days": item_wait_days,
                 "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
             }
         )
@@ -4336,9 +4359,11 @@ def hq_project_final_review(project_id: int):
             flash("この案件は現在、本部承認の対象ではありません。", "danger")
             return redirect(url_for("hq_top"))
         review_data = _build_hq_final_review_view_data(project, queue_projects)
+        project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "hq_project_final_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
@@ -4371,9 +4396,11 @@ def hq_project_final_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "hq_project_final_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
         if len(rejection_comment) > 500:
@@ -4384,9 +4411,11 @@ def hq_project_final_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "hq_project_final_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
 
@@ -4466,9 +4495,11 @@ def hq_project_final_review(project_id: int):
             rejection_comment=rejection_comment if action == "reject" else "",
             force_reject_mode=(action == "reject"),
         )
+        project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "hq_project_final_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
