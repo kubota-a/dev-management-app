@@ -1,3 +1,18 @@
+.theme-hq,
+.theme-manager,
+.theme-applicant {
+    --color-status-label-executable-bg: #dcfce7;
+    --color-status-label-executable-text: #166534;
+    --color-status-label-delay-bg: #fee2e2;
+    --color-status-label-delay-text: #dc3545;
+    --color-status-label-budget-warning-bg: #ffedd5;
+    --color-status-label-budget-warning-text: #c2410c;
+    --color-status-label-department-pending-bg: #e0f5f8;
+    --color-status-label-department-pending-text: #1a7585;
+    --color-status-label-hq-pending-bg: #dbeafe;
+    --color-status-label-hq-pending-text: #1d4ed8;
+}
+
 .theme-hq {
     --color-header-bg: #31475E;    /* ヘッダー背景 */
     --color-sidebar-bg: #45617c;    /* サイドバー背景 */

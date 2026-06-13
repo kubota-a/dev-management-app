@@ -1397,13 +1397,18 @@ def applicant_project_status(project_id):
         switcher_options.append(
             {
                 "project_id": item.id,
+                "title": item.title,
                 "label": f"{item.title} — {status_label_map.get(item.status, item.status)}",
+                "status": item.status,
             }
         )
+
+    project_switch_items = build_applicant_status_project_switch_items(switcher_options, project.id)
 
     return render_template(
         "applicant_project_status.html",
         status_view=build_project_status_view_data(project),
+        project_switch_items=project_switch_items,
         switcher_options=switcher_options,
         switcher_count=len(switcher_options),
         unread_notifications_count=get_unread_notifications_count(),
@@ -1652,6 +1657,34 @@ def build_applicant_progress_switcher_data(projects: list[Project], current_proj
         )
     )
     return items
+
+
+def build_applicant_project_switch_items(
+    progress_switcher_projects: list[dict],
+    current_progress_project_id: int,
+) -> list[dict]:
+    """申請者向け案件切り替えサブヘッダー用の共通データを作る。"""
+    project_switch_items = []
+    for item in progress_switcher_projects:
+        badges = []
+        if item.get("has_delay"):
+            badges.append({"label": "遅延", "class_name": "is-delay"})
+        if item.get("has_budget_alert"):
+            badges.append({"label": "予算", "class_name": "is-budget"})
+        if item.get("can_complete_wait"):
+            badges.append({"label": "完了待ち", "class_name": "is-complete"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("applicant_project_progress_detail", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_progress_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
 
 
 def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[str], dict]:
@@ -1998,9 +2031,11 @@ def applicant_project_progress_detail(project_id):
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
     progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
+    project_switch_items = build_applicant_project_switch_items(progress_switcher_projects, project.id)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
+        project_switch_items=project_switch_items,
         progress_switcher_projects=progress_switcher_projects,
         current_progress_project_id=project.id,
         login_success_toast=None,
@@ -2658,6 +2693,7 @@ def build_manager_review_view_data(
                 "title": item.title,
                 "submitted_date": format_jst_date(item_submitted, "%m/%d") if item_submitted else "—",
                 "is_current": item.id == project.id,
+                "wait_days": item_wait_days,
                 "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
             }
         )
@@ -2769,9 +2805,11 @@ def manager_project_review(project_id: int):
             return redirect(url_for("manager_top"))
 
         review_data = build_manager_review_view_data(project, queue_projects)
+        project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "manager_project_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
@@ -2802,9 +2840,11 @@ def manager_project_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "manager_project_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
         if len(rejection_comment) > 500:
@@ -2815,9 +2855,11 @@ def manager_project_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "manager_project_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
 
@@ -2908,9 +2950,11 @@ def manager_project_review(project_id: int):
             rejection_comment=rejection_comment if action == "reject" else "",
             force_reject_mode=(action == "reject"),
         )
+        project_switch_items = build_manager_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "manager_project_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
@@ -3199,6 +3243,101 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
     }
 
 
+def build_project_switch_items(monitoring_projects: list[dict], current_project_id: int) -> list[dict]:
+    """案件切り替えサブヘッダー用の共通データを作る。"""
+    project_switch_items = []
+    for item in monitoring_projects:
+        badges = []
+        if item.get("can_complete"):
+            badges.append({"label": "完了可", "class_name": "is-complete"})
+        if item.get("has_delay"):
+            badges.append({"label": "遅延", "class_name": "is-delay"})
+        if item.get("has_budget_alert"):
+            badges.append({"label": "予算", "class_name": "is-budget"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("manager_project_monitoring_detail", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
+def build_manager_review_project_switch_items(queue_items: list[dict], current_project_id: int) -> list[dict]:
+    """部門管理者の承認審査画面向け案件切り替えサブヘッダー用データを作る。"""
+    project_switch_items = []
+    for item in queue_items:
+        badges = []
+        wait_days = item.get("wait_days")
+        if item.get("wait_badge_text") and wait_days is not None:
+            badges.append({"label": f"+{wait_days}", "class_name": "is-delay"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("manager_project_review", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
+def build_hq_final_review_project_switch_items(queue_items: list[dict], current_project_id: int) -> list[dict]:
+    """本部管理者の最終承認審査画面向け案件切り替えサブヘッダー用データを作る。"""
+    project_switch_items = []
+    for item in queue_items:
+        badges = []
+        wait_days = item.get("wait_days")
+        if item.get("wait_badge_text") and wait_days is not None:
+            badges.append({"label": f"+{wait_days}", "class_name": "is-delay"})
+
+        project_switch_items.append(
+            {
+                "project_id": item["project_id"],
+                "title": item["title"],
+                "url": url_for("hq_project_final_review", project_id=item["project_id"]),
+                "is_active": item["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
+def build_applicant_status_project_switch_items(switcher_options: list[dict], current_project_id: int) -> list[dict]:
+    """申請者の申請状況確認画面向け案件切り替えサブヘッダー用データを作る。"""
+    project_switch_items = []
+    for option in switcher_options:
+        badges = []
+        status = option.get("status")
+        if status == "department_pending":
+            badges.append({"label": "部門待ち", "class_name": "is-department-pending"})
+        elif status == "hq_pending":
+            badges.append({"label": "本部待ち", "class_name": "is-hq-pending"})
+        elif status == "rejected":
+            badges.append({"label": "却下", "class_name": "is-rejected"})
+
+        project_switch_items.append(
+            {
+                "project_id": option["project_id"],
+                "title": option.get("title") or option.get("project_name") or option.get("label"),
+                "url": url_for("applicant_project_status", project_id=option["project_id"]),
+                "is_active": option["project_id"] == current_project_id,
+                "badges": badges,
+            }
+        )
+
+    return project_switch_items
+
+
 @app.route("/manager/projects/monitoring")
 @login_required
 def manager_project_monitoring():
@@ -3289,9 +3428,11 @@ def manager_project_monitoring_detail(project_id: int):
 
     monitoring_projects = get_manager_monitoring_projects(current_user.department_id)
     view_data = build_manager_monitoring_view_data(project, monitoring_projects)
+    project_switch_items = build_project_switch_items(view_data["monitoring_projects"], project.id)
     return render_template(
         "manager_project_monitoring.html",
         view_data=view_data,
+        project_switch_items=project_switch_items,
         monitoring_projects=view_data["monitoring_projects"],
         current_project_id=project.id,
         unread_notifications_count=get_unread_notifications_count(),
@@ -4156,6 +4297,7 @@ def _build_hq_final_review_view_data(
                 "department_name": item.department.name if item.department else "—",
                 "department_approved_date_display": item_dept_approved_date_display,
                 "is_current": item.id == project.id,
+                "wait_days": item_wait_days,
                 "wait_badge_text": f"{item_wait_days}日待機" if item_wait_days >= 3 else "",
             }
         )
@@ -4248,9 +4390,11 @@ def hq_project_final_review(project_id: int):
             flash("この案件は現在、本部承認の対象ではありません。", "danger")
             return redirect(url_for("hq_top"))
         review_data = _build_hq_final_review_view_data(project, queue_projects)
+        project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "hq_project_final_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 
@@ -4283,9 +4427,11 @@ def hq_project_final_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "hq_project_final_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
         if len(rejection_comment) > 500:
@@ -4296,9 +4442,11 @@ def hq_project_final_review(project_id: int):
                 rejection_comment=rejection_comment,
                 force_reject_mode=True,
             )
+            project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
             return render_template(
                 "hq_project_final_review.html",
                 review_data=review_data,
+                project_switch_items=project_switch_items,
                 unread_notifications_count=get_unread_notifications_count(),
             )
 
@@ -4378,9 +4526,11 @@ def hq_project_final_review(project_id: int):
             rejection_comment=rejection_comment if action == "reject" else "",
             force_reject_mode=(action == "reject"),
         )
+        project_switch_items = build_hq_final_review_project_switch_items(review_data["queue_items"], review_data["project_id"])
         return render_template(
             "hq_project_final_review.html",
             review_data=review_data,
+            project_switch_items=project_switch_items,
             unread_notifications_count=get_unread_notifications_count(),
         )
 

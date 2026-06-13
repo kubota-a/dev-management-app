@@ -80,10 +80,6 @@
   border: 1px solid var(--hfr-danger-mid);
   white-space: nowrap;
 }
-.mock-hq-final-review .rb-nav { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.mock-hq-final-review .rb-nav-btn { width: 34px; height: 34px; background: rgba(255,255,255,.15); border-radius: 8px; border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; font-family: var(--font-family-base); }
-.mock-hq-final-review .rb-nav-btn:hover { background: rgba(255,255,255,.28); }
-.mock-hq-final-review .rb-nav-count { font-size: 12px; color: rgba(255,255,255,.75); }
 
 .mock-hq-final-review .three-col { display: grid; grid-template-columns: 1fr 1fr 340px; gap: 20px; align-items: start; }
 .mock-hq-final-review .col-a { display: flex; flex-direction: column; gap: 18px; }
@@ -346,6 +342,11 @@
 </style>
 {% endblock %}
 
+{% block header_after %}
+{% set project_switch_label = "案件切替：" %}
+{% include "partials/project/_project_switch_header.html" %}
+{% endblock %}
+
 {% block content %}
 <div class="mock-hq-final-review">
   <div class="content">
@@ -367,11 +368,6 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="rb-nav">
-        <button class="rb-nav-btn" onclick="{% if review_data.prev_project_id %}location.href='{{ url_for('hq_project_final_review', project_id=review_data.prev_project_id) }}'{% else %}showHqFinalReviewToast('前の審査待ち案件はありません。'){% endif %}">←</button>
-        <span class="rb-nav-count">{{ review_data.queue_position }} / {{ review_data.queue_total_count }}</span>
-        <button class="rb-nav-btn" onclick="{% if review_data.next_project_id %}location.href='{{ url_for('hq_project_final_review', project_id=review_data.next_project_id) }}'{% else %}showHqFinalReviewToast('次の審査待ち案件はありません。'){% endif %}">→</button>
       </div>
     </div>
 

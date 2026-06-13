@@ -33,48 +33,6 @@
   color: var(--app-prog-text);
 }
 .mock-applicant-project-progress .applicant-progress-content { padding: 8px 28px 120px; }
-.mock-applicant-project-progress-header-after {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-.mock-applicant-project-progress .applicant-progress-proj-tabbar {
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--app-prog-card);
-  border-bottom: 1px solid var(--app-prog-border);
-  padding: 10px 28px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-.mock-applicant-project-progress .applicant-progress-proj-tab {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--app-prog-muted);
-  border: 1.5px solid var(--app-prog-border);
-  background: #fff;
-  transition: all .15s;
-  flex-shrink: 0;
-  text-decoration: none;
-}
-.mock-applicant-project-progress .applicant-progress-proj-tab:hover { border-color: var(--app-prog-header); color: var(--app-prog-header); }
-.mock-applicant-project-progress .applicant-progress-proj-tab.active { background: var(--app-prog-header); color: #fff; border-color: var(--app-prog-header); font-weight: 700; }
-.mock-applicant-project-progress .apt-delay-badge { background: #fee2e2; color: var(--app-prog-danger); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; }
-.mock-applicant-project-progress .apt-budget-badge { background: #ffedd5; color: var(--app-prog-warning); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; }
-.mock-applicant-project-progress .apt-complete-wait-badge { background: var(--app-prog-success-bg); color: var(--app-prog-success); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; border: 1px solid #a7f3d0; }
 .mock-applicant-project-progress .summary-card, .mock-applicant-project-progress .budget-input-card, .mock-applicant-project-progress .monthly-card, .mock-applicant-project-progress .task-card {
   background: var(--app-prog-card); border: 1px solid var(--app-prog-border); border-radius: var(--app-prog-radius);
 }
@@ -280,32 +238,12 @@
 .applicant-progress-footer-update:disabled:hover { background: #9ca3af; }
 @media (max-width: 900px) {
   .mock-applicant-project-progress .applicant-progress-content { padding: 8px 14px 110px; }
-  .mock-applicant-project-progress .applicant-progress-proj-tabbar { width: 100%; max-width: 100%; padding: 10px 14px; }
   .mock-applicant-project-progress .two-col-layout, .mock-applicant-project-progress .summary-kpi-row { grid-template-columns: 1fr; }
   .mock-applicant-project-progress .summary-kpi { border-right: none; border-bottom: 1px solid var(--app-prog-border); }
   .mock-applicant-project-progress .task-meta { flex-direction: column; gap: 4px; }
   .mock-applicant-project-progress .task-assignee { margin-top: 4px; }
   .mock-applicant-project-progress .task-modal-overlay { align-items: flex-start; justify-content: center; padding: 84px 14px 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .mock-applicant-project-progress .task-modal-box { width: 100%; max-height: calc(100vh - 180px); max-height: calc(100dvh - 180px); overflow-y: auto; padding: 20px 18px 18px; }
-}
-@media (min-width: 900px) {
-  .mock-applicant-project-progress-header-after {
-    position: sticky;
-    top: var(--header-height);
-    z-index: 690;
-    background: var(--app-prog-card);
-  }
-}
-@media (max-width: 899px) {
-  .app-content:has(#applicantProgressForm) {
-    padding-top: 8px;
-  }
-}
-@media (max-width: 899px) {
-  .mock-applicant-project-progress-header-after {
-    position: static;
-    padding-top: var(--mobile-header-height);
-  }
 }
 @media (max-width: 600px) {
   .mock-applicant-project-progress .budget-current-row { grid-template-columns: 1fr; }
@@ -321,25 +259,8 @@
 {% endblock %}
 
 {% block header_after %}
-<div class="mock-applicant-project-progress mock-applicant-project-progress-header-after">
-  <div class="applicant-progress-proj-tabbar">
-    <div style="font-size:12px;color:var(--app-prog-muted);font-weight:700;flex-shrink:0;">案件切替：</div>
-    {% for item in progress_switcher_projects %}
-    <a href="{{ url_for('applicant_project_progress_detail', project_id=item.project_id) }}" class="applicant-progress-proj-tab{% if item.project_id == current_progress_project_id %} active{% endif %}">
-      {{ item.title }}
-      {% if item.has_delay %}
-      <span class="apt-delay-badge">遅延</span>
-      {% endif %}
-      {% if item.has_budget_alert %}
-      <span class="apt-budget-badge">予算</span>
-      {% endif %}
-      {% if item.can_complete_wait %}
-      <span class="apt-complete-wait-badge">完了待ち</span>
-      {% endif %}
-    </a>
-    {% endfor %}
-  </div>
-</div>
+{% set project_switch_label = "案件切替：" %}
+{% include "partials/project/_project_switch_header.html" %}
 {% endblock %}
 
 {% block content %}

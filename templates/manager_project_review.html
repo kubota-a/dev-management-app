@@ -83,13 +83,6 @@
   border: 1px solid var(--mpr-danger-mid);
   white-space: nowrap;
 }
-.mock-manager-project-review .rb-nav { display: flex; align-items: center; gap: 10px; }
-.mock-manager-project-review .rb-nav-btn {
-  width: 34px; height: 34px; background: rgba(255,255,255,.15); border-radius: 8px; border: 1px solid rgba(255,255,255,.25);
-  color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; font-family: var(--font-family-base);
-}
-.mock-manager-project-review .rb-nav-btn:hover { background: rgba(255,255,255,.28); }
-.mock-manager-project-review .rb-nav-count { font-size: 12px; color: rgba(255,255,255,.75); }
 
 .mock-manager-project-review .review-layout {
   display: grid;
@@ -365,6 +358,11 @@
 </style>
 {% endblock %}
 
+{% block header_after %}
+{% set project_switch_label = "案件切替：" %}
+{% include "partials/project/_project_switch_header.html" %}
+{% endblock %}
+
 {% block content %}
 <div class="mock-manager-project-review">
   <div class="content">
@@ -386,11 +384,6 @@
             <div class="rb-meta-item"><span>案件コード</span><span>{{ review_data.project_code }}</span></div>
           </div>
         </div>
-      </div>
-      <div class="rb-nav">
-        <button type="button" class="rb-nav-btn" id="managerReviewPrevBtn" data-target-url="{{ url_for('manager_project_review', project_id=review_data.prev_project_id) if review_data.prev_project_id else '' }}">‹</button>
-        <div class="rb-nav-count">{{ review_data.queue_position }} / {{ review_data.queue_total_count }} 件</div>
-        <button type="button" class="rb-nav-btn" id="managerReviewNextBtn" data-target-url="{{ url_for('manager_project_review', project_id=review_data.next_project_id) if review_data.next_project_id else '' }}">›</button>
       </div>
     </div>
 
@@ -742,22 +735,6 @@ function showManagerReviewToast(msg) {
   t.classList.add("show");
   setTimeout(function() { t.classList.remove("show"); }, 2600);
 }
-
-function bindManagerReviewPager(buttonId, noTargetMessage) {
-  const button = getManagerReviewEl(buttonId);
-  if (!button) return;
-  button.addEventListener("click", function() {
-    const targetUrl = button.getAttribute("data-target-url");
-    if (!targetUrl) {
-      showManagerReviewToast(noTargetMessage);
-      return;
-    }
-    window.location.href = targetUrl;
-  });
-}
-
-bindManagerReviewPager("managerReviewPrevBtn", "前の審査待ち案件はありません。");
-bindManagerReviewPager("managerReviewNextBtn", "次の審査待ち案件はありません。");
 
 setManagerReviewVerdict(reviewData.initial_verdict || "approve");
 
