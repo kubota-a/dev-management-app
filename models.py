@@ -36,6 +36,7 @@ class Department(db.Model):
     )
 
     users = db.relationship("User", back_populates="department")
+    memberships = db.relationship("DepartmentMembership", back_populates="department")
     projects = db.relationship("Project", back_populates="department")
     project_drafts = db.relationship("ProjectDraft", back_populates="department")
     yearly_budgets = db.relationship("DepartmentYearlyBudget", back_populates="department")
@@ -69,6 +70,7 @@ class User(UserMixin, db.Model):
     )
 
     department = db.relationship("Department", back_populates="users")
+    member_profile = db.relationship("DepartmentMember", back_populates="user", uselist=False)
     projects_as_applicant = db.relationship(
         "Project",
         foreign_keys="Project.applicant_id",
@@ -79,7 +81,68 @@ class User(UserMixin, db.Model):
     project_status_logs = db.relationship("ProjectStatusLog", back_populates="actor")
 
 
-# 3. projects（案件）
+# 3. department_members（部門メンバー）
+class DepartmentMember(db.Model):
+    """ログイン有無を問わず、タスク担当候補となる部門メンバー。"""
+
+    __tablename__ = "department_members"
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=True, unique=True)
+    display_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(255), nullable=True)
+    can_assign_task = db.Column(db.Boolean, nullable=False, default=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        onupdate=utc_now,
+    )
+
+    user = db.relationship("User", back_populates="member_profile")
+    memberships = db.relationship("DepartmentMembership", back_populates="member")
+    tasks = db.relationship("Task", back_populates="assignee_member")
+
+
+# 4. department_memberships（部門所属）
+class DepartmentMembership(db.Model):
+    """部門メンバーと部門の所属関係。兼務と主所属を表現する。"""
+
+    __tablename__ = "department_memberships"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "member_id",
+            "department_id",
+            name="uq_department_memberships_member_department",
+        ),
+    )
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    member_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey("department_members.id"),
+        nullable=False,
+        index=True,
+    )
+    department_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey("departments.id"),
+        nullable=False,
+        index=True,
+    )
+    is_primary = db.Column(db.Boolean, nullable=False, default=False)
+    role_label = db.Column(db.String(50), nullable=True)
+    joined_on = db.Column(db.Date, nullable=True)
+    left_on = db.Column(db.Date, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+
+    member = db.relationship("DepartmentMember", back_populates="memberships")
+    department = db.relationship("Department", back_populates="memberships")
+
+
+# 5. projects（案件）
 class Project(db.Model):
     """申請〜承認〜進行〜完了までを管理する案件。"""
 
@@ -180,7 +243,7 @@ class Project(db.Model):
         return any(task.due_date < today and task.status != "done" for task in self.tasks)
 
 
-# 4. tasks（タスク）
+# 6. tasks（タスク）
 class Task(db.Model):
     """案件配下の作業タスク。"""
 
@@ -198,6 +261,12 @@ class Task(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
     project_id = db.Column(db.BigInteger, db.ForeignKey("projects.id"), nullable=False, index=True)
+    assignee_member_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey("department_members.id"),
+        nullable=True,
+        index=True,
+    )
     title = db.Column(db.String(200), nullable=False)
     assignee_name = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(20), nullable=False, index=True)
@@ -213,9 +282,10 @@ class Task(db.Model):
     )
 
     project = db.relationship("Project", back_populates="tasks")
+    assignee_member = db.relationship("DepartmentMember", back_populates="tasks")
 
 
-# 5. notifications（通知）
+# 7. notifications（通知）
 class Notification(db.Model):
     """ユーザー向け通知。ヘッダードロップダウン表示向けに単一メッセージで管理。"""
 
@@ -258,7 +328,7 @@ class Notification(db.Model):
     project = db.relationship("Project", back_populates="notifications")
 
 
-# 6. budget_actual_logs（予算実績ログ）
+# 8. budget_actual_logs（予算実績ログ）
 class BudgetActualLog(db.Model):
     """案件の予算実績を積み上げ記録するログ。"""
 
@@ -277,7 +347,7 @@ class BudgetActualLog(db.Model):
     project = db.relationship("Project", back_populates="budget_actual_logs")
 
 
-# 7. project_status_logs（案件ステータス履歴）
+# 9. project_status_logs（案件ステータス履歴）
 class ProjectStatusLog(db.Model):
     """案件ステータス変更の監査ログ。"""
 
@@ -310,7 +380,7 @@ class ProjectStatusLog(db.Model):
     actor = db.relationship("User", back_populates="project_status_logs")
 
 
-# 8. project_drafts（案件下書き）
+# 10. project_drafts（案件下書き）
 class ProjectDraft(db.Model):
     """申請フォームの一時保存データ。"""
 
@@ -337,7 +407,7 @@ class ProjectDraft(db.Model):
     department = db.relationship("Department", back_populates="project_drafts")
 
 
-# 9. department_yearly_budgets（部門年間予算）
+# 11. department_yearly_budgets（部門年間予算）
 class DepartmentYearlyBudget(db.Model):
     """部門ごとの年間予算を年度単位で管理する。"""
 
