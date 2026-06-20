@@ -10,6 +10,8 @@ from app import app
 from models import (
     BudgetActualLog,
     Department,
+    DepartmentMember,
+    DepartmentMembership,
     DepartmentYearlyBudget,
     Notification,
     Project,
@@ -411,6 +413,8 @@ def reset_all_data() -> None:
     db.session.query(Task).delete()
     db.session.query(Project).delete()
     db.session.query(ProjectDraft).delete()
+    db.session.query(DepartmentMembership).delete()
+    db.session.query(DepartmentMember).delete()
     db.session.query(User).delete()
     db.session.query(DepartmentYearlyBudget).delete()
     db.session.query(Department).delete()
@@ -461,6 +465,54 @@ def create_users(departments_by_key: dict[str, Department]) -> dict[str, User]:
     db.session.flush()
     print(f"users: {len(users_by_key)}件作成")
     return users_by_key
+
+
+def create_department_members(users_by_key: dict[str, User]) -> dict[str, DepartmentMember]:
+    members_by_name: dict[str, DepartmentMember] = {}
+    for item in USERS:
+        if item["role"] == "hq":
+            continue
+
+        user = users_by_key[item["key"]]
+        member = DepartmentMember(
+            user_id=user.id,
+            display_name=user.display_name,
+            email=None,
+            can_assign_task=item["role"] == "applicant",
+            is_active=True,
+        )
+        db.session.add(member)
+        members_by_name[member.display_name] = member
+    db.session.flush()
+    print(f"department_members: {len(members_by_name)}件作成")
+    return members_by_name
+
+
+def create_department_memberships(
+    users_by_key: dict[str, User],
+    members_by_name: dict[str, DepartmentMember],
+    departments_by_key: dict[str, Department],
+) -> list[DepartmentMembership]:
+    rows: list[DepartmentMembership] = []
+    for item in USERS:
+        if item["role"] == "hq":
+            continue
+
+        user = users_by_key[item["key"]]
+        member = members_by_name[user.display_name]
+        row = DepartmentMembership(
+            member_id=member.id,
+            department_id=departments_by_key[item["department_key"]].id,
+            is_primary=True,
+            role_label="manager" if item["role"] == "manager" else "member",
+            joined_on=None,
+            left_on=None,
+        )
+        db.session.add(row)
+        rows.append(row)
+    db.session.flush()
+    print(f"department_memberships: {len(rows)}件作成")
+    return rows
 
 
 def create_project_drafts(users_by_key: dict[str, User], departments_by_key: dict[str, Department]) -> list[ProjectDraft]:
@@ -530,7 +582,7 @@ def create_projects(users_by_key: dict[str, User], departments_by_key: dict[str,
     return projects_by_key
 
 
-def create_tasks(projects_by_key: dict[str, Project]) -> list[Task]:
+def create_tasks(projects_by_key: dict[str, Project], members_by_name: dict[str, DepartmentMember]) -> list[Task]:
     task_specs = {
         "proj_03": [
             ("要件整理ミーティング", "佐藤 美咲", "in_progress", 55, "n1"),
@@ -539,15 +591,15 @@ def create_tasks(projects_by_key: dict[str, Project]) -> list[Task]:
             ("インデックス最適化", "佐藤 美咲", "not_started", 0, "n4"),
             ("回帰テストケース作成", "田中 拓海", "in_progress", 35, "n5"),
             ("利用部門レビュー", "田中 拓海", "not_started", 0, "n6"),
-            ("運用手順反映", "山本 瑞希", "not_started", 0, "n7"),
+            ("運用手順反映", "佐藤 美咲", "not_started", 0, "n7"),
         ],
         "proj_07": [
             ("対象サーバ整理", "鈴木 孝介", "in_progress", 55, "d1"),
             ("バックアップジョブ見直し", "鈴木 孝介", "in_progress", 45, "d2"),
-            ("監視閾値調整", "中村 直樹", "not_started", 0, "d3"),
+            ("監視閾値調整", "高橋 彩乃", "not_started", 0, "d3"),
             ("通知先メンテ", "高橋 彩乃", "in_progress", 35, "d4"),
             ("手順書更新", "鈴木 孝介", "not_started", 0, "d5"),
-            ("定例報告資料作成", "中村 直樹", "not_started", 0, "d6"),
+            ("定例報告資料作成", "鈴木 孝介", "not_started", 0, "d6"),
             ("本番適用計画作成", "高橋 彩乃", "not_started", 0, "d7"),
         ],
         "proj_10": [
@@ -557,7 +609,7 @@ def create_tasks(projects_by_key: dict[str, Project]) -> list[Task]:
             ("月次帳票テンプレート調整", "伊藤 良太", "in_progress", 45, "s4"),
             ("部門ヒアリング対応", "渡辺 優菜", "in_progress", 35, "w_today"),
             ("運用説明資料作成", "伊藤 良太", "not_started", 0, "s6"),
-            ("リリース計画確認", "小林 理絵", "in_progress", 20, "s7"),
+            ("リリース計画確認", "森田 葵", "in_progress", 20, "s7"),
         ],
         "proj_11": [
             ("要件定義レビュー", "伊藤 良太", "in_progress", 70, "b1"),
@@ -571,17 +623,17 @@ def create_tasks(projects_by_key: dict[str, Project]) -> list[Task]:
         "proj_04": [
             ("入力補助候補抽出", "田中 拓海", "done", 100, "co1"),
             ("フォーム文言改修", "田中 拓海", "done", 100, "co2"),
-            ("簡易バリデーション追加", "山本 瑞希", "done", 100, "co3"),
+            ("簡易バリデーション追加", "佐藤 美咲", "done", 100, "co3"),
             ("UI確認テスト", "佐藤 美咲", "done", 100, "co4"),
             ("操作説明更新", "田中 拓海", "done", 100, "co5"),
-            ("完了報告", "山本 瑞希", "done", 100, "co6"),
+            ("完了報告", "田中 拓海", "done", 100, "co6"),
         ],
         "proj_08": [
             ("権限一覧取り込み", "高橋 彩乃", "done", 100, "cr1"),
             ("棚卸し画面実装", "高橋 彩乃", "done", 100, "cr2"),
-            ("判定ルール調整", "中村 直樹", "done", 100, "cr3"),
+            ("判定ルール調整", "鈴木 孝介", "done", 100, "cr3"),
             ("操作手順確認", "高橋 彩乃", "done", 100, "cr4"),
-            ("利用部門確認", "中村 直樹", "done", 100, "cr5"),
+            ("利用部門確認", "鈴木 孝介", "done", 100, "cr5"),
             ("完了報告", "高橋 彩乃", "done", 100, "cr6"),
         ],
         "proj_14": [
@@ -594,7 +646,7 @@ def create_tasks(projects_by_key: dict[str, Project]) -> list[Task]:
         "proj_15": [
             ("申請手順の棚卸し", "渡辺 優菜", "done", 100, "wc1"),
             ("入力項目の整理", "渡辺 優菜", "done", 100, "wc2"),
-            ("承認前チェック項目調整", "小林 理絵", "done", 100, "wc3"),
+            ("承認前チェック項目調整", "藤本 健", "done", 100, "wc3"),
             ("完了報告導線の確認", "渡辺 優菜", "done", 100, "wc4"),
             ("操作説明の更新", "渡辺 優菜", "done", 100, "wc5"),
         ],
@@ -617,10 +669,14 @@ def create_tasks(projects_by_key: dict[str, Project]) -> list[Task]:
     for project_key, specs in task_specs.items():
         project = projects_by_key[project_key]
         for title, assignee_name, status, progress_rate, task_role in specs:
+            member = members_by_name.get(assignee_name)
+            if member is None:
+                raise ValueError(f"DepartmentMember が見つかりません: {assignee_name}")
             start_date, due_date = resolve_task_dates(task_role)
             row = Task(
                 project_id=project.id,
                 title=title,
+                assignee_member_id=member.id,
                 assignee_name=assignee_name,
                 status=status,
                 progress_rate=progress_rate,
@@ -1009,16 +1065,18 @@ def main() -> None:
         departments_by_key = create_departments()
         create_department_yearly_budgets(departments_by_key)
         users_by_key = create_users(departments_by_key)
+        members_by_name = create_department_members(users_by_key)
+        create_department_memberships(users_by_key, members_by_name, departments_by_key)
         create_project_drafts(users_by_key, departments_by_key)
         projects_by_key = create_projects(users_by_key, departments_by_key)
-        create_tasks(projects_by_key)
+        create_tasks(projects_by_key, members_by_name)
         create_budget_actual_logs(projects_by_key)
         create_notifications(users_by_key, projects_by_key)
         create_project_status_logs(users_by_key, projects_by_key)
 
         db.session.commit()
         print("seed完了")
-        print("投入件数: departments=3, department_yearly_budgets=3, users=12, project_drafts=5, projects=18, tasks=59, budget_actual_logs=39, notifications=1, project_status_logs=45")
+        print("投入件数: departments=3, department_yearly_budgets=3, users=12, department_members=11, department_memberships=11, project_drafts=5, projects=18, tasks=59, budget_actual_logs=39, notifications=1, project_status_logs=45")
 
 
 if __name__ == "__main__":

@@ -366,7 +366,7 @@
           <div class="task-list" id="applicantProgressTaskList">
             {% if view_data.tasks %}
               {% for task in view_data.tasks %}
-                <div class="task-card {{ task.card_class }}" id="applicantProgressTaskCard{{ task.idx }}" data-overdue="{{ 'true' if task.overdue_flag else 'false' }}" data-task-id="{{ task.id }}" data-task-title="{{ task.title }}" data-task-assignee="{{ task.assignee_name }}" data-task-start-date="{{ task.start_date_value }}" data-task-due-date="{{ task.due_date_value }}">
+                <div class="task-card {{ task.card_class }}" id="applicantProgressTaskCard{{ task.idx }}" data-overdue="{{ 'true' if task.overdue_flag else 'false' }}" data-task-id="{{ task.id }}" data-task-title="{{ task.title }}" data-task-assignee="{{ task.assignee_name }}" data-task-assignee-member-id="{{ task.assignee_member_id or '' }}" data-task-start-date="{{ task.start_date_value }}" data-task-due-date="{{ task.due_date_value }}">
                   <div class="task-head">
                     <div class="task-main">
                       <div class="task-name">
@@ -378,7 +378,7 @@
                           <div class="task-meta-item {{ task.due_class }}" data-due-class="{{ task.due_class }}">{{ task.due_display }}</div>
                           <div class="task-meta-item">{{ task.start_display }}</div>
                         </div>
-                        <div class="task-assignee">{{ task.assignee_name }}</div>
+                        <div class="task-assignee">{{ task.assignee_display_name }}</div>
                       </div>
                     </div>
                     <div class="task-card-actions">
@@ -462,12 +462,17 @@
           <p class="field-error" id="applicantTaskModalTaskNameError">タスク名を入力してください。</p>
         </div>
         <div class="task-modal-field">
-          <label class="task-modal-field-label" for="applicantTaskModalAssignee">
+          <label class="task-modal-field-label" for="applicantTaskModalAssigneeMemberId">
             担当者名 <span class="req-badge">必須</span>
           </label>
-          <p class="field-hint">担当するメンバー名を入力してください。</p>
-          <input type="text" class="f-input" id="applicantTaskModalAssignee" name="task_assignee_name" maxlength="100" placeholder="例：田中 太郎">
-          <p class="field-error" id="applicantTaskModalAssigneeError">担当者名を入力してください。</p>
+          <p class="field-hint">同じ部門の担当可能メンバーから選択してください。</p>
+          <select class="f-input" id="applicantTaskModalAssigneeMemberId" name="assignee_member_id" required>
+            <option value="">担当者を選択してください</option>
+            {% for member in assignable_members %}
+              <option value="{{ member.id }}">{{ member.display_name }}</option>
+            {% endfor %}
+          </select>
+          <p class="field-error" id="applicantTaskModalAssigneeMemberIdError">担当者を選択してください。</p>
         </div>
         <div class="task-modal-field">
           <label class="task-modal-field-label" for="applicantTaskModalStartDate">
@@ -927,11 +932,11 @@ function getApplicantTaskModalEls(){
     submit:getApplicantProgressEl("applicantTaskModalSubmit"),
     taskId:getApplicantProgressEl("applicantTaskModalTaskId"),
     taskName:getApplicantProgressEl("applicantTaskModalTaskName"),
-    assignee:getApplicantProgressEl("applicantTaskModalAssignee"),
+    assigneeMemberId:getApplicantProgressEl("applicantTaskModalAssigneeMemberId"),
     startDate:getApplicantProgressEl("applicantTaskModalStartDate"),
     dueDate:getApplicantProgressEl("applicantTaskModalDueDate"),
     taskNameError:getApplicantProgressEl("applicantTaskModalTaskNameError"),
-    assigneeError:getApplicantProgressEl("applicantTaskModalAssigneeError"),
+    assigneeMemberIdError:getApplicantProgressEl("applicantTaskModalAssigneeMemberIdError"),
     startDateError:getApplicantProgressEl("applicantTaskModalStartDateError"),
     dueDateError:getApplicantProgressEl("applicantTaskModalDueDateError")
   };
@@ -945,7 +950,7 @@ function setApplicantTaskModalMode(mode,taskId,taskIdx){
   if(applicantTaskModalState.mode==="edit"){
     const taskCard=applicantTaskModalState.taskIdx!==null?getApplicantProgressEl("applicantProgressTaskCard"+applicantTaskModalState.taskIdx):null;
     const taskTitle=taskCard?(taskCard.dataset.taskTitle||""):"";
-    const assigneeName=taskCard?(taskCard.dataset.taskAssignee||""):"";
+    const assigneeMemberId=taskCard?(taskCard.dataset.taskAssigneeMemberId||""):"";
     const startDateValue=taskCard?(taskCard.dataset.taskStartDate||""):"";
     const dueDateValue=taskCard?(taskCard.dataset.taskDueDate||""):"";
     if(els.title){els.title.textContent="タスクを編集";}
@@ -953,7 +958,7 @@ function setApplicantTaskModalMode(mode,taskId,taskIdx){
     if(els.submit){els.submit.textContent="保存する";}
     if(els.taskId){els.taskId.value=taskId?String(taskId):"";}
     if(els.taskName){els.taskName.value=taskTitle;}
-    if(els.assignee){els.assignee.value=assigneeName;}
+    if(els.assigneeMemberId){els.assigneeMemberId.value=assigneeMemberId;}
     if(els.startDate){els.startDate.value=startDateValue;}
     if(els.dueDate){els.dueDate.value=dueDateValue;}
   }else{
@@ -962,7 +967,7 @@ function setApplicantTaskModalMode(mode,taskId,taskIdx){
     if(els.submit){els.submit.textContent="追加する";}
     if(els.taskId){els.taskId.value="";}
     if(els.taskName){els.taskName.value="";}
-    if(els.assignee){els.assignee.value="";}
+    if(els.assigneeMemberId){els.assigneeMemberId.value="";}
     if(els.startDate){els.startDate.value="";}
     if(els.dueDate){els.dueDate.value="";}
   }
@@ -988,18 +993,18 @@ function closeApplicantTaskModal(){
 }
 function clearApplicantTaskModalErrors(){
   const els=getApplicantTaskModalEls();
-  [els.taskName,els.assignee,els.startDate,els.dueDate].forEach(function(inputEl){if(inputEl){inputEl.classList.remove("error");}});
-  [els.taskNameError,els.assigneeError,els.startDateError,els.dueDateError].forEach(function(errorEl){if(errorEl){errorEl.classList.remove("show");}});
+  [els.taskName,els.assigneeMemberId,els.startDate,els.dueDate].forEach(function(inputEl){if(inputEl){inputEl.classList.remove("error");}});
+  [els.taskNameError,els.assigneeMemberIdError,els.startDateError,els.dueDateError].forEach(function(errorEl){if(errorEl){errorEl.classList.remove("show");}});
 }
 function updateApplicantTaskModalSubmitDisabledState(){
   const els=getApplicantTaskModalEls();
   if(!els.submit)return;
   const taskName=els.taskName?els.taskName.value.trim():"";
-  const assignee=els.assignee?els.assignee.value.trim():"";
+  const assigneeMemberId=els.assigneeMemberId?els.assigneeMemberId.value.trim():"";
   const startDate=els.startDate?els.startDate.value:"";
   const dueDate=els.dueDate?els.dueDate.value:"";
   const isDateOrderValid=!startDate||(dueDate&&startDate<=dueDate);
-  const canSubmit=Boolean(taskName&&assignee&&dueDate&&isDateOrderValid);
+  const canSubmit=Boolean(taskName&&assigneeMemberId&&dueDate&&isDateOrderValid);
   els.submit.disabled=!canSubmit;
 }
 function showApplicantTaskModalError(inputEl,errorEl,message){
@@ -1010,13 +1015,13 @@ function validateApplicantTaskModal(){
   const els=getApplicantTaskModalEls();
   clearApplicantTaskModalErrors();
   const taskName=els.taskName?els.taskName.value.trim():"";
-  const assignee=els.assignee?els.assignee.value.trim():"";
+  const assigneeMemberId=els.assigneeMemberId?els.assigneeMemberId.value.trim():"";
   const startDate=els.startDate?els.startDate.value:"";
   const dueDate=els.dueDate?els.dueDate.value:"";
   let firstErrorInput=null;
   let hasError=false;
   if(!taskName){showApplicantTaskModalError(els.taskName,els.taskNameError,"タスク名を入力してください。");firstErrorInput=firstErrorInput||els.taskName;hasError=true;}
-  if(!assignee){showApplicantTaskModalError(els.assignee,els.assigneeError,"担当者名を入力してください。");firstErrorInput=firstErrorInput||els.assignee;hasError=true;}
+  if(!assigneeMemberId){showApplicantTaskModalError(els.assigneeMemberId,els.assigneeMemberIdError,"担当者を選択してください。");firstErrorInput=firstErrorInput||els.assigneeMemberId;hasError=true;}
   if(!dueDate){showApplicantTaskModalError(els.dueDate,els.dueDateError,"期限日を入力してください。");firstErrorInput=firstErrorInput||els.dueDate;hasError=true;}
   if(startDate&&dueDate&&startDate>dueDate){showApplicantTaskModalError(els.startDate,els.startDateError,"開始日は期限日以前の日付にしてください。");firstErrorInput=firstErrorInput||els.startDate;hasError=true;}
   if(firstErrorInput){firstErrorInput.focus();}
@@ -1035,7 +1040,7 @@ async function handleApplicantTaskModalSubmit(){
   const formData=new FormData();
   formData.append("csrf_token",getApplicantProgressCsrfToken());
   formData.append("task_title",els.taskName?els.taskName.value.trim():"");
-  formData.append("task_assignee_name",els.assignee?els.assignee.value.trim():"");
+  formData.append("assignee_member_id",els.assigneeMemberId?els.assigneeMemberId.value.trim():"");
   formData.append("task_start_date",els.startDate?els.startDate.value:"");
   formData.append("task_due_date",els.dueDate?els.dueDate.value:"");
   els.submit.disabled=true;
@@ -1123,7 +1128,7 @@ function initApplicantTaskModal(){
   if(els.overlay){els.overlay.addEventListener("click",function(event){if(event.target===els.overlay){closeApplicantTaskModal();}});}
   if(els.box){els.box.addEventListener("click",function(event){event.stopPropagation();});}
   if(els.submit){els.submit.addEventListener("click",handleApplicantTaskModalSubmit);}
-  [els.taskName,els.assignee,els.startDate,els.dueDate].forEach(function(inputEl){
+  [els.taskName,els.assigneeMemberId,els.startDate,els.dueDate].forEach(function(inputEl){
     if(!inputEl)return;
     inputEl.addEventListener("input",updateApplicantTaskModalSubmitDisabledState);
     inputEl.addEventListener("change",updateApplicantTaskModalSubmitDisabledState);
