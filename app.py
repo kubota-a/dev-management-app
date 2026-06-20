@@ -17,6 +17,8 @@ from forms import LoginForm
 from models import (
     BudgetActualLog,
     Department,
+    DepartmentMember,
+    DepartmentMembership,
     DepartmentYearlyBudget,
     Notification,
     Project,
@@ -1447,7 +1449,7 @@ def get_applicant_progress_projects(user_id: int) -> list[Project]:
     return (
         Project.query.options(
             joinedload(Project.department),
-            joinedload(Project.tasks),
+            joinedload(Project.tasks).joinedload(Task.assignee_member),
             joinedload(Project.budget_actual_logs),
         )
         .filter(
@@ -1457,6 +1459,41 @@ def get_applicant_progress_projects(user_id: int) -> list[Project]:
         )
         .order_by(Project.planned_end_date.is_(None), Project.planned_end_date.asc(), Project.id.asc())
         .all()
+    )
+
+
+def get_assignable_members_for_project(project: Project) -> list[DepartmentMember]:
+    """案件の部門に所属する、タスク担当可能な部門メンバーを取得する。"""
+    if project.department_id is None:
+        return []
+
+    return (
+        DepartmentMember.query.join(DepartmentMembership)
+        .filter(
+            DepartmentMembership.department_id == project.department_id,
+            DepartmentMember.is_active.is_(True),
+            DepartmentMember.can_assign_task.is_(True),
+        )
+        .distinct()
+        .order_by(DepartmentMember.display_name.asc(), DepartmentMember.id.asc())
+        .all()
+    )
+
+
+def get_assignable_member_for_project(project: Project, assignee_member_id: int | None) -> DepartmentMember | None:
+    """案件で選択可能な担当者をIDで取得する。対象外ならNone。"""
+    if assignee_member_id is None or project.department_id is None:
+        return None
+
+    return (
+        DepartmentMember.query.join(DepartmentMembership)
+        .filter(
+            DepartmentMember.id == assignee_member_id,
+            DepartmentMembership.department_id == project.department_id,
+            DepartmentMember.is_active.is_(True),
+            DepartmentMember.can_assign_task.is_(True),
+        )
+        .first()
     )
 
 
@@ -1488,6 +1525,7 @@ def should_notify_all_tasks_done(before_all_done: bool, after_all_done: bool, pr
 
 def build_applicant_progress_task_data(task: Task, idx: int, today: date, tomorrow: date) -> dict:
     """タスクカード表示用データを作る。"""
+    assignee_display_name = task.assignee_member.display_name if task.assignee_member else task.assignee_name
     due_display = "期限：未設定"
     due_class = ""
     overdue_flag = False
@@ -1533,7 +1571,9 @@ def build_applicant_progress_task_data(task: Task, idx: int, today: date, tomorr
         "idx": idx,
         "task_id": task.id,
         "title": task.title,
+        "assignee_member_id": task.assignee_member_id,
         "assignee_name": task.assignee_name,
+        "assignee_display_name": assignee_display_name,
         "due_display": due_display,
         "due_class": due_class,
         "start_display": f"開始：{format_business_date(task.start_date)}" if task.start_date else "開始：未設定",
@@ -1748,26 +1788,32 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     return errors, payload
 
 
-def validate_applicant_task_modal_form(form_data):
+def validate_applicant_task_modal_form(form_data, project: Project):
     """案件進捗のタスク追加・編集モーダル入力を検証する。"""
     errors: list[str] = []
     title = (form_data.get("task_title") or "").strip()
-    assignee_name = (form_data.get("task_assignee_name") or "").strip()
+    assignee_member_id_raw = (form_data.get("assignee_member_id") or "").strip()
     start_date_raw = (form_data.get("task_start_date") or "").strip()
     due_date_raw = (form_data.get("task_due_date") or "").strip()
 
     start_date = None
     due_date = None
+    assignee_member_id = None
 
     if not title:
         errors.append("タスク名を入力してください。")
     elif len(title) > 200:
         errors.append("タスク名は200文字以内で入力してください。")
 
-    if not assignee_name:
-        errors.append("担当者名を入力してください。")
-    elif len(assignee_name) > 100:
-        errors.append("担当者名は100文字以内で入力してください。")
+    if not assignee_member_id_raw:
+        errors.append("担当者を選択してください。")
+    else:
+        try:
+            assignee_member_id = int(assignee_member_id_raw)
+        except ValueError:
+            assignee_member_id = None
+        if assignee_member_id is None:
+            errors.append("担当者を選択してください。")
 
     if start_date_raw:
         start_date, start_date_err = parse_date_value(start_date_raw)
@@ -1784,9 +1830,13 @@ def validate_applicant_task_modal_form(form_data):
     if start_date and due_date and start_date > due_date:
         errors.append("開始日は期限日以前の日付にしてください。")
 
+    assignee_member = get_assignable_member_for_project(project, assignee_member_id)
+    if assignee_member is None:
+        errors.append("担当者を選択してください。")
+
     normalized = {
         "title": title,
-        "assignee_name": assignee_name,
+        "assignee_member": assignee_member,
         "start_date": start_date,
         "due_date": due_date,
     }
@@ -1812,14 +1862,15 @@ def applicant_project_task_create(project_id):
     if project is None:
         return jsonify({"ok": False, "message": "この案件ではタスクを追加できません。"}), 403
 
-    errors, normalized = validate_applicant_task_modal_form(request.form)
+    errors, normalized = validate_applicant_task_modal_form(request.form, project)
     if errors:
         return jsonify({"ok": False, "message": errors[0]}), 400
 
     task = Task(
         project_id=project.id,
         title=normalized["title"],
-        assignee_name=normalized["assignee_name"],
+        assignee_member_id=normalized["assignee_member"].id,
+        assignee_name=normalized["assignee_member"].display_name,
         start_date=normalized["start_date"],
         due_date=normalized["due_date"],
         status="not_started",
@@ -1865,12 +1916,13 @@ def applicant_project_task_update(project_id, task_id):
     if task is None:
         return jsonify({"ok": False, "message": "対象のタスクが見つかりません。"}), 404
 
-    errors, normalized = validate_applicant_task_modal_form(request.form)
+    errors, normalized = validate_applicant_task_modal_form(request.form, project)
     if errors:
         return jsonify({"ok": False, "message": errors[0]}), 400
 
     task.title = normalized["title"]
-    task.assignee_name = normalized["assignee_name"]
+    task.assignee_member_id = normalized["assignee_member"].id
+    task.assignee_name = normalized["assignee_member"].display_name
     task.start_date = normalized["start_date"]
     task.due_date = normalized["due_date"]
 
@@ -1949,7 +2001,7 @@ def applicant_project_progress_detail(project_id):
         project = (
             Project.query.options(
                 joinedload(Project.department),
-                joinedload(Project.tasks),
+                joinedload(Project.tasks).joinedload(Task.assignee_member),
                 joinedload(Project.budget_actual_logs),
             )
             .filter(
@@ -2030,11 +2082,13 @@ def applicant_project_progress_detail(project_id):
         return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
 
     view_data = build_applicant_progress_view_data(project, progress_projects)
+    assignable_members = get_assignable_members_for_project(project)
     progress_switcher_projects = build_applicant_progress_switcher_data(progress_projects, project.id)
     project_switch_items = build_applicant_project_switch_items(progress_switcher_projects, project.id)
     return render_template(
         "applicant_project_progress.html",
         view_data=view_data,
+        assignable_members=assignable_members,
         project_switch_items=project_switch_items,
         progress_switcher_projects=progress_switcher_projects,
         current_progress_project_id=project.id,
