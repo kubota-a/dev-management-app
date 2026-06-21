@@ -888,6 +888,64 @@ def create_project_reports(projects_by_key: dict[str, Project]) -> list[ProjectR
     return rows
 
 
+def set_project_last_progress_updates(projects_by_key: dict[str, Project]) -> None:
+    """開発中・完了済み案件に、最終進捗更新日時・更新者を設定する。"""
+    for project in projects_by_key.values():
+        if project.status not in {"in_progress", "completed"}:
+            project.last_progress_updated_at = None
+            project.last_progress_updated_by_id = None
+            continue
+
+        candidates: list[dict[str, datetime | int | None]] = []
+
+        for report in project.project_reports:
+            if report.submitted_at is not None:
+                candidates.append(
+                    {
+                        "updated_at": report.submitted_at,
+                        "updated_by_id": report.reporter_id,
+                    }
+                )
+
+        for log in project.budget_actual_logs:
+            if log.created_at is not None:
+                candidates.append(
+                    {
+                        "updated_at": log.created_at,
+                        "updated_by_id": project.applicant_id,
+                    }
+                )
+
+        for task in project.tasks:
+            if task.updated_at is not None:
+                candidates.append(
+                    {
+                        "updated_at": task.updated_at,
+                        "updated_by_id": project.applicant_id,
+                    }
+                )
+
+        if project.updated_at is not None:
+            candidates.append(
+                {
+                    "updated_at": project.updated_at,
+                    "updated_by_id": project.applicant_id,
+                }
+            )
+
+        latest = max(candidates, key=lambda item: item["updated_at"], default=None)
+
+        if latest is None or latest["updated_at"] is None:
+            project.last_progress_updated_at = None
+            project.last_progress_updated_by_id = None
+        else:
+            project.last_progress_updated_at = clamp_to_not_future(latest["updated_at"])
+            project.last_progress_updated_by_id = latest["updated_by_id"]
+
+    db.session.flush()
+    print("projects.last_progress_updated_at / by_id を設定")
+
+
 def create_notifications(users_by_key: dict[str, User], projects_by_key: dict[str, Project]) -> list[Notification]:
     rows: list[Notification] = []
     row = Notification(
@@ -1218,6 +1276,7 @@ def main() -> None:
         create_tasks(projects_by_key, members_by_name)
         create_budget_actual_logs(projects_by_key)
         create_project_reports(projects_by_key)
+        set_project_last_progress_updates(projects_by_key)
         create_notifications(users_by_key, projects_by_key)
         create_project_status_logs(users_by_key, projects_by_key)
 

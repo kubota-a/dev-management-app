@@ -76,6 +76,11 @@ class User(UserMixin, db.Model):
         foreign_keys="Project.applicant_id",
         back_populates="applicant",
     )
+    projects_last_progress_updated = db.relationship(
+        "Project",
+        foreign_keys="Project.last_progress_updated_by_id",
+        back_populates="last_progress_updated_by",
+    )
     notifications = db.relationship("Notification", back_populates="user")
     project_drafts = db.relationship("ProjectDraft", back_populates="user")
     project_reports = db.relationship("ProjectReport", back_populates="reporter")
@@ -188,6 +193,13 @@ class Project(db.Model):
     planned_end_date = db.Column(db.Date, nullable=True)
     monthly_report_comment = db.Column(db.Text, nullable=True)
     monthly_report_updated_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    last_progress_updated_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
+    last_progress_updated_by_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
     final_rejected_at = db.Column(db.DateTime(timezone=True), nullable=True)
     approved_at = db.Column(db.DateTime(timezone=True), nullable=True)
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -203,6 +215,11 @@ class Project(db.Model):
         "User",
         foreign_keys=[applicant_id],
         back_populates="projects_as_applicant",
+    )
+    last_progress_updated_by = db.relationship(
+        "User",
+        foreign_keys=[last_progress_updated_by_id],
+        back_populates="projects_last_progress_updated",
     )
     department = db.relationship("Department", back_populates="projects")
     tasks = db.relationship("Task", back_populates="project")
