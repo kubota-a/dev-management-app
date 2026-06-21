@@ -1497,6 +1497,13 @@ def get_assignable_member_for_project(project: Project, assignee_member_id: int 
     )
 
 
+def touch_project_progress(project: Project, user: User | None = None) -> None:
+    """案件の最終進捗更新日時・更新者を記録する。"""
+    project.last_progress_updated_at = utc_now()
+    if user is not None:
+        project.last_progress_updated_by_id = user.id
+
+
 def normalize_task_status_by_progress(progress_rate: int) -> str:
     """進捗率を正としてステータスを補正する。"""
     if progress_rate <= 0:
@@ -1879,6 +1886,7 @@ def applicant_project_task_create(project_id):
     db.session.add(task)
 
     try:
+        touch_project_progress(project, current_user)
         db.session.commit()
     except SQLAlchemyError:
         db.session.rollback()
@@ -1927,6 +1935,7 @@ def applicant_project_task_update(project_id, task_id):
     task.due_date = normalized["due_date"]
 
     try:
+        touch_project_progress(project, current_user)
         db.session.commit()
     except SQLAlchemyError:
         db.session.rollback()
@@ -1972,6 +1981,7 @@ def applicant_project_task_delete(project_id, task_id):
     try:
         db.session.delete(task)
         project.updated_at = utc_now()
+        touch_project_progress(project, current_user)
         db.session.commit()
         flash("タスクを削除しました。", "success")
         return jsonify(
@@ -2060,6 +2070,7 @@ def applicant_project_progress_detail(project_id):
 
         try:
             project.updated_at = utc_now()
+            touch_project_progress(project, current_user)
             after_all_done = is_all_tasks_done(project.tasks)
             if should_notify_all_tasks_done(before_all_done, after_all_done, project):
                 managers = User.query.filter(
@@ -3055,22 +3066,17 @@ def _get_monitoring_overdue_metrics(project: Project, today: date) -> dict:
 
 
 def _get_monitoring_last_progress_metrics(project: Project, today: date) -> dict:
-    progress_updated_at = None
-    if project.updated_at:
-        if project.approved_at is None or project.updated_at > project.approved_at:
-            progress_updated_at = project.updated_at
-
     latest_budget_log_created_at = max(
         (log.created_at for log in project.budget_actual_logs if log.created_at),
         default=None,
     )
 
-    candidate_timestamps = [
-        progress_updated_at,
-        project.monthly_report_updated_at,
-        latest_budget_log_created_at,
-    ]
-    latest_updated_at = max((dt for dt in candidate_timestamps if dt is not None), default=None)
+    latest_updated_at = (
+        project.last_progress_updated_at
+        or project.monthly_report_updated_at
+        or latest_budget_log_created_at
+        or project.updated_at
+    )
     if latest_updated_at is None:
         return {
             "is_initial": True,
