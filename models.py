@@ -78,6 +78,7 @@ class User(UserMixin, db.Model):
     )
     notifications = db.relationship("Notification", back_populates="user")
     project_drafts = db.relationship("ProjectDraft", back_populates="user")
+    project_reports = db.relationship("ProjectReport", back_populates="reporter")
     project_status_logs = db.relationship("ProjectStatusLog", back_populates="actor")
 
 
@@ -207,6 +208,7 @@ class Project(db.Model):
     tasks = db.relationship("Task", back_populates="project")
     notifications = db.relationship("Notification", back_populates="project")
     budget_actual_logs = db.relationship("BudgetActualLog", back_populates="project")
+    project_reports = db.relationship("ProjectReport", back_populates="project")
     project_status_logs = db.relationship("ProjectStatusLog", back_populates="project")
 
     @property
@@ -347,7 +349,52 @@ class BudgetActualLog(db.Model):
     project = db.relationship("Project", back_populates="budget_actual_logs")
 
 
-# 9. project_status_logs（案件ステータス履歴）
+# 9. project_reports（案件報告履歴）
+class ProjectReport(db.Model):
+    """案件の月次報告・完了報告の履歴を管理する。"""
+
+    __tablename__ = "project_reports"
+    __table_args__ = (
+        db.CheckConstraint(
+            "report_type IN ('monthly', 'completion')",
+            name="ck_project_reports_report_type_allowed",
+        ),
+        db.CheckConstraint(
+            """
+            (
+              report_type = 'monthly'
+              AND report_month IS NOT NULL
+            )
+            OR
+            (
+              report_type = 'completion'
+              AND report_month IS NULL
+            )
+            """,
+            name="ck_project_reports_month_rule",
+        ),
+    )
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.BigInteger, db.ForeignKey("projects.id"), nullable=False, index=True)
+    reporter_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=False, index=True)
+    report_type = db.Column(db.String(20), nullable=False, index=True)
+    report_month = db.Column(db.Date, nullable=True, index=True)
+    comment = db.Column(db.Text, nullable=False)
+    submitted_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now, index=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        onupdate=utc_now,
+    )
+
+    project = db.relationship("Project", back_populates="project_reports")
+    reporter = db.relationship("User", back_populates="project_reports")
+
+
+# 10. project_status_logs（案件ステータス履歴）
 class ProjectStatusLog(db.Model):
     """案件ステータス変更の監査ログ。"""
 
@@ -380,7 +427,7 @@ class ProjectStatusLog(db.Model):
     actor = db.relationship("User", back_populates="project_status_logs")
 
 
-# 10. project_drafts（案件下書き）
+# 11. project_drafts（案件下書き）
 class ProjectDraft(db.Model):
     """申請フォームの一時保存データ。"""
 
@@ -407,7 +454,7 @@ class ProjectDraft(db.Model):
     department = db.relationship("Department", back_populates="project_drafts")
 
 
-# 11. department_yearly_budgets（部門年間予算）
+# 12. department_yearly_budgets（部門年間予算）
 class DepartmentYearlyBudget(db.Model):
     """部門ごとの年間予算を年度単位で管理する。"""
 

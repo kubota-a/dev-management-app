@@ -16,10 +16,12 @@ from models import (
     Notification,
     Project,
     ProjectDraft,
+    ProjectReport,
     ProjectStatusLog,
     Task,
     User,
     db,
+    utc_now,
 )
 
 
@@ -194,6 +196,58 @@ PROJECT_MONTHLY_REPORT_ROLES = {
     "proj_08": "report_completed",
     "proj_15": "report_completed",
     "proj_16": "report_recent",
+}
+
+PROJECT_REPORT_MONTHLY_HISTORY = {
+    "proj_03": [
+        "今月は検索条件の洗い出しと画面設計を中心に進めました。主要な検索軸は固まり、大きな課題はありません。",
+        "検索条件UIの実装と保存機能の設計を進めました。API連携部分の確認事項はありますが、全体の進捗は予定範囲内です。",
+        "検索条件UIの設計とAPI実装を進めています。検索条件の保存機能は設計方針が固まり、現在は検索APIの実装とインデックス最適化の検証を行っています。",
+    ],
+    "proj_04": [
+        "入力補助候補の整理とフォーム文言の見直しを進めました。利用者レビューでも大きな手戻りは発生していません。",
+        "申請フォーム入力補助機能の導入作業は完了しました。入力補助候補の整備、フォーム文言改修、操作説明更新まで完了しています。",
+    ],
+    "proj_07": [
+        "対象サーバの整理と現行バックアップ運用の確認を実施しました。運用課題の洗い出しを完了しています。",
+        "バックアップジョブ見直しと監視閾値調整を進めています。一部タスクに遅れが出ているため、担当者間で優先度を見直しながら対応しています。",
+    ],
+    "proj_08": [
+        "棚卸し対象の抽出ルールと画面要件を整理しました。ダッシュボード構成の方針は合意済みです。",
+        "権限棚卸し支援ダッシュボード作成は完了しました。権限一覧取り込み、棚卸し画面実装、判定ルール調整まで完了しています。",
+    ],
+    "proj_10": [
+        "入力項目の棚卸しと現行帳票の見直しを進めました。削減候補の整理が完了しています。",
+        "画面遷移改善案の検討と入力補助の仕様整理を行いました。次月は実装と部門確認を進める予定です。",
+        "月次報告フォームの入力項目整理と画面遷移改善を進めています。入力補助ロジックの実装に着手しており、次回は部門ヒアリング結果を反映する予定です。",
+    ],
+    "proj_11": [
+        "予算執行状況の可視化に向けて要件定義と集計観点の整理を進めました。主要指標は確定しています。",
+        "集計ロジックの検証と表示方式の比較を進めました。残タスクはありますが、全体の進捗は計画どおりです。",
+        "予算執行状況の集計ロジックとグラフ表示の調整を進めています。予算消化が大きいため、残作業の範囲と追加費用の見込みを確認しています。",
+    ],
+    "proj_14": [
+        "ナレッジ分類ルールの見直しとタグ設計を進めました。利用シナリオ整理まで完了しています。",
+        "ナレッジカテゴリとタグ整理を進めています。検索結果の表示順改善に一部遅れがあるため、利用頻度の高い手順から優先して調整しています。",
+    ],
+    "proj_15": [
+        "申請フローの現状整理と改善観点の棚卸しを行いました。差し戻し要因の洗い出しまで完了しています。",
+        "社内申請ワークフロー簡素化対応は完了しました。申請手順の棚卸し、入力項目整理、承認前チェック項目の調整まで完了しています。",
+    ],
+    "proj_16": [
+        "検索条件の見直しと利用導線の確認を進めました。改善対象の優先順位付けまで終えています。",
+        "業務マニュアル検索改善を進めています。検索条件調整と表示改善を実施し、次回は利用ログを見ながら精度調整を行う予定です。",
+    ],
+    "proj_18": [
+        "テンプレート項目の標準化と記入ガイドの整備を進めました。利用部門向けの説明素材も準備しています。",
+    ],
+}
+
+PROJECT_COMPLETION_REPORTS = {
+    "proj_04": "全タスクの完了を確認しました。入力補助候補の整備とフォーム改修が完了しているため、部門管理者による完了認定をお願いします。",
+    "proj_08": "全タスクの完了を確認しました。棚卸し支援ダッシュボードの実装と確認作業が完了しているため、完了認定をお願いします。",
+    "proj_15": "全タスクの完了を確認しました。申請フロー簡素化対応の実装と最終確認が完了したため、部門管理者による完了認定をお願いします。",
+    "proj_18": "全タスクの完了を確認しました。テンプレート整備と関連導線の作業が完了しているため、部門管理者による完了認定をお願いします。",
 }
 
 
@@ -393,6 +447,27 @@ def resolve_monthly_report_updated_at(role: str) -> datetime:
     return combine_jst_to_utc(target, 17, 30)
 
 
+def shift_month_start(base_month: date, offset_months: int) -> date:
+    month_index = (base_month.year * 12 + (base_month.month - 1)) + offset_months
+    year = month_index // 12
+    month = (month_index % 12) + 1
+    return date(year, month, 1)
+
+
+def resolve_monthly_report_submitted_at(report_month: date, sequence_index: int) -> datetime:
+    submit_day = 24 + min(sequence_index, 4)
+    submit_hour = 17 + (sequence_index % 2)
+    submit_minute = 20 if sequence_index % 2 == 0 else 45
+    return combine_jst_to_utc(date(report_month.year, report_month.month, submit_day), submit_hour, submit_minute)
+
+
+def clamp_to_not_future(target: datetime) -> datetime:
+    now = utc_now()
+    if target > now:
+        return now
+    return target
+
+
 def resolve_notification_created_at(role: str) -> datetime:
     anchor = get_seed_anchor()
     target = anchor + timedelta(days=NOTIFICATION_DATE_RULES[role])
@@ -408,6 +483,7 @@ def resolve_status_log_acted_at(role: str) -> datetime:
 def reset_all_data() -> None:
     print("既存データ削除を開始します...")
     db.session.query(ProjectStatusLog).delete()
+    db.session.query(ProjectReport).delete()
     db.session.query(Notification).delete()
     db.session.query(BudgetActualLog).delete()
     db.session.query(Task).delete()
@@ -742,6 +818,76 @@ def create_budget_actual_logs(projects_by_key: dict[str, Project]) -> list[Budge
     return rows
 
 
+def create_project_reports(projects_by_key: dict[str, Project]) -> list[ProjectReport]:
+    rows: list[ProjectReport] = []
+    for project_key, project in projects_by_key.items():
+        tasks = list(project.tasks or [])
+        if project.status not in {"in_progress", "completed"} or not tasks:
+            continue
+
+        monthly_comments = PROJECT_REPORT_MONTHLY_HISTORY.get(project_key, [])
+        if monthly_comments:
+            latest_monthly_at = clamp_to_not_future(project.monthly_report_updated_at or project.updated_at or utc_now())
+            current_month = date(get_seed_anchor().year, get_seed_anchor().month, 1)
+            latest_month = date(
+                latest_monthly_at.astimezone(JST).year,
+                latest_monthly_at.astimezone(JST).month,
+                1,
+            )
+            latest_month = min(latest_month, current_month)
+            monthly_reports: list[ProjectReport] = []
+            for idx, comment in enumerate(reversed(monthly_comments)):
+                report_month = shift_month_start(latest_month, -idx)
+                if idx == 0:
+                    submitted_at = project.monthly_report_updated_at or project.updated_at or utc_now()
+                else:
+                    submitted_at = resolve_monthly_report_submitted_at(report_month, idx)
+                submitted_at = clamp_to_not_future(submitted_at)
+                report = ProjectReport(
+                    project_id=project.id,
+                    reporter_id=project.applicant_id,
+                    report_type="monthly",
+                    report_month=report_month,
+                    comment=comment,
+                    submitted_at=submitted_at,
+                )
+                db.session.add(report)
+                rows.append(report)
+                monthly_reports.append(report)
+
+            latest_report = max(monthly_reports, key=lambda item: item.submitted_at)
+            project.monthly_report_comment = latest_report.comment
+            project.monthly_report_updated_at = latest_report.submitted_at
+
+        all_tasks_done = bool(tasks) and all(task.status == "done" for task in tasks)
+        if all_tasks_done and project.status in {"in_progress", "completed"}:
+            completion_submitted_at = project.completed_at or project.updated_at
+            if completion_submitted_at is None:
+                completion_due_date = max((task.due_date for task in tasks if task.due_date), default=None)
+                if completion_due_date is None:
+                    completion_submitted_at = utc_now()
+                else:
+                    completion_submitted_at = combine_jst_to_utc(completion_due_date, 17, 30)
+            completion_submitted_at = clamp_to_not_future(completion_submitted_at)
+            report = ProjectReport(
+                project_id=project.id,
+                reporter_id=project.applicant_id,
+                report_type="completion",
+                report_month=None,
+                comment=PROJECT_COMPLETION_REPORTS.get(
+                    project_key,
+                    "全タスクの完了を確認しました。部門管理者による完了認定をお願いします。",
+                ),
+                submitted_at=completion_submitted_at,
+            )
+            db.session.add(report)
+            rows.append(report)
+
+    db.session.flush()
+    print(f"project_reports: {len(rows)}件作成")
+    return rows
+
+
 def create_notifications(users_by_key: dict[str, User], projects_by_key: dict[str, Project]) -> list[Notification]:
     rows: list[Notification] = []
     row = Notification(
@@ -1071,12 +1217,13 @@ def main() -> None:
         projects_by_key = create_projects(users_by_key, departments_by_key)
         create_tasks(projects_by_key, members_by_name)
         create_budget_actual_logs(projects_by_key)
+        create_project_reports(projects_by_key)
         create_notifications(users_by_key, projects_by_key)
         create_project_status_logs(users_by_key, projects_by_key)
 
         db.session.commit()
         print("seed完了")
-        print("投入件数: departments=3, department_yearly_budgets=3, users=12, department_members=11, department_memberships=11, project_drafts=5, projects=18, tasks=59, budget_actual_logs=39, notifications=1, project_status_logs=45")
+        print("投入件数: departments=3, department_yearly_budgets=3, users=12, department_members=11, department_memberships=11, project_drafts=5, projects=18, tasks=59, budget_actual_logs=39, project_reports=26, notifications=1, project_status_logs=45")
 
 
 if __name__ == "__main__":
