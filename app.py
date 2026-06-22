@@ -3048,12 +3048,25 @@ def has_completion_report(project: Project) -> bool:
     if project.id is None:
         return False
 
+    if project.project_reports is not None:
+        return any(report.report_type == "completion" for report in project.project_reports)
+
     return (
         ProjectReport.query.filter(
             ProjectReport.project_id == project.id,
             ProjectReport.report_type == "completion",
         ).first()
         is not None
+    )
+
+
+def _get_sorted_project_reports(project: Project) -> list[ProjectReport]:
+    """案件報告を提出日時の新しい順で返す。"""
+    fallback_dt = datetime.min.replace(tzinfo=ZoneInfo("UTC"))
+    return sorted(
+        list(project.project_reports or []),
+        key=lambda report: (report.submitted_at or fallback_dt, report.id or 0),
+        reverse=True,
     )
 
 
@@ -3130,7 +3143,7 @@ def _get_monitoring_latest_due_date(project: Project) -> date | None:
 def get_manager_monitoring_sort_key(project: Project):
     """モニタリング案件一覧の優先順キーを返す。"""
     today = jst_today()
-    can_complete = is_manager_monitoring_project_complete_ready(project)
+    can_complete = is_manager_monitoring_project_complete_ready(project) and has_completion_report(project)
     overdue_metrics = _get_monitoring_overdue_metrics(project, today)
     budget_metrics = _get_monitoring_budget_metrics(project)
     last_progress_metrics = _get_monitoring_last_progress_metrics(project, today)
@@ -3153,6 +3166,7 @@ def get_manager_monitoring_projects(department_id: int) -> list[Project]:
             joinedload(Project.department),
             joinedload(Project.tasks),
             joinedload(Project.budget_actual_logs),
+            joinedload(Project.project_reports).joinedload(ProjectReport.reporter),
         )
         .filter(
             Project.department_id == department_id,
@@ -3240,7 +3254,24 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
     budget_metrics = _get_monitoring_budget_metrics(project)
     overdue_metrics = _get_monitoring_overdue_metrics(project, today)
     last_progress_metrics = _get_monitoring_last_progress_metrics(project, today)
-    can_complete = is_manager_monitoring_project_complete_ready(project)
+    is_all_tasks_done = is_manager_monitoring_project_complete_ready(project)
+    has_completion = has_completion_report(project)
+    can_complete = is_all_tasks_done and has_completion
+    is_completion_phase = is_all_tasks_done
+    project_reports = _get_sorted_project_reports(project)
+    latest_report = project_reports[0] if project_reports else None
+
+    current_monthly_report = next(
+        (
+            report
+            for report in project_reports
+            if report.report_type == "monthly"
+            and report.report_month
+            and report.report_month.year == today.year
+            and report.report_month.month == today.month
+        ),
+        None,
+    )
 
     tasks_data = [_build_manager_monitoring_task_data(task, today) for task in (project.tasks or [])]
     tasks_data.sort(key=lambda item: item["sort_rank"])
@@ -3264,6 +3295,62 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
         report_submitted = (report_jst.year == today.year and report_jst.month == today.month)
         report_updated_display = format_jst_date(report_updated_at)
 
+    if current_monthly_report is not None:
+        report_submitted = True
+        report_updated_display = format_jst_date(current_monthly_report.submitted_at)
+        report_comment = (current_monthly_report.comment or "").strip()
+
+    report_options = []
+    for report in project_reports:
+        is_completion = report.report_type == "completion"
+        report_options.append(
+            {
+                "id": report.id,
+                "type": report.report_type,
+                "type_label": "完了報告" if is_completion else "月次報告",
+                "submitted_at_display": format_jst_date(report.submitted_at),
+                "comment": report.comment or "",
+                "reporter_name": report.reporter.display_name if report.reporter else "—",
+                "is_completion": is_completion,
+                "option_label": f"{format_jst_date(report.submitted_at)} {'完了報告' if is_completion else '月次報告'}",
+            }
+        )
+
+    if latest_report is not None:
+        latest_report_is_completion = latest_report.report_type == "completion"
+        latest_report_type = latest_report.report_type
+        latest_report_type_label = "完了報告" if latest_report_is_completion else "月次報告"
+        selected_report_comment = latest_report.comment or ""
+        selected_reporter_name = latest_report.reporter.display_name if latest_report.reporter else "—"
+    else:
+        latest_report_is_completion = False
+        latest_report_type = "monthly"
+        latest_report_type_label = "月次報告"
+        if report_submitted and report_comment:
+            selected_report_comment = report_comment
+            selected_reporter_name = project.applicant.display_name if project.applicant else "—"
+        else:
+            selected_report_comment = "月次進捗報告はまだ提出されていません\n\n主担当者が案件進捗管理画面で報告を入力すると、ここに表示されます。"
+            selected_reporter_name = project.applicant.display_name if project.applicant else "—"
+
+    report_alert_title = "完了報告" if is_completion_phase else "月次進捗報告"
+    if is_completion_phase:
+        report_alert_sub = ""
+        report_alert_submitted = has_completion
+    else:
+        report_alert_submitted = report_submitted
+        report_alert_sub = f"{report_month_label}を提出済み" if report_submitted else f"{report_month_label}は未提出です"
+
+    completion_report_missing_message = ""
+    complete_disabled_reason = ""
+    if can_complete:
+        complete_disabled_reason = ""
+    elif is_all_tasks_done and not has_completion:
+        complete_disabled_reason = "完了報告が未提出のため、完了認定はできません。"
+        completion_report_missing_message = "完了報告が未提出のため、完了認定はできません"
+    else:
+        complete_disabled_reason = "完了認定できる条件を満たしていません。全タスクが完了しているか確認してください。"
+
     monitoring_projects_data = []
     for item in monitoring_projects:
         item_overdue = _get_monitoring_overdue_metrics(item, today)
@@ -3273,7 +3360,7 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
                 "project_id": item.id,
                 "title": item.title,
                 "is_current": item.id == project.id,
-                "can_complete": is_manager_monitoring_project_complete_ready(item),
+                "can_complete": is_manager_monitoring_project_complete_ready(item) and has_completion_report(item),
                 "has_delay": item_overdue["overdue_count"] > 0,
                 "has_budget_alert": item_budget["budget_pct"] >= 80,
             }
@@ -3310,10 +3397,23 @@ def build_manager_monitoring_view_data(project: Project, monitoring_projects: li
         "report_submitted": report_submitted,
         "report_updated_display": report_updated_display,
         "report_comment": report_comment,
+        "report_alert_title": report_alert_title,
+        "report_alert_sub": report_alert_sub,
+        "report_alert_submitted": report_alert_submitted,
+        "report_options": report_options,
+        "latest_report_type": latest_report_type,
+        "latest_report_type_label": latest_report_type_label,
+        "latest_report_is_completion": latest_report_is_completion,
+        "selected_report_comment": selected_report_comment,
+        "selected_reporter_name": selected_reporter_name,
         "tasks": tasks_data,
         "is_overall_progress_complete": avg_progress >= 100,
+        "is_all_tasks_done": is_all_tasks_done,
+        "has_completion_report": has_completion,
         "can_complete": can_complete,
-        "complete_disabled_reason": "" if can_complete else "完了認定できる条件を満たしていません。全タスクが完了しているか確認してください。",
+        "complete_disabled_reason": complete_disabled_reason,
+        "completion_report_missing_message": completion_report_missing_message,
+        "is_completion_phase": is_completion_phase,
         "monitoring_projects": monitoring_projects_data,
     }
 
@@ -3442,6 +3542,7 @@ def manager_project_monitoring_detail(project_id: int):
             joinedload(Project.department),
             joinedload(Project.tasks),
             joinedload(Project.budget_actual_logs),
+            joinedload(Project.project_reports).joinedload(ProjectReport.reporter),
         )
         .filter(Project.id == project_id)
         .first()
