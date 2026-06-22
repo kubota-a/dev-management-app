@@ -23,6 +23,7 @@ from models import (
     Notification,
     Project,
     ProjectDraft,
+    ProjectReport,
     ProjectStatusLog,
     Task,
     User,
@@ -3042,6 +3043,20 @@ def is_manager_monitoring_project_complete_ready(project: Project) -> bool:
     return all(task.status == "done" and int(task.progress_rate or 0) == 100 for task in tasks)
 
 
+def has_completion_report(project: Project) -> bool:
+    """案件に完了報告が提出されているかを返す。"""
+    if project.id is None:
+        return False
+
+    return (
+        ProjectReport.query.filter(
+            ProjectReport.project_id == project.id,
+            ProjectReport.report_type == "completion",
+        ).first()
+        is not None
+    )
+
+
 def _get_monitoring_budget_metrics(project: Project) -> dict:
     base_budget = project.approved_budget_amount if project.approved_budget_amount is not None else project.estimated_budget_amount
     budget_base = Decimal(base_budget or 0)
@@ -3448,6 +3463,10 @@ def manager_project_monitoring_detail(project_id: int):
 
         if not is_manager_monitoring_project_complete_ready(project):
             flash("完了認定できる条件を満たしていません。全タスクが完了しているか確認してください。", "danger")
+            return redirect(url_for("manager_project_monitoring_detail", project_id=project.id))
+
+        if not has_completion_report(project):
+            flash("完了報告が未提出のため、案件完了認定はできません。", "danger")
             return redirect(url_for("manager_project_monitoring_detail", project_id=project.id))
 
         try:
