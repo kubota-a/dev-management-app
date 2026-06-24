@@ -3705,6 +3705,7 @@ def build_hq_top_view_data() -> dict:
             joinedload(Project.tasks),
             joinedload(Project.budget_actual_logs),
             joinedload(Project.project_status_logs),
+            joinedload(Project.project_reports),
         )
         .order_by(Project.updated_at.desc(), Project.id.desc())
         .all()
@@ -3879,15 +3880,23 @@ def build_hq_top_view_data() -> dict:
             else:
                 detail_text = _truncate_with_ellipsis(detail_base, 70)
         elif project.status == "completed":
-            detail_label = "最終報告"
-            detail_text = _normalize_single_line(project.monthly_report_comment or "")
+            latest_completion_report = next(
+                (report for report in _get_sorted_project_reports(project) if report.report_type == "completion"),
+                None,
+            )
+            if latest_completion_report and latest_completion_report.submitted_at:
+                submitted_jst = latest_completion_report.submitted_at.astimezone(ZoneInfo("Asia/Tokyo"))
+                detail_label = f"完了報告（{submitted_jst.year}年{submitted_jst.month}月{submitted_jst.day}日）"
+            else:
+                detail_label = "完了報告"
+            detail_text = _normalize_single_line(latest_completion_report.comment if latest_completion_report else "")
             if not detail_text:
-                detail_text = "最終報告はまだ登録されていません。"
+                detail_text = "完了報告はまだ登録されていません。"
         else:
             detail_text = _normalize_single_line(project.monthly_report_comment or "")
             if project.monthly_report_updated_at:
                 updated_jst = project.monthly_report_updated_at.astimezone(ZoneInfo("Asia/Tokyo"))
-                detail_label = f"最新月次報告（{updated_jst.year}年{updated_jst.month}月）"
+                detail_label = f"最新月次報告（{updated_jst.year}年{updated_jst.month}月{updated_jst.day}日）"
             else:
                 detail_label = "最新月次報告"
             if not detail_text:
