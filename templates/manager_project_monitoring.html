@@ -67,6 +67,12 @@
 .mock-manager-project-monitoring .hero-card { background: #54365a; border-radius: var(--mpm-radius); box-shadow: 0 4px 18px rgba(61,32,64,.22); overflow: hidden; min-width: 0; width: 100%; max-width: 100%; }
 .mock-manager-project-monitoring .hero-main { padding: 18px 20px; }
 .mock-manager-project-monitoring .hero-name { font-size: 18px; font-weight: 900; color: #fff; line-height: 1.3; }
+.mock-manager-project-monitoring .hero-completion-warning {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mpm-danger);
+}
 .mock-manager-project-monitoring .manager-monitoring-complete-label {
   display: inline-block;
   margin-top: 8px;
@@ -151,9 +157,21 @@
   padding: 13px 18px; border-bottom: 1px solid var(--mpm-border); background: var(--mpm-purple-light); display: flex; align-items: center; justify-content: space-between;
 }
 .mock-manager-project-monitoring .rc-title { font-size: 13px; font-weight: 800; color: var(--mpm-header); display: flex; align-items: center; gap: 7px; }
+.mock-manager-project-monitoring .rc-title.is-completion { color: var(--mpm-danger); }
 .mock-manager-project-monitoring .rc-meta { display: flex; align-items: center; gap: 8px; }
 .mock-manager-project-monitoring .rc-date { font-size: 11px; color: var(--mpm-muted); }
-.mock-manager-project-monitoring .rc-new-badge { font-size: 10px; font-weight: 800; padding: 2px 9px; border-radius: 8px; background: var(--mpm-success); color: #fff; }
+.mock-manager-project-monitoring .rc-select {
+  min-width: 180px;
+  max-width: 240px;
+  border: 1px solid var(--mpm-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--mpm-text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 28px 6px 10px;
+  font-family: var(--font-family-base);
+}
 .mock-manager-project-monitoring .report-body { padding: 20px 22px; }
 .mock-manager-project-monitoring .report-accordion-head { cursor: pointer; user-select: none; }
 .mock-manager-project-monitoring .report-accordion-head:hover { background: var(--mpm-purple-soft); }
@@ -316,6 +334,8 @@
             <div class="hero-name" id="managerProjectMonitoringHeroName">{{ view_data.project_name }}</div>
             {% if view_data.can_complete %}
             <div class="manager-monitoring-complete-label">完了認定待ち</div>
+            {% elif view_data.completion_report_missing_message %}
+            <div class="hero-completion-warning">{{ view_data.completion_report_missing_message }}</div>
             {% endif %}
             <div class="hero-meta">
               <div class="hero-meta-item">主担当：{{ view_data.applicant_name }}</div>
@@ -360,14 +380,9 @@
                 <div class="ap-text">最終進捗更新<small>{{ view_data.last_progress_meta }}</small></div>
                 <div class="ap-val">{{ view_data.last_progress_label }}</div>
               </div>
-              <div class="ap-item {% if view_data.report_submitted %}api-info{% else %}api-warning{% endif %}">
-                {% if view_data.report_submitted %}
-                <div class="ap-text">月次進捗報告<small>{{ view_data.report_month_label }}を提出済み</small></div>
-                <div class="ap-val">提出済</div>
-                {% else %}
-                <div class="ap-text">月次進捗報告<small>{{ view_data.report_month_label }}は未提出です</small></div>
-                <div class="ap-val">未提出</div>
-                {% endif %}
+              <div class="ap-item {% if view_data.report_alert_submitted %}api-info{% else %}api-warning{% endif %}">
+                <div class="ap-text">{{ view_data.report_alert_title }}{% if view_data.report_alert_sub %}<small>{{ view_data.report_alert_sub }}</small>{% endif %}</div>
+                <div class="ap-val">{% if view_data.report_alert_submitted %}提出済{% else %}未提出{% endif %}</div>
               </div>
             </div>
           </div>
@@ -375,25 +390,24 @@
 
         <div class="report-card">
           <div class="rc-head report-accordion-head" onclick="toggleManagerProjectMonitoringReportAccordion(this)">
-            <div class="rc-title">月次進捗報告</div>
+            <div class="rc-title{% if view_data.latest_report_is_completion %} is-completion{% endif %}" id="managerProjectMonitoringReportTitle">{{ view_data.latest_report_type_label }}</div>
             <div class="rc-head-right">
-              <div class="rc-meta">
-                <div class="rc-date">{% if view_data.report_submitted %}{{ view_data.report_updated_display }} 提出{% else %}{{ view_data.report_month_label }} 未提出{% endif %}</div>
-                {% if view_data.report_submitted %}<div class="rc-new-badge">最新</div>{% endif %}
-              </div>
+              <select class="rc-select" id="managerProjectMonitoringReportSelect" onclick="event.stopPropagation()" onchange="switchManagerProjectMonitoringReport()" {% if not view_data.report_options %}disabled{% endif %}>
+                {% if view_data.report_options %}
+                  {% for option in view_data.report_options %}
+                  <option value="{{ option.id }}">{{ option.option_label }}</option>
+                  {% endfor %}
+                {% else %}
+                  <option value="">報告履歴なし</option>
+                {% endif %}
+              </select>
               <div class="rc-arrow open">▼</div>
             </div>
           </div>
           <div class="report-body report-accordion-body open">
-            {% if view_data.report_submitted %}
-            <div class="report-text">{{ view_data.report_comment }}</div>
-            {% else %}
-            <div class="report-text">月次進捗報告はまだ提出されていません
-
-主担当者が案件進捗管理画面で報告を入力すると、ここに表示されます。</div>
-            {% endif %}
+            <div class="report-text" id="managerProjectMonitoringReportText">{{ view_data.selected_report_comment }}</div>
             <div class="report-footer">
-              <div class="report-owner">主担当：<strong>{{ view_data.applicant_name }}</strong></div>
+              <div class="report-owner">主担当：<strong id="managerProjectMonitoringReportOwner">{{ view_data.selected_reporter_name }}</strong></div>
             </div>
           </div>
         </div>
@@ -482,7 +496,10 @@
 
 {% block script_extra %}
 <script>
+var managerProjectMonitoringReports = {{ view_data.report_options | tojson }};
+
 (function initManagerProjectMonitoringMock() {
+  switchManagerProjectMonitoringReport();
   initManagerProjectMonitoringResponsiveAccordions();
 })();
 
@@ -506,6 +523,24 @@ function initManagerProjectMonitoringResponsiveAccordions() {
   var arrow = document.querySelector('.mock-manager-project-monitoring .rc-arrow');
   if (body) body.classList.remove('open');
   if (arrow) arrow.classList.remove('open');
+}
+
+function switchManagerProjectMonitoringReport() {
+  var select = getManagerProjectMonitoringEl('managerProjectMonitoringReportSelect');
+  var title = getManagerProjectMonitoringEl('managerProjectMonitoringReportTitle');
+  var text = getManagerProjectMonitoringEl('managerProjectMonitoringReportText');
+  var owner = getManagerProjectMonitoringEl('managerProjectMonitoringReportOwner');
+  if (!select || !title || !text || !owner || !managerProjectMonitoringReports.length) return;
+
+  var selectedId = select.value;
+  var report = managerProjectMonitoringReports.find(function (item) {
+    return String(item.id) === String(selectedId);
+  }) || managerProjectMonitoringReports[0];
+
+  title.textContent = report.type_label;
+  title.classList.toggle('is-completion', !!report.is_completion);
+  text.textContent = report.comment || '';
+  owner.textContent = report.reporter_name || '—';
 }
 
 function setManagerProjectMonitoringFilter(btn, type) {
