@@ -1452,6 +1452,7 @@ def get_applicant_progress_projects(user_id: int) -> list[Project]:
             joinedload(Project.department),
             joinedload(Project.tasks).joinedload(Task.assignee_member),
             joinedload(Project.budget_actual_logs),
+            joinedload(Project.project_reports).joinedload(ProjectReport.reporter),
         )
         .filter(
             Project.applicant_id == user_id,
@@ -1618,6 +1619,10 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
     done_count = sum(1 for t in sorted_tasks if t.status == "done")
     total_count = len(sorted_tasks)
     avg_progress = calculate_project_progress_pct(sorted_tasks)
+    is_completion_report_mode = is_all_tasks_done(sorted_tasks)
+    project_reports = _get_sorted_project_reports(project)
+    latest_monthly_report = next((report for report in project_reports if report.report_type == "monthly"), None)
+    latest_completion_report = next((report for report in project_reports if report.report_type == "completion"), None)
 
     budget_pct = 0
     if base_budget > 0:
@@ -1626,6 +1631,27 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
     current_index = next((idx for idx, p in enumerate(progress_projects) if p.id == project.id), -1)
     prev_project_id = progress_projects[current_index - 1].id if current_index > 0 else None
     next_project_id = progress_projects[current_index + 1].id if 0 <= current_index < len(progress_projects) - 1 else None
+
+    previous_report_date_display = "なし"
+    if latest_monthly_report and latest_monthly_report.submitted_at:
+        previous_report_date_display = format_jst_date(latest_monthly_report.submitted_at)
+    elif project.monthly_report_updated_at:
+        previous_report_date_display = format_jst_date(project.monthly_report_updated_at)
+
+    previous_monthly_report_comment = ""
+    if latest_monthly_report and latest_monthly_report.comment:
+        previous_monthly_report_comment = latest_monthly_report.comment
+    else:
+        previous_monthly_report_comment = project.monthly_report_comment or ""
+
+    completion_report_comment = latest_completion_report.comment if latest_completion_report else ""
+    report_comment = completion_report_comment if is_completion_report_mode else (project.monthly_report_comment or "")
+    report_card_title = "案件完了報告" if is_completion_report_mode else f"月次報告（前回：{previous_report_date_display}）"
+    report_placeholder = (
+        "完了内容・成果・残課題・引き継ぎ事項などを入力してください。"
+        if is_completion_report_mode
+        else "今月の進捗・課題・来月の予定などを入力してください。"
+    )
 
     return {
         "project": project,
@@ -1643,9 +1669,15 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "budget_gauge_class": "gf-over" if budget_pct >= 100 else "gf-warn" if budget_pct >= 80 else "gf-ok",
         "budget_pct_color": "var(--app-prog-danger)" if budget_pct >= 100 else "var(--app-prog-warning)" if budget_pct >= 80 else "var(--app-prog-success)",
         "tasks": [build_applicant_progress_task_data(task, idx, today, tomorrow) for idx, task in enumerate(sorted_tasks)],
-        "monthly_report_comment": project.monthly_report_comment or "",
-        "previous_monthly_report_comment": project.monthly_report_comment or "",
+        "monthly_report_comment": report_comment,
+        "previous_monthly_report_comment": previous_monthly_report_comment,
+        "completion_report_comment": completion_report_comment,
         "report_month_label": f"{today.year}年{today.month}月",
+        "previous_report_date_display": previous_report_date_display,
+        "is_completion_report_mode": is_completion_report_mode,
+        "report_card_title": report_card_title,
+        "report_comment_field_name": "report_comment",
+        "report_placeholder": report_placeholder,
         "today_iso": today.isoformat(),
         "current_position": current_index + 1 if current_index >= 0 else 0,
         "total_projects": len(progress_projects),
@@ -1740,7 +1772,7 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     errors: list[str] = []
     payload: dict = {
         "budget_actual_amount": None,
-        "monthly_report_comment": (form_data.get("monthly_report_comment") or "").strip(),
+        "report_comment": (form_data.get("report_comment") or "").strip(),
         "monthly_report_changed": (form_data.get("monthly_report_changed") or "").strip() == "1",
         "task_updates": {},
     }
@@ -1749,8 +1781,8 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
         errors.append("確認モーダルで「更新する」を押してから実行してください。")
         return errors, payload
 
-    if len(payload["monthly_report_comment"]) > 500:
-        errors.append("月次進捗報告は500文字以内で入力してください。")
+    if len(payload["report_comment"]) > 500:
+        errors.append("報告内容は500文字以内で入力してください。")
         return errors, payload
 
     budget_raw = (form_data.get("budget_actual_amount") or "").strip()
@@ -2014,6 +2046,7 @@ def applicant_project_progress_detail(project_id):
                 joinedload(Project.department),
                 joinedload(Project.tasks).joinedload(Task.assignee_member),
                 joinedload(Project.budget_actual_logs),
+                joinedload(Project.project_reports).joinedload(ProjectReport.reporter),
             )
             .filter(
                 Project.id == project_id,
@@ -2048,11 +2081,6 @@ def applicant_project_progress_detail(project_id):
                 )
             )
 
-        if payload["monthly_report_changed"]:
-            changed = True
-            project.monthly_report_comment = payload["monthly_report_comment"]
-            project.monthly_report_updated_at = utc_now()
-
         task_map = {task.id: task for task in project.tasks}
         for task_id, update_data in payload["task_updates"].items():
             task = task_map.get(task_id)
@@ -2064,6 +2092,45 @@ def applicant_project_progress_detail(project_id):
                 task.status = update_data["status"]
                 task.progress_rate = int(update_data["progress_rate"])
                 task.updated_at = utc_now()
+
+        if payload["monthly_report_changed"]:
+            changed = True
+            report_mode_after_submit = is_all_tasks_done(project.tasks)
+            if report_mode_after_submit:
+                now_utc = utc_now()
+                latest_completion_report = next(
+                    (report for report in _get_sorted_project_reports(project) if report.report_type == "completion"),
+                    None,
+                )
+                if latest_completion_report is None:
+                    db.session.add(
+                        ProjectReport(
+                            project_id=project.id,
+                            report_type="completion",
+                            report_month=None,
+                            comment=payload["report_comment"],
+                            reporter_id=current_user.id,
+                            submitted_at=now_utc,
+                        )
+                    )
+                else:
+                    latest_completion_report.comment = payload["report_comment"]
+                    latest_completion_report.reporter_id = current_user.id
+                    latest_completion_report.submitted_at = now_utc
+            else:
+                now_utc = utc_now()
+                project.monthly_report_comment = payload["report_comment"]
+                project.monthly_report_updated_at = now_utc
+                db.session.add(
+                    ProjectReport(
+                        project_id=project.id,
+                        report_type="monthly",
+                        report_month=jst_today().replace(day=1),
+                        comment=payload["report_comment"],
+                        reporter_id=current_user.id,
+                        submitted_at=now_utc,
+                    )
+                )
 
         if not changed:
             flash("更新する変更はありません。", "warning")

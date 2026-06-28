@@ -342,13 +342,13 @@
           <div class="accordion-head" onclick="toggleApplicantProgressAccordion(this)">
             <div class="accordion-title">
               <span class="unsaved-dot" aria-hidden="true"></span>
-              <span>月次進捗報告（{{ view_data.report_month_label }}）</span>
+              <span>{{ view_data.report_card_title }}</span>
             </div>
             <div class="accordion-arrow open">▼</div>
           </div>
           <div class="accordion-body open">
             <button type="button" class="quote-btn" onclick="quoteApplicantProgressLastReport()">前回の報告を引用</button>
-            <textarea class="monthly-textarea" id="reportText" name="monthly_report_comment" placeholder="今月の進捗・課題・来月の予定などを入力してください。" oninput="updateApplicantProgressCharCount(this, true)"></textarea>
+            <textarea class="monthly-textarea" id="reportText" name="{{ view_data.report_comment_field_name }}" placeholder="{{ view_data.report_placeholder }}" oninput="updateApplicantProgressCharCount(this, true)">{{ view_data.monthly_report_comment }}</textarea>
             <div class="char-count" id="applicantProgressCharCount">0 文字</div>
           </div>
         </div>
@@ -530,7 +530,8 @@
 <script>
 const APPLICANT_PROGRESS_BUDGET = Number({{ view_data.base_budget_amount|tojson }});
 const APPLICANT_PROGRESS_PROJECT_ID = {{ view_data.project_id }};
-const APPLICANT_PROGRESS_SAVED_REPORT = {{ view_data.monthly_report_comment|tojson }};
+const APPLICANT_PROGRESS_SAVED_REPORT = {{ view_data.previous_monthly_report_comment|tojson }};
+const APPLICANT_PROGRESS_IS_COMPLETION_REPORT_MODE = {{ view_data.is_completion_report_mode|tojson }};
 const APPLICANT_PROGRESS_TODAY_ISO = {{ view_data.today_iso|tojson }};
 let applicantProgressCurrentActual = Number({{ view_data.current_actual_amount|tojson }});
 let applicantProgressPendingBudgetActualAmount = 0;
@@ -917,7 +918,7 @@ function quoteApplicantProgressLastReport(){
   showApplicantProgressToast("前回の報告を引用しました");
 }
 function updateApplicantProgressCharCount(ta,markUnsaved){const c=getApplicantProgressEl("applicantProgressCharCount");if(!ta||!c)return;c.textContent=ta.value.length+" 文字";if(markUnsaved){const monthlyReportChanged=getApplicantProgressEl("monthlyReportChanged");if(monthlyReportChanged){monthlyReportChanged.value="1";}markApplicantProgressUnsaved("report");}}
-function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges()){return;}const monthlyChanged=getApplicantProgressEl("monthlyReportChanged");const reportText=getApplicantProgressEl("reportText");if(monthlyChanged&&monthlyChanged.value==="1"&&reportText&&reportText.value.trim()===""){showApplicantProgressToast("月次報告欄が空です。報告内容を入力するか、「変更を戻す」を押してください。");return;}const pct=getApplicantProgressBudgetPct();const allTasksDone=isApplicantProgressAllTasksDone();const dlgTitle=getApplicantProgressEl("applicantProgressDlgTitle");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay){return;}if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="更新する";}let title="";let message="";let useNormalButton=false;if(allTasksDone&&pct>=100){title="全タスク完了と予算超過の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が100%以上になりますが、このまま更新してよろしいですか？";}else if(allTasksDone&&pct>=80){title="全タスク完了と予算注意の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が80%以上になりますが、このまま更新してよろしいですか？";}else if(allTasksDone){title="全タスク完了の確認";message="全タスク完了済みとして更新しますか？部門管理者に完了確認の通知が送信されます。";useNormalButton=true;}else if(pct>=100){title="予算超過リスクの確認";message="予算を超過します。このまま更新してよろしいですか？";}else if(pct>=80){title="予算注意の確認";message="予算消費率が80%以上になります。このまま更新してよろしいですか？";}else{title="変更内容の確認";message="変更を更新してよろしいですか？";useNormalButton=true;}if(dlgTitle){dlgTitle.textContent=title;}if(dlgBody){dlgBody.textContent=message;}if(okBtn&&useNormalButton){okBtn.classList.add("is-normal-update");}overlay.classList.add("open");}
+function submitApplicantProgressReport(){if(!hasApplicantProgressUnsavedChanges()){return;}const monthlyChanged=getApplicantProgressEl("monthlyReportChanged");const reportText=getApplicantProgressEl("reportText");if(monthlyChanged&&monthlyChanged.value==="1"&&reportText&&reportText.value.trim()===""){showApplicantProgressToast(APPLICANT_PROGRESS_IS_COMPLETION_REPORT_MODE?"案件完了報告欄が空です。報告内容を入力するか、「変更を戻す」を押してください。":"月次報告欄が空です。報告内容を入力するか、「変更を戻す」を押してください。");return;}const pct=getApplicantProgressBudgetPct();const allTasksDone=isApplicantProgressAllTasksDone();const dlgTitle=getApplicantProgressEl("applicantProgressDlgTitle");const dlgBody=getApplicantProgressEl("applicantProgressDlgBody");const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");if(!overlay){return;}if(okBtn){okBtn.classList.remove("is-normal-update");okBtn.textContent="更新する";}let title="";let message="";let useNormalButton=false;if(allTasksDone&&pct>=100){title="全タスク完了と予算超過の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が100%以上になりますが、このまま更新してよろしいですか？";}else if(allTasksDone&&pct>=80){title="全タスク完了と予算注意の確認";message="全タスク完了済みとして更新します。部門管理者に完了確認の通知が送信されます。予算消費率が80%以上になりますが、このまま更新してよろしいですか？";}else if(allTasksDone){title="全タスク完了の確認";message="全タスク完了済みとして更新しますか？部門管理者に完了確認の通知が送信されます。";useNormalButton=true;}else if(pct>=100){title="予算超過リスクの確認";message="予算を超過します。このまま更新してよろしいですか？";}else if(pct>=80){title="予算注意の確認";message="予算消費率が80%以上になります。このまま更新してよろしいですか？";}else{title="変更内容の確認";message="変更を更新してよろしいですか？";useNormalButton=true;}if(dlgTitle){dlgTitle.textContent=title;}if(dlgBody){dlgBody.textContent=message;}if(okBtn&&useNormalButton){okBtn.classList.add("is-normal-update");}overlay.classList.add("open");}
 function closeApplicantProgressDialog(){const overlay=getApplicantProgressEl("applicantProgressDialogOverlay");if(overlay)overlay.classList.remove("open");}
 function confirmApplicantProgressSubmit(){const form=getApplicantProgressEl("applicantProgressForm");const confirmed=getApplicantProgressEl("applicantProgressConfirmed");const okBtn=getApplicantProgressEl("applicantProgressDlgOkBtn");const updateBtn=getApplicantProgressEl("applicantProgressFooterUpdateBtn");const resetBtn=getApplicantProgressEl("applicantProgressFooterResetBtn");if(!form||!confirmed){showApplicantProgressToast("送信準備に失敗しました。画面を再読み込みしてください。");return;}confirmed.value="1";if(okBtn){okBtn.disabled=true;okBtn.textContent="送信中...";}if(updateBtn){updateBtn.disabled=true;}if(resetBtn){resetBtn.disabled=true;}form.submit();}
 function showApplicantProgressToast(msg){const t=getApplicantProgressEl("applicantProgressToast");if(!t)return;t.textContent=escapeApplicantProgressMockHtml(msg);t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
