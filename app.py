@@ -1522,16 +1522,6 @@ def is_all_tasks_done(tasks: list[Task]) -> bool:
     return all(task.status == "done" for task in tasks)
 
 
-def should_notify_all_tasks_done(before_all_done: bool, after_all_done: bool, project: Project) -> bool:
-    """全タスク完了通知が必要なケースかを判定する。"""
-    return (
-        (not before_all_done)
-        and after_all_done
-        and project.status == "in_progress"
-        and len(project.tasks) > 0
-    )
-
-
 def build_applicant_progress_task_data(task: Task, idx: int, today: date, tomorrow: date) -> dict:
     """タスクカード表示用データを作る。"""
     assignee_display_name = task.assignee_member.display_name if task.assignee_member else task.assignee_name
@@ -1647,6 +1637,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
     completion_report_comment = latest_completion_report.comment if latest_completion_report else ""
     report_comment = completion_report_comment if is_completion_report_mode else (project.monthly_report_comment or "")
     report_card_title = "案件完了報告" if is_completion_report_mode else f"月次報告（前回：{previous_report_date_display}）"
+    report_mode = "completion" if is_completion_report_mode else "monthly"
     report_placeholder = (
         "完了内容・成果・残課題・引き継ぎ事項などを入力してください。"
         if is_completion_report_mode
@@ -1675,6 +1666,7 @@ def build_applicant_progress_view_data(project: Project, progress_projects: list
         "report_month_label": f"{today.year}年{today.month}月",
         "previous_report_date_display": previous_report_date_display,
         "is_completion_report_mode": is_completion_report_mode,
+        "report_mode": report_mode,
         "report_card_title": report_card_title,
         "report_comment_field_name": "report_comment",
         "report_placeholder": report_placeholder,
@@ -1773,6 +1765,7 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
     payload: dict = {
         "budget_actual_amount": None,
         "report_comment": (form_data.get("report_comment") or "").strip(),
+        "report_mode": (form_data.get("report_mode") or "").strip(),
         "monthly_report_changed": (form_data.get("monthly_report_changed") or "").strip() == "1",
         "task_updates": {},
     }
@@ -1783,6 +1776,10 @@ def validate_applicant_progress_form(form_data, project: Project) -> tuple[list[
 
     if len(payload["report_comment"]) > 500:
         errors.append("報告内容は500文字以内で入力してください。")
+        return errors, payload
+
+    if payload["report_mode"] not in {"monthly", "completion"}:
+        errors.append("報告モードの送信内容が不正です。")
         return errors, payload
 
     budget_raw = (form_data.get("budget_actual_amount") or "").strip()
@@ -2067,8 +2064,9 @@ def applicant_project_progress_detail(project_id):
             flash(errors[0], "danger")
             return redirect(url_for("applicant_project_progress_detail", project_id=project.id))
 
-        before_all_done = is_all_tasks_done(project.tasks)
         changed = False
+        completion_report_saved = False
+        completion_report_skipped = False
 
         if payload["budget_actual_amount"] is not None:
             changed = True
@@ -2095,28 +2093,31 @@ def applicant_project_progress_detail(project_id):
 
         if payload["monthly_report_changed"]:
             changed = True
-            report_mode_after_submit = is_all_tasks_done(project.tasks)
-            if report_mode_after_submit:
+            if payload["report_mode"] == "completion":
                 now_utc = utc_now()
-                latest_completion_report = next(
-                    (report for report in _get_sorted_project_reports(project) if report.report_type == "completion"),
-                    None,
-                )
-                if latest_completion_report is None:
-                    db.session.add(
-                        ProjectReport(
-                            project_id=project.id,
-                            report_type="completion",
-                            report_month=None,
-                            comment=payload["report_comment"],
-                            reporter_id=current_user.id,
-                            submitted_at=now_utc,
-                        )
+                if is_all_tasks_done(project.tasks):
+                    latest_completion_report = next(
+                        (report for report in _get_sorted_project_reports(project) if report.report_type == "completion"),
+                        None,
                     )
+                    if latest_completion_report is None:
+                        db.session.add(
+                            ProjectReport(
+                                project_id=project.id,
+                                report_type="completion",
+                                report_month=None,
+                                comment=payload["report_comment"],
+                                reporter_id=current_user.id,
+                                submitted_at=now_utc,
+                            )
+                        )
+                    else:
+                        latest_completion_report.comment = payload["report_comment"]
+                        latest_completion_report.reporter_id = current_user.id
+                        latest_completion_report.submitted_at = now_utc
+                    completion_report_saved = True
                 else:
-                    latest_completion_report.comment = payload["report_comment"]
-                    latest_completion_report.reporter_id = current_user.id
-                    latest_completion_report.submitted_at = now_utc
+                    completion_report_skipped = True
             else:
                 now_utc = utc_now()
                 project.monthly_report_comment = payload["report_comment"]
@@ -2139,8 +2140,14 @@ def applicant_project_progress_detail(project_id):
         try:
             project.updated_at = utc_now()
             touch_project_progress(project, current_user)
-            after_all_done = is_all_tasks_done(project.tasks)
-            if should_notify_all_tasks_done(before_all_done, after_all_done, project):
+            if (
+                payload["report_mode"] == "completion"
+                and payload["monthly_report_changed"]
+                and completion_report_saved
+                and is_all_tasks_done(project.tasks)
+                and project.status == "in_progress"
+                and project.approval_stage == "approved"
+            ):
                 managers = User.query.filter(
                     User.role == "manager",
                     User.department_id == project.department_id,
@@ -2151,9 +2158,11 @@ def applicant_project_progress_detail(project_id):
                         user_id=manager.id,
                         project_id=project.id,
                         notif_type="completed",
-                        message="全タスクが完了しました。案件完了の確認を行ってください。",
+                        message="案件完了報告が提出されました。案件完了の確認を行ってください。",
                     )
             db.session.commit()
+            if completion_report_skipped:
+                flash("未完了タスクがあるため、案件完了報告は保存できません。タスク状態を更新後、改めて月次報告を入力してください。", "warning")
             flash("進捗情報を更新しました。", "success")
         except SQLAlchemyError:
             db.session.rollback()
