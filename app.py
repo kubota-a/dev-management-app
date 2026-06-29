@@ -1700,6 +1700,7 @@ def build_applicant_progress_switcher_data(projects: list[Project], current_proj
             and project.status == "in_progress"
             and project.approval_stage == "approved"
             and all(task.status == "done" and int(task.progress_rate or 0) == 100 for task in tasks)
+            and has_completion_report(project)
         )
 
         nearest_due_date = min(
